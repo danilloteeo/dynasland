@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:Dynasland.App.Converters">
+
+    <FontFamily x:Key="IslandFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="IslandTextFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+
+    <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#FF000000" />
+    <SolidColorBrush x:Key="IslandEdgeBrush" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="IslandPrimaryTextBrush" Color="#FFF5F5F7" />
+    <SolidColorBrush x:Key="IslandSecondaryTextBrush" Color="#99F5F5F7" />
+
+    <converters:DoubleToCornerRadiusConverter x:Key="DoubleToCornerRadius" />
+
+</ResourceDictionary>

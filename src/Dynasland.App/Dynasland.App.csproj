@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(DynaslandWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(DynaslandMinWindows)</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <!-- Apenas para System.Windows.Forms.NotifyIcon (Ã­cone da bandeja), jÃ¡ incluso no runtime do Windows Desktop. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Dynasland.App</RootNamespace>
+    <AssemblyName>Dynasland</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\dynasland.ico</ApplicationIcon>
+    <!-- WFO0003 sugere configurar DPI via API do WinForms; num app WPF o manifest (PerMonitorV2) é o mecanismo correto. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Evita ambiguidades (Application, MessageBox, Color...) entre WPF e WinForms. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\dynasland.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dynasland.Core\Dynasland.Core.csproj" />
+    <ProjectReference Include="..\Dynasland.Infrastructure\Dynasland.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

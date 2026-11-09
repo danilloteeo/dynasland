@@ -1,0 +1,45 @@
+using System.Windows;
+using System.Windows.Interop;
+using Dynasland.Core.Interfaces;
+using Dynasland.Core.Layout;
+using Dynasland.Infrastructure.Windows;
+using Microsoft.Extensions.Logging;
+
+namespace Dynasland.App.Services;
+
+/// <summary>Posiciona a janela da ilha no topo central do monitor configurado.</summary>
+public sealed class IslandPlacementService(
+    IMonitorService monitorService,
+    IIslandSettingsService settings,
+    ILogger<IslandPlacementService> logger)
+{
+    public void Place(Window window)
+    {
+        var hwnd = new WindowInteropHelper(window).Handle;
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var monitor = MonitorSelector.Select(monitorService.GetMonitors(), settings.Current.MonitorDeviceName);
+        if (monitor is null)
+        {
+            logger.LogWarning("Nenhum monitor encontrado; posicionamento ignorado.");
+            return;
+        }
+
+        var topMargin = settings.Current.TopMargin * monitor.Scale;
+
+        // Primeiro movimento usa a largura estimada no DPI do monitor de destino.
+        // Se o monitor tiver outro DPI, o WPF redimensiona a janela (WM_DPICHANGED)
+        // e a posição é recalculada com a largura real.
+        var estimatedWidth = (int)Math.Round(window.Width * monitor.Scale);
+        WindowInterop.MoveTopmost(hwnd, IslandPlacementCalculator.TopCenter(monitor.WorkArea, estimatedWidth, topMargin));
+
+        var actualWidth = WindowInterop.GetBounds(hwnd).Width;
+        if (actualWidth > 0 && actualWidth != estimatedWidth)
+        {
+            WindowInterop.MoveTopmost(hwnd, IslandPlacementCalculator.TopCenter(monitor.WorkArea, actualWidth, topMargin));
+        }
+    }
+}

@@ -1,0 +1,84 @@
+<Window x:Class="Dynasland.App.Views.IslandWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:IslandViewModel}"
+        x:Name="Root"
+        Title="Dynasland"
+        Width="460"
+        Height="200"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        Focusable="False"
+        UseLayoutRounding="True">
+
+    <!--
+        A janela tem tamanho fixo (maior estado + margem para a sombra) e é totalmente
+        transparente: pixels com alfa 0 deixam os cliques passarem para o que está atrás.
+        Apenas a cápsula (IslandHost) é animada, evitando redimensionar a janela a cada frame.
+    -->
+    <Grid>
+        <Grid x:Name="IslandHost"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Top"
+              RenderTransformOrigin="0.5,0"
+              Cursor="Hand"
+              MouseEnter="OnIslandMouseEnter"
+              MouseLeave="OnIslandMouseLeave"
+              MouseLeftButtonUp="OnIslandMouseLeftButtonUp">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="HoverScaleTransform" />
+            </Grid.RenderTransform>
+
+            <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
+            <Border Background="{StaticResource IslandBackgroundBrush}"
+                    CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20"
+                                      ShadowDepth="4"
+                                      Direction="270"
+                                      Opacity="0.35"
+                                      Color="Black"
+                                      RenderingBias="Performance" />
+                </Border.Effect>
+            </Border>
+
+            <Border Background="{StaticResource IslandBackgroundBrush}"
+                    BorderBrush="{StaticResource IslandEdgeBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
+                <Grid>
+                    <!-- Reservado para os indicadores discretos dos módulos (Fase 2+). -->
+                    <Grid x:Name="CompactContent" />
+
+                    <Grid x:Name="InteractiveContent"
+                          Opacity="0"
+                          IsHitTestVisible="False">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TimeText}"
+                                       FontFamily="{StaticResource IslandFont}"
+                                       FontSize="46"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource IslandPrimaryTextBrush}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding DateText}"
+                                       FontFamily="{StaticResource IslandTextFont}"
+                                       FontSize="14"
+                                       Foreground="{StaticResource IslandSecondaryTextBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
