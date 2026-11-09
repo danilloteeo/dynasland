@@ -32,6 +32,9 @@ public partial class IslandWindow : Window
     private const double HoverScale = 1.05;
     private const double SwapOffset = 6;
 
+    /// <summary>Altura do rodapé (abas e configurações), somada à do conteúdo no estado interativo.</summary>
+    private const double FooterHeight = 28;
+
     // Leve overshoot na expansão (sensação de mola) e desaceleração suave no recolhimento.
     private static readonly IEasingFunction ExpandEasing = Frozen(new BackEase { Amplitude = 0.22, EasingMode = EasingMode.EaseOut });
     private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseInOut });
@@ -51,7 +54,6 @@ public partial class IslandWindow : Window
         InitializeComponent();
         DataContext = viewModel;
 
-        ApplyDimensions(viewModel.Dimensions, animate: false);
         ApplyLayers(viewModel.State, animate: false);
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
@@ -222,20 +224,21 @@ public partial class IslandWindow : Window
 
     private void ApplyDimensions(IslandDimensions target, bool animate)
     {
+        var height = target.Height + (_viewModel.State == IslandState.Interactive ? FooterHeight : 0);
         if (!animate)
         {
             SetImmediate(IslandHost, WidthProperty, target.Width);
-            SetImmediate(IslandHost, HeightProperty, target.Height);
+            SetImmediate(IslandHost, HeightProperty, height);
             SetImmediate(this, CornerSizeProperty, target.CornerRadius);
             return;
         }
 
-        var growing = target.Height >= IslandHost.Height;
+        var growing = height >= IslandHost.Height;
         var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
         var easing = growing ? ExpandEasing : CollapseEasing;
 
         Animate(IslandHost, WidthProperty, target.Width, duration, easing);
-        Animate(IslandHost, HeightProperty, target.Height, duration, easing);
+        Animate(IslandHost, HeightProperty, height, duration, easing);
         Animate(this, CornerSizeProperty, target.CornerRadius, duration, easing);
     }
 
@@ -263,6 +266,25 @@ public partial class IslandWindow : Window
                 Animate(layer, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
             }
         }
+
+        var interactive = state == IslandState.Interactive;
+        FooterRow.Height = new GridLength(interactive ? FooterHeight : 0);
+        Footer.IsHitTestVisible = interactive;
+        if (!animate)
+        {
+            SetImmediate(Footer, OpacityProperty, interactive ? 1 : 0);
+        }
+        else if (interactive)
+        {
+            Animate(Footer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+        }
+        else
+        {
+            Animate(Footer, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+        }
+
+        // O rodapé muda a altura total mesmo quando o conteúdo mantém o mesmo tamanho.
+        ApplyDimensions(_viewModel.Dimensions, animate);
 
         if (state != IslandState.Compact)
         {

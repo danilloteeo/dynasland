@@ -5,7 +5,7 @@
     <TargetFramework>$(DynaslandWindowsTfm)</TargetFramework>
     <SupportedOSPlatformVersion>$(DynaslandMinWindows)</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
-    <!-- Apenas para System.Windows.Forms.NotifyIcon (Ã­cone da bandeja), jÃ¡ incluso no runtime do Windows Desktop. -->
+    <!-- Apenas para System.Windows.Forms.NotifyIcon (ícone da bandeja), já incluso no runtime do Windows Desktop. -->
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Dynasland.App</RootNamespace>
     <AssemblyName>Dynasland</AssemblyName>

@@ -69,6 +69,14 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
                 Announce(entry, now);
             }
         }
+        else if (activity.OpenInteractive)
+        {
+            _queue.RemoveAll(e => e.Id == activity.Id);
+            _shown = new Entry(activity, ++_sequence);
+            _focusId = activity.Id;
+            _state = IslandState.Interactive;
+            _collapseAt = _pointerOver ? null : now + ExpandedDuration;
+        }
         else if (_shown?.Id == activity.Id)
         {
             // Mesma atividade já visível (ex.: volume mudando de novo): atualiza e reinicia o tempo.
@@ -139,21 +147,45 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
             return;
         }
 
-        var candidates = OrderedLive().Select(e => e.Id).ToList();
-        if (_shown is { Activity.Kind: ActivityKind.Transient })
-        {
-            candidates.Insert(0, _shown.Id);
-        }
-
-        if (candidates.Count < 2)
+        var pages = InteractivePages();
+        if (pages.Count < 2)
         {
             return;
         }
 
-        var index = Math.Max(0, candidates.IndexOf(_focusId!));
-        _focusId = candidates[(index + Math.Sign(direction) + candidates.Count) % candidates.Count];
+        var index = Math.Max(0, pages.IndexOf(_focusId!));
+        SelectPage((index + Math.Sign(direction) + pages.Count) % pages.Count, now);
+    }
+
+    /// <summary>Vai direto para uma aba do estado interativo (ex.: clique no indicador de página).</summary>
+    public void SelectPage(int index, DateTimeOffset now)
+    {
+        if (_state != IslandState.Interactive)
+        {
+            return;
+        }
+
+        var pages = InteractivePages();
+        if (index < 0 || index >= pages.Count)
+        {
+            return;
+        }
+
+        _focusId = pages[index];
         _collapseAt = _pointerOver ? null : now + ExpandedDuration;
         Publish();
+    }
+
+    /// <summary>Abas do estado interativo: o painel/aviso aberto (se houver) e as atividades contínuas.</summary>
+    private List<string> InteractivePages()
+    {
+        var pages = OrderedLive().Select(e => e.Id).ToList();
+        if (_shown is { Activity.Kind: ActivityKind.Transient } shown)
+        {
+            pages.Insert(0, shown.Id);
+        }
+
+        return pages;
     }
 
     /// <summary>Volta ao compacto e descarta transitórias pendentes (ex.: ilha ocultada).</summary>
@@ -341,7 +373,9 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
         var content = _state == IslandState.Compact ? indicator?.Content : focused?.Content;
         var dimensions = IslandLayout.Clamp(content?.GetPreferredDimensions(_state) ?? IslandLayout.For(_state));
 
-        var snapshot = new IslandSnapshot(_state, focused, indicator, dimensions, _live.Count);
+        var pages = _state == IslandState.Interactive ? InteractivePages() : [];
+        var pageIndex = _focusId is null ? -1 : pages.IndexOf(_focusId);
+        var snapshot = new IslandSnapshot(_state, focused, indicator, dimensions, _live.Count, pages.Count, pageIndex);
         if (snapshot == Snapshot)
         {
             return;

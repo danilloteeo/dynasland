@@ -14,4 +14,19 @@ public static class Glyphs
     public const string VolumeHigh = "";
     public const string Brightness = "";
     public const string Notification = "";
+    public const string Stopwatch = "";
+    public const string Timer = "";
+    public const string Stop = "";
+    public const string Add = "";
+    public const string Cancel = "";
+    public const string Clipboard = "";
+    public const string Copy = "";
+    public const string Photo = "";
+    public const string Document = "";
+    public const string Diagnostic = "";
+    public const string Download = "";
+    public const string FolderOpen = "";
+    public const string OpenFile = "";
+    public const string Warning = "";
+    public const string Accept = "";
 }

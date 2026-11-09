@@ -50,6 +50,8 @@ public sealed class IslandController : IDisposable
 
     public void Cycle(int direction) => Run(c => c.Cycle(direction, Now));
 
+    public void SelectPage(int index) => Run(c => c.SelectPage(index, Now));
+
     public void PointerEntered() => Run(c => c.PointerEntered());
 
     public void PointerExited() => Run(c => c.PointerExited(Now));

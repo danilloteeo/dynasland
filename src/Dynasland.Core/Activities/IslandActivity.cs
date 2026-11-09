@@ -13,4 +13,10 @@ public sealed record IslandActivity(string Id, string ModuleId, ActivityKind Kin
 
     /// <summary>Para atividades <see cref="ActivityKind.Live"/>: expande a ilha quando a atividade começa.</summary>
     public bool ExpandOnStart { get; init; }
+
+    /// <summary>
+    /// Para atividades <see cref="ActivityKind.Transient"/> pedidas pelo usuário (ex.: atalho da tela inicial):
+    /// abre direto no estado interativo e fica até o usuário fechar ou a ilha recolher por inatividade.
+    /// </summary>
+    public bool OpenInteractive { get; init; }
 }

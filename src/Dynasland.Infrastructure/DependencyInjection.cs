@@ -8,6 +8,9 @@ using Dynasland.Infrastructure.Repositories;
 using Dynasland.Infrastructure.Windows;
 using Dynasland.Infrastructure.Windows.Audio;
 using Dynasland.Infrastructure.Windows.Brightness;
+using Dynasland.Infrastructure.Windows.Clipboard;
+using Dynasland.Infrastructure.Windows.Downloads;
+using Dynasland.Infrastructure.Windows.Metrics;
 using Dynasland.Infrastructure.Windows.Media;
 using Dynasland.Infrastructure.Windows.Notifications;
 using Dynasland.Infrastructure.Windows.Power;
@@ -34,6 +37,11 @@ public static class DependencyInjection
         services.AddSingleton<IBrightnessService, WmiBrightnessService>();
         services.AddSingleton<IPowerService, WindowsPowerService>();
         services.AddSingleton<INotificationService, WindowsNotificationService>();
+        services.AddSingleton<ISystemMetricsService, WindowsSystemMetricsService>();
+        services.AddSingleton<IDownloadProvider, BrowserDownloadFolderProvider>();
+        services.AddSingleton<IClipboardService, WindowsClipboardService>();
+        services.AddSingleton<IShellService, ShellService>();
+        services.AddSingleton<IShortcutRegistry, ShortcutRegistry>();
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IEventBus, EventBus>();

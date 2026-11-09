@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Windows.Forms;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Models;
-using Dynasland.Core.Modules;
 using Microsoft.Extensions.Logging;
 using Application = System.Windows.Application;
 
@@ -15,7 +14,7 @@ namespace Dynasland.App.Services;
 public sealed class TrayIconService(
     IIslandSettingsService settings,
     IMonitorService monitorService,
-    ModuleManager moduleManager,
+    SettingsWindowService settingsWindow,
     ILogger<TrayIconService> logger) : IDisposable
 {
     private NotifyIcon? _notifyIcon;
@@ -47,7 +46,7 @@ public sealed class TrayIconService(
         {
             if (e.Button == MouseButtons.Left)
             {
-                ToggleVisibility();
+                settingsWindow.Show();
             }
         };
     }
@@ -57,9 +56,10 @@ public sealed class TrayIconService(
         var current = settings.Current;
         menu.Items.Clear();
 
+        menu.Items.Add(new ToolStripMenuItem("Configurações…", null, (_, _) => settingsWindow.Show()) { Font = new Font(menu.Font, System.Drawing.FontStyle.Bold) });
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem(current.IsVisible ? "Ocultar ilha" : "Mostrar ilha", null, (_, _) => ToggleVisibility()));
         menu.Items.Add(BuildMonitorMenu(current));
-        menu.Items.Add(BuildModulesMenu());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("Sair do Dynasland", null, (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty)));
     }
@@ -88,42 +88,6 @@ public sealed class TrayIconService(
 
         root.DropDown.Renderer = new DarkMenuRenderer();
         return root;
-    }
-
-    private ToolStripMenuItem BuildModulesMenu()
-    {
-        var root = new ToolStripMenuItem("Módulos");
-        foreach (var module in moduleManager.GetModules())
-        {
-            var id = module.Id;
-            var enabled = module.IsEnabled;
-            var label = module switch
-            {
-                { IsUnavailable: true } => $"{module.DisplayName} (indisponível)",
-                { Error: not null } => $"{module.DisplayName} (falhou ao iniciar)",
-                _ => module.DisplayName,
-            };
-            root.DropDownItems.Add(new ToolStripMenuItem(label, null, (_, _) => SetModuleEnabled(id, !enabled))
-            {
-                Checked = enabled,
-                ToolTipText = module.Error ?? module.Description,
-            });
-        }
-
-        root.DropDown.Renderer = new DarkMenuRenderer();
-        return root;
-    }
-
-    private async void SetModuleEnabled(string moduleId, bool enabled)
-    {
-        try
-        {
-            await moduleManager.SetEnabledAsync(moduleId, enabled);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Falha ao alterar o módulo {Module}.", moduleId);
-        }
     }
 
     private static string Describe(DisplayMonitor monitor)

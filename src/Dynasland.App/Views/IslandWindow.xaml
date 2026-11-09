@@ -11,7 +11,7 @@
         x:Name="Root"
         Title="Dynasland"
         Width="480"
-        Height="220"
+        Height="250"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -23,18 +23,51 @@
         UseLayoutRounding="True">
 
     <!--
-        A janela tem tamanho fixo (IslandLayout.Maximum + folga para overshoot e sombra) e Ã©
-        totalmente transparente: pixels com alfa 0 deixam os cliques passarem para o que estÃ¡ atrÃ¡s.
-        Apenas a cÃ¡psula (IslandHost) Ã© animada, evitando redimensionar o HWND a cada frame.
+        A janela tem tamanho fixo (IslandLayout.Maximum + rodapé + folga para overshoot e sombra) e é
+        totalmente transparente: pixels com alfa 0 deixam os cliques passarem para o que está atrás.
+        Apenas a cápsula (IslandHost) é animada, evitando redimensionar o HWND a cada frame.
     -->
     <Window.Resources>
         <views:ActivityTemplateSelector x:Key="CompactTemplates" Mode="{x:Static models:IslandState.Compact}" />
         <views:ActivityTemplateSelector x:Key="ExpandedTemplates" Mode="{x:Static models:IslandState.Expanded}" />
         <views:ActivityTemplateSelector x:Key="InteractiveTemplates" Mode="{x:Static models:IslandState.Interactive}" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <Style x:Key="LayerStyle" TargetType="ContentPresenter">
             <Setter Property="Opacity" Value="0" />
             <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+
+        <Style x:Key="FooterButton" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
+        </Style>
+
+        <!-- Ponto de página: clicável, destacado quando é a aba atual. -->
+        <Style x:Key="PageDotButton" TargetType="Button">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Ellipse x:Name="Dot" Width="6" Height="6" Fill="{StaticResource IslandTertiaryTextBrush}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                <Setter TargetName="Dot" Property="Fill" Value="{StaticResource IslandPrimaryTextBrush}" />
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Dot" Property="Fill" Value="{StaticResource IslandSecondaryTextBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -52,7 +85,7 @@
                 <ScaleTransform x:Name="HoverScaleTransform" />
             </Grid.RenderTransform>
 
-            <!-- Camada separada para a sombra: o efeito nÃ£o afeta a renderizaÃ§Ã£o do texto. -->
+            <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
             <Border Background="{StaticResource IslandBackgroundBrush}"
                     CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
                 <Border.Effect>
@@ -70,6 +103,12 @@
                     BorderThickness="1"
                     CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
                 <Grid ClipToBounds="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <!-- Rodapé do estado interativo; altura 0 nos demais estados. -->
+                        <RowDefinition x:Name="FooterRow" Height="0" />
+                    </Grid.RowDefinitions>
+
                     <ContentPresenter x:Name="CompactLayer"
                                       Style="{StaticResource LayerStyle}"
                                       Content="{Binding CompactContent}"
@@ -94,6 +133,31 @@
                             <TranslateTransform />
                         </ContentPresenter.RenderTransform>
                     </ContentPresenter>
+
+                    <!-- Navegação entre abas e acesso às configurações, sempre visíveis no interativo. -->
+                    <Grid x:Name="Footer" Grid.Row="1" Margin="16,0,12,6" Opacity="0" IsHitTestVisible="False">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
+                            <Button Style="{StaticResource FooterButton}" Content="&#xE76B;" Command="{Binding PreviousPageCommand}" ToolTip="Aba anterior" />
+                            <ItemsControl ItemsSource="{Binding Pages}" Focusable="False" Margin="4,0" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource PageDotButton}"
+                                                Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
+                                                CommandParameter="{Binding Index}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Style="{StaticResource FooterButton}" Content="&#xE76C;" Command="{Binding NextPageCommand}" ToolTip="Próxima aba" />
+                        </StackPanel>
+                        <Button Style="{StaticResource FooterButton}" Content="&#xE713;" Command="{Binding OpenSettingsCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Configurações" />
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

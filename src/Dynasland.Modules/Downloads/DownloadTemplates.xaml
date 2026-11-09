@@ -1,0 +1,104 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="DownloadBrush" Color="#FF0A84FF" />
+
+    <DataTemplate x:Key="Dynasland.Modules.Downloads.DownloadsContent:Compact">
+        <Grid Margin="14,0">
+            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
+                       Foreground="{StaticResource DownloadBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Summary}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{StaticResource DownloadBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Downloads.DownloadsContent:Expanded">
+        <Grid Margin="20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+                       Foreground="{StaticResource DownloadBrush}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Download iniciado" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
+                           Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                <TextBlock Text="{Binding Headline}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Downloads.DownloadsContent:Interactive">
+        <StackPanel Margin="20,14">
+            <TextBlock Text="Downloads" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                       Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="0,0,0,6" />
+            <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="{Binding FileName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" Text="{Binding Detail}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
+                                       Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Style="{DynamicResource IslandProgressBarStyle}" Margin="0,5,0,0"
+                                         Foreground="{StaticResource DownloadBrush}" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
+                                         IsIndeterminate="{Binding IsIndeterminate}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Downloads.DownloadCompletedContent:Expanded">
+        <Grid Margin="20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+                       Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding FileName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Detail}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Downloads.DownloadCompletedContent:Interactive">
+        <Grid Margin="20,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+                       Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding FileName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Detail}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Mostrar na pasta" Command="{Binding RevealCommand}" />
+                <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Abrir" Command="{Binding OpenCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>

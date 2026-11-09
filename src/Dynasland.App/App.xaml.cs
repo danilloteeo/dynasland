@@ -4,8 +4,10 @@ using Dynasland.App.Services;
 using Dynasland.App.ViewModels;
 using Dynasland.App.Views;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Modules;
 using Dynasland.Infrastructure;
 using Dynasland.Infrastructure.Database;
+using Dynasland.Infrastructure.Logging;
 using Dynasland.Infrastructure.Services;
 using Dynasland.Modules;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,9 +59,19 @@ public partial class App : Application
 
             await _host.StartAsync();
 
+            // Último atalho da tela inicial da ilha, depois dos registrados pelos módulos.
+            var settingsWindow = _host.Services.GetRequiredService<SettingsWindowService>();
+            _host.Services.GetRequiredService<IShortcutRegistry>().Register(
+                new IslandShortcut("app.settings", "app", "", "Configurações", settingsWindow.Show));
+
             var tray = _host.Services.GetRequiredService<TrayIconService>();
             tray.ExitRequested += (_, _) => Shutdown();
             tray.Initialize();
+
+            if (e.Args.Contains("--configuracoes", StringComparer.OrdinalIgnoreCase))
+            {
+                settingsWindow.Show();
+            }
 
             _singleInstance.ActivationRequested += (_, _) =>
                 Dispatcher.BeginInvoke(async () => await settings.UpdateAsync(s => s with { IsVisible = true }));
@@ -109,6 +121,7 @@ public partial class App : Application
 
         builder.Logging.ClearProviders();
         builder.Logging.AddDebug();
+        builder.Logging.AddProvider(new FileLoggerProvider(FileLoggerProvider.DefaultPath));
 
         builder.Services.AddDynaslandInfrastructure(new DatabaseOptions(DatabaseOptions.DefaultPath));
         builder.Services.AddDynaslandModules();
@@ -120,6 +133,9 @@ public partial class App : Application
         builder.Services.AddSingleton<IslandViewModel>();
         builder.Services.AddSingleton<IslandWindow>();
         builder.Services.AddSingleton<TrayIconService>();
+        builder.Services.AddSingleton<IAlertSound, AlertSoundPlayer>();
+        builder.Services.AddSingleton<SettingsWindowService>();
+        builder.Services.AddTransient<SettingsViewModel>();
 
         return builder.Build();
     }

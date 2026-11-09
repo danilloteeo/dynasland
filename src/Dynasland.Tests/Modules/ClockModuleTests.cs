@@ -1,6 +1,7 @@
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Modules;
 using Dynasland.Modules.Clock;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
@@ -12,6 +13,7 @@ public class ClockModuleTests
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 11, 9, 14, 31, 50, TimeSpan.Zero));
     private readonly EventBus _bus = new(NullLogger<EventBus>.Instance);
     private readonly InlineDispatcher _ui = new();
+    private readonly ShortcutRegistry _shortcuts = new();
 
     public ClockModuleTests() => _time.SetLocalTimeZone(TimeZoneInfo.Utc);
 
@@ -31,7 +33,7 @@ public class ClockModuleTests
     {
         IslandActivity? posted = null;
         using var subscription = _bus.Subscribe<ActivityPostedEvent>(e => posted = e.Activity);
-        using var module = new ClockModule(_bus, _ui, _time);
+        using var module = new ClockModule(_bus, _ui, _time, _shortcuts);
 
         await module.StartAsync(CancellationToken.None);
 
@@ -47,7 +49,7 @@ public class ClockModuleTests
     {
         IslandActivity? posted = null;
         using var subscription = _bus.Subscribe<ActivityPostedEvent>(e => posted = e.Activity);
-        using var module = new ClockModule(_bus, _ui, _time);
+        using var module = new ClockModule(_bus, _ui, _time, _shortcuts);
         await module.StartAsync(CancellationToken.None);
         var content = Assert.IsType<ClockContent>(posted!.Content);
 
@@ -67,7 +69,7 @@ public class ClockModuleTests
     [Fact]
     public async Task Stop_cancels_updates()
     {
-        using var module = new ClockModule(_bus, _ui, _time);
+        using var module = new ClockModule(_bus, _ui, _time, _shortcuts);
         await module.StartAsync(CancellationToken.None);
 
         await module.StopAsync(CancellationToken.None);

@@ -265,6 +265,42 @@ public class IslandCoordinatorTests
     }
 
     [Fact]
+    public void Interactive_snapshot_exposes_pages_and_select_page_jumps_directly()
+    {
+        _coordinator.Post(Live("clock", ActivityPriority.Low), At(0));
+        _coordinator.Post(Live("media"), At(0));
+        _coordinator.Post(Live("timer"), At(0));
+
+        Assert.Equal(0, _coordinator.Snapshot.PageCount);
+
+        _coordinator.ToggleInteractive(At(1));
+        Assert.Equal(3, _coordinator.Snapshot.PageCount);
+        Assert.Equal(0, _coordinator.Snapshot.PageIndex);
+        Assert.Equal("timer", _coordinator.Snapshot.Focused?.Id);
+
+        _coordinator.SelectPage(2, At(2));
+        Assert.Equal(2, _coordinator.Snapshot.PageIndex);
+        Assert.Equal("clock", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(At(7), _coordinator.NextDeadline);
+
+        _coordinator.SelectPage(9, At(3));
+        Assert.Equal("clock", _coordinator.Snapshot.Focused?.Id);
+    }
+
+    [Fact]
+    public void Open_panel_counts_as_first_page()
+    {
+        _coordinator.Post(Live("media"), At(0));
+        _coordinator.Post(Transient("system.panel") with { OpenInteractive = true }, At(0));
+
+        Assert.Equal(2, _coordinator.Snapshot.PageCount);
+        Assert.Equal(0, _coordinator.Snapshot.PageIndex);
+
+        _coordinator.Cycle(1, At(1));
+        Assert.Equal("media", _coordinator.Snapshot.Focused?.Id);
+    }
+
+    [Fact]
     public void Removing_focused_live_activity_moves_focus_or_collapses()
     {
         _coordinator.Post(Live("clock", ActivityPriority.Low), At(0));
@@ -317,6 +353,23 @@ public class IslandCoordinatorTests
 
         Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
         Assert.Equal("clock", _coordinator.Snapshot.Indicator?.Id);
+    }
+
+    [Fact]
+    public void Open_interactive_request_goes_straight_to_interactive_and_is_discarded_on_close()
+    {
+        _coordinator.Post(Live("clock", ActivityPriority.Low), At(0));
+        _coordinator.ToggleInteractive(At(0));
+
+        _coordinator.Post(Transient("system.panel") with { OpenInteractive = true }, At(1));
+        Assert.Equal(IslandState.Interactive, _coordinator.Snapshot.State);
+        Assert.Equal("system.panel", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(At(6), _coordinator.NextDeadline);
+
+        _coordinator.ToggleInteractive(At(2));
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+        _coordinator.ToggleInteractive(At(3));
+        Assert.Equal("clock", _coordinator.Snapshot.Focused?.Id);
     }
 
     [Fact]

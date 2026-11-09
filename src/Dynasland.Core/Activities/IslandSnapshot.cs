@@ -9,12 +9,16 @@ namespace Dynasland.Core.Activities;
 /// <param name="Indicator">Atividade contínua de maior prioridade, para o indicador do estado compacto.</param>
 /// <param name="Dimensions">Tamanho da cápsula para o estado e conteúdo atuais.</param>
 /// <param name="LiveCount">Quantidade de atividades contínuas.</param>
+/// <param name="PageCount">No estado interativo: quantas atividades podem ser alternadas (abas).</param>
+/// <param name="PageIndex">No estado interativo: posição da atividade em foco; -1 fora dele.</param>
 public sealed record IslandSnapshot(
     IslandState State,
     IslandActivity? Focused,
     IslandActivity? Indicator,
     IslandDimensions Dimensions,
-    int LiveCount)
+    int LiveCount,
+    int PageCount = 0,
+    int PageIndex = -1)
 {
     public static IslandSnapshot Empty { get; } = new(IslandState.Compact, null, null, IslandLayout.Compact, 0);
 }

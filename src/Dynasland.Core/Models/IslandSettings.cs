@@ -20,4 +20,7 @@ public sealed record IslandSettings
 
     /// <summary>Tempo sem interação até a ilha voltar ao estado compacto.</summary>
     public double ExpandedDurationSeconds { get; init; } = 6;
+
+    /// <summary>Tempo sem interação até o painel interativo recolher (atalhos, controles).</summary>
+    public TimeSpan ExpandedDuration => TimeSpan.FromSeconds(ExpandedDurationSeconds);
 }
