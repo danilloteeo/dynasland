@@ -25,11 +25,16 @@ public sealed class SystemAlertPolicy
     private int _consecutiveHighMemory;
     private DateTimeOffset _lastMemoryAlert = DateTimeOffset.MinValue;
 
-    public IReadOnlyList<SystemAlert> Evaluate(MemoryUsage memory, IReadOnlyList<DiskUsage> disks, DateTimeOffset now)
+    public IReadOnlyList<SystemAlert> Evaluate(
+        MemoryUsage memory,
+        IReadOnlyList<DiskUsage> disks,
+        DateTimeOffset now,
+        double memoryThreshold = MemoryThresholdPercent,
+        double diskFreeThreshold = DiskFreeThresholdPercent)
     {
         var alerts = new List<SystemAlert>();
 
-        if (memory.TotalBytes > 0 && memory.Percent >= MemoryThresholdPercent)
+        if (memory.TotalBytes > 0 && memory.Percent >= memoryThreshold)
         {
             _consecutiveHighMemory++;
             if (_consecutiveHighMemory >= 2 && now - _lastMemoryAlert >= MemoryCooldown)
@@ -54,7 +59,7 @@ public sealed class SystemAlertPolicy
                 continue;
             }
 
-            if (disk.FreePercent < DiskFreeThresholdPercent && _alertedDisks.Add(disk.Name))
+            if (disk.FreePercent < diskFreeThreshold && _alertedDisks.Add(disk.Name))
             {
                 alerts.Add(new SystemAlert(
                     $"disk.{disk.Name}",
@@ -62,7 +67,7 @@ public sealed class SystemAlertPolicy
                     $"{TextFormat.Bytes(disk.FreeBytes)} livres de {TextFormat.Bytes(disk.TotalBytes)}",
                     IsSevere: disk.FreePercent < 3));
             }
-            else if (disk.FreePercent >= DiskRearmPercent)
+            else if (disk.FreePercent >= diskFreeThreshold + (DiskRearmPercent - DiskFreeThresholdPercent))
             {
                 _alertedDisks.Remove(disk.Name);
             }

@@ -2,6 +2,7 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Models;
+using Dynasland.Core.Modules;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dynasland.Tests.Modules;
@@ -212,6 +213,12 @@ internal sealed class InMemorySettingsStore : ISettingsStore
 {
     public Dictionary<string, string> Values { get; } = [];
 
+    public Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        Values.Clear();
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyDictionary<string, string>> GetAllAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>(Values));
 
@@ -224,4 +231,28 @@ internal sealed class InMemorySettingsStore : ISettingsStore
 
         return Task.CompletedTask;
     }
+}
+
+internal static class TestOptions
+{
+    /// <summary>Opções de módulo com os valores padrão (armazenamento em memória).</summary>
+    public static ModuleOptionsService Create() => new(new InMemorySettingsStore());
+}
+
+internal sealed class FakeIslandSettings : IIslandSettingsService
+{
+    public IslandSettings Current { get; private set; } = IslandSettings.Default;
+
+    public event EventHandler<IslandSettings>? Changed;
+
+    public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task UpdateAsync(Func<IslandSettings, IslandSettings> update, CancellationToken cancellationToken = default)
+    {
+        Current = update(Current);
+        Changed?.Invoke(this, Current);
+        return Task.CompletedTask;
+    }
+
+    public Task ResetAsync(CancellationToken cancellationToken = default) => UpdateAsync(_ => IslandSettings.Default, cancellationToken);
 }

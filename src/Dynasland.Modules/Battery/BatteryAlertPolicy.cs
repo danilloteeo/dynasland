@@ -18,7 +18,10 @@ public static class BatteryAlertPolicy
     public const int LowThreshold = 20;
     public const int CriticalThreshold = 10;
 
-    public static BatteryAlert Evaluate(PowerState previous, PowerState current)
+    /// <summary>Limite de bateria muito fraca: 10% ou metade do limite de bateria fraca, o que for menor.</summary>
+    public static int CriticalFor(int lowThreshold) => Math.Min(CriticalThreshold, lowThreshold / 2);
+
+    public static BatteryAlert Evaluate(PowerState previous, PowerState current, int lowThreshold = LowThreshold)
     {
         if (!current.HasBattery)
         {
@@ -38,12 +41,13 @@ public static class BatteryAlertPolicy
         // Avisa uma vez ao cruzar cada limite, descarregando.
         if (!current.IsPluggedIn)
         {
-            if (previous.Percent > CriticalThreshold && current.Percent <= CriticalThreshold)
+            var critical = CriticalFor(lowThreshold);
+            if (previous.Percent > critical && current.Percent <= critical)
             {
                 return BatteryAlert.Critical;
             }
 
-            if (previous.Percent > LowThreshold && current.Percent <= LowThreshold)
+            if (previous.Percent > lowThreshold && current.Percent <= lowThreshold)
             {
                 return BatteryAlert.Low;
             }

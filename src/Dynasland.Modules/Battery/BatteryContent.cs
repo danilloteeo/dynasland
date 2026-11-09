@@ -31,13 +31,13 @@ public sealed partial class BatteryContent : ObservableObject, IActivityContent
 
     public string ChargingGlyph => "";
 
-    public void Apply(PowerState state, string headline)
+    public void Apply(PowerState state, string headline, int lowThreshold = BatteryAlertPolicy.LowThreshold)
     {
         Percent = state.Percent;
         Headline = headline;
         StateText = BatteryAlertPolicy.StateText(state);
         IsCharging = state.BatteryState == BatteryChargeState.Charging;
-        IsLow = !state.IsPluggedIn && state.Percent <= BatteryAlertPolicy.LowThreshold;
+        IsLow = !state.IsPluggedIn && state.Percent <= lowThreshold;
         RemainingText = state.RemainingTime is { } remaining ? $"{TextFormat.Duration(remaining)} restantes" : string.Empty;
     }
 

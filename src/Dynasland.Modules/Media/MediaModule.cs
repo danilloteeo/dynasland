@@ -12,7 +12,7 @@ namespace Dynasland.Modules.Media;
 /// Mídia do Windows (Spotify, navegadores...): atividade contínua enquanto houver sessão e
 /// anúncio expandido quando uma nova faixa começa a tocar.
 /// </summary>
-public sealed class MediaModule(IMediaSessionService media, IEventBus bus, IUiDispatcher ui, TimeProvider time) : IIslandModule
+public sealed class MediaModule(IMediaSessionService media, IEventBus bus, IUiDispatcher ui, TimeProvider time, IModuleOptions options, IIslandSettingsService settings) : IIslandModule
 {
     public const string ModuleId = "media";
     public const string SessionActivityId = "media.session";
@@ -34,11 +34,19 @@ public sealed class MediaModule(IMediaSessionService media, IEventBus bus, IUiDi
 
     public string Description => "Música e vídeos em reprodução (Spotify, navegadores e outros apps).";
 
+    public static readonly ModuleOption AnnounceTracks = ModuleOption.Toggle(
+        "announceTracks", "Anunciar nova música", "Expande a ilha quando uma nova faixa começa a tocar.");
+
+    public static readonly ModuleOption AnimatedEqualizer = ModuleOption.Toggle(
+        "animatedEqualizer", "Equalizador animado", "Barras animadas na ilha compacta enquanto toca (desligado, ficam paradas).");
+
+    public IReadOnlyList<ModuleOption> Options => [AnnounceTracks, AnimatedEqualizer];
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         lock (_lock)
         {
-            _content = new MediaContent(media, ui, time);
+            _content = new MediaContent(media, ui, time, CanAnimateIndicator);
             _sessionPosted = false;
             _announcedTrackKey = null;
         }
@@ -47,12 +55,16 @@ public sealed class MediaModule(IMediaSessionService media, IEventBus bus, IUiDi
         // quando o Dynasland abriu vira indicador, sem anúncio. Só depois passamos a ouvir eventos.
         await media.StartAsync(cancellationToken);
         media.Changed += OnMediaChanged;
+        options.Changed += OnPreferencesChanged;
+        settings.Changed += OnPreferencesChanged;
         Apply(media.Current, announce: false);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         media.Changed -= OnMediaChanged;
+        options.Changed -= OnPreferencesChanged;
+        settings.Changed -= OnPreferencesChanged;
         await media.StopAsync();
 
         lock (_lock)
@@ -67,6 +79,20 @@ public sealed class MediaModule(IMediaSessionService media, IEventBus bus, IUiDi
     }
 
     private void OnMediaChanged(object? sender, MediaSnapshot? snapshot) => Apply(snapshot, announce: true);
+
+    private bool CanAnimateIndicator() => settings.Current.AnimationsEnabled && options.IsOn(ModuleId, AnimatedEqualizer);
+
+    private void OnPreferencesChanged(object? sender, (string ModuleId, string Key) e) => RefreshAnimation();
+
+    private void OnPreferencesChanged(object? sender, IslandSettings e) => RefreshAnimation();
+
+    private void RefreshAnimation()
+    {
+        if (_content is { } content)
+        {
+            ui.Post(content.RefreshAnimation);
+        }
+    }
 
     private void Apply(MediaSnapshot? snapshot, bool announce)
     {
@@ -108,7 +134,7 @@ public sealed class MediaModule(IMediaSessionService media, IEventBus bus, IUiDi
             // Anuncia cada faixa uma vez, quando começa a tocar (troca durante a pausa é anunciada ao retomar).
             if (snapshot.IsPlaying && snapshot.TrackKey != _announcedTrackKey)
             {
-                if (announce)
+                if (announce && options.IsOn(ModuleId, AnnounceTracks))
                 {
                     bus.PostActivity(new IslandActivity(TrackActivityId, ModuleId, ActivityKind.Transient, content)
                     {

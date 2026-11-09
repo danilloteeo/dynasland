@@ -46,7 +46,7 @@ public class BatteryTests : IDisposable
     [Fact]
     public async Task Module_is_unavailable_on_desktops()
     {
-        var module = new BatteryModule(new FakePowerService(new PowerState(BatteryChargeState.NotPresent, 100, true, null)), _recorder.Bus, new InlineDispatcher());
+        var module = new BatteryModule(new FakePowerService(new PowerState(BatteryChargeState.NotPresent, 100, true, null)), _recorder.Bus, new InlineDispatcher(), TestOptions.Create());
 
         await Assert.ThrowsAsync<ModuleUnavailableException>(() => module.StartAsync(CancellationToken.None));
     }
@@ -55,7 +55,7 @@ public class BatteryTests : IDisposable
     public async Task Module_announces_alerts_with_priority_and_details()
     {
         var power = new FakePowerService(OnBattery(22));
-        var module = new BatteryModule(power, _recorder.Bus, new InlineDispatcher());
+        var module = new BatteryModule(power, _recorder.Bus, new InlineDispatcher(), TestOptions.Create());
         await module.StartAsync(CancellationToken.None);
 
         power.Raise(OnBattery(21));

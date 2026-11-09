@@ -5,6 +5,7 @@ using Dynasland.Core.Services;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Database.Migrations;
 using Dynasland.Infrastructure.Repositories;
+using Dynasland.Infrastructure.Updates;
 using Dynasland.Infrastructure.Windows;
 using Dynasland.Infrastructure.Windows.Audio;
 using Dynasland.Infrastructure.Windows.Brightness;
@@ -42,6 +43,9 @@ public static class DependencyInjection
         services.AddSingleton<IClipboardService, WindowsClipboardService>();
         services.AddSingleton<IShellService, ShellService>();
         services.AddSingleton<IShortcutRegistry, ShortcutRegistry>();
+        services.AddSingleton<IModuleOptions, ModuleOptionsService>();
+        services.AddSingleton<IStartupRegistration, StartupRegistration>();
+        services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IEventBus, EventBus>();

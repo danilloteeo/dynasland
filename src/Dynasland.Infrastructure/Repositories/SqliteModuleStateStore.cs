@@ -22,6 +22,14 @@ public sealed class SqliteModuleStateStore(SqliteConnectionFactory connectionFac
         return states;
     }
 
+    public async Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await connectionFactory.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM modules;";
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task SetEnabledAsync(string moduleId, bool enabled, CancellationToken cancellationToken = default)
     {
         await using var connection = await connectionFactory.OpenAsync(cancellationToken);

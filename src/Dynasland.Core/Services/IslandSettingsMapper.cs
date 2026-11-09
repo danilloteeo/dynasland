@@ -1,46 +1,92 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Dynasland.Core.Models;
 
 namespace Dynasland.Core.Services;
 
 /// <summary>Converte <see cref="IslandSettings"/> de/para pares chave/valor, tolerando valores inválidos.</summary>
-public static class IslandSettingsMapper
+public static partial class IslandSettingsMapper
 {
     public static class Keys
     {
         public const string MonitorDeviceName = "island.monitor";
         public const string TopMargin = "island.topMargin";
         public const string IsVisible = "island.visible";
+        public const string StartHidden = "island.startHidden";
+        public const string HideInFullscreen = "island.hideInFullscreen";
         public const string ExpandedDurationSeconds = "island.expandedDurationSeconds";
         public const string AnimationsEnabled = "animations.enabled";
         public const string AnimationSpeed = "animations.speed";
+        public const string AnimationIntensity = "animations.intensity";
+        public const string Theme = "appearance.theme";
+        public const string AccentColor = "appearance.accent";
+        public const string IslandOpacity = "appearance.opacity";
+        public const string ShadowIntensity = "appearance.shadow";
+        public const string Roundness = "appearance.roundness";
+        public const string CompactWidth = "appearance.compactWidth";
+        public const string CompactHeight = "appearance.compactHeight";
+        public const string MaxWidth = "appearance.maxWidth";
+        public const string CheckForUpdates = "system.checkForUpdates";
     }
 
     public static IslandSettings FromValues(IReadOnlyDictionary<string, string> values)
     {
-        var defaults = IslandSettings.Default;
+        var d = IslandSettings.Default;
         values.TryGetValue(Keys.MonitorDeviceName, out var monitor);
+        values.TryGetValue(Keys.AccentColor, out var accent);
 
         return new IslandSettings
         {
             MonitorDeviceName = string.IsNullOrWhiteSpace(monitor) ? null : monitor,
-            TopMargin = ReadDouble(values, Keys.TopMargin, defaults.TopMargin, 0, 200),
-            IsVisible = ReadBool(values, Keys.IsVisible, defaults.IsVisible),
-            ExpandedDurationSeconds = ReadDouble(values, Keys.ExpandedDurationSeconds, defaults.ExpandedDurationSeconds, 1, 60),
-            AnimationsEnabled = ReadBool(values, Keys.AnimationsEnabled, defaults.AnimationsEnabled),
-            AnimationSpeed = ReadDouble(values, Keys.AnimationSpeed, defaults.AnimationSpeed, 0.25, 3),
+            TopMargin = ReadDouble(values, Keys.TopMargin, d.TopMargin, 0, 200),
+            IsVisible = ReadBool(values, Keys.IsVisible, d.IsVisible),
+            StartHidden = ReadBool(values, Keys.StartHidden, d.StartHidden),
+            HideInFullscreen = ReadBool(values, Keys.HideInFullscreen, d.HideInFullscreen),
+            ExpandedDurationSeconds = ReadDouble(values, Keys.ExpandedDurationSeconds, d.ExpandedDurationSeconds, 1, 60),
+            AnimationsEnabled = ReadBool(values, Keys.AnimationsEnabled, d.AnimationsEnabled),
+            AnimationSpeed = ReadDouble(values, Keys.AnimationSpeed, d.AnimationSpeed, 0.25, 3),
+            AnimationIntensity = ReadDouble(values, Keys.AnimationIntensity, d.AnimationIntensity, 0, 2),
+            Theme = values.TryGetValue(Keys.Theme, out var theme) && Enum.TryParse<AppTheme>(theme, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed)
+                ? parsed
+                : d.Theme,
+            AccentColor = accent is not null && IsHexColor(accent) ? accent.ToUpperInvariant() : d.AccentColor,
+            IslandOpacity = ReadDouble(values, Keys.IslandOpacity, d.IslandOpacity, 0.5, 1),
+            ShadowIntensity = ReadDouble(values, Keys.ShadowIntensity, d.ShadowIntensity, 0, 1),
+            Roundness = ReadDouble(values, Keys.Roundness, d.Roundness, 0.3, 1),
+            CompactWidth = ReadDouble(values, Keys.CompactWidth, d.CompactWidth, 140, 300),
+            CompactHeight = ReadDouble(values, Keys.CompactHeight, d.CompactHeight, 28, 44),
+            MaxWidth = ReadDouble(values, Keys.MaxWidth, d.MaxWidth, 340, 420),
+            CheckForUpdates = ReadBool(values, Keys.CheckForUpdates, d.CheckForUpdates),
         };
     }
 
-    public static IReadOnlyDictionary<string, string> ToValues(IslandSettings settings) => new Dictionary<string, string>
+    public static IReadOnlyDictionary<string, string> ToValues(IslandSettings s) => new Dictionary<string, string>
     {
-        [Keys.MonitorDeviceName] = settings.MonitorDeviceName ?? string.Empty,
-        [Keys.TopMargin] = settings.TopMargin.ToString(CultureInfo.InvariantCulture),
-        [Keys.IsVisible] = settings.IsVisible ? "true" : "false",
-        [Keys.ExpandedDurationSeconds] = settings.ExpandedDurationSeconds.ToString(CultureInfo.InvariantCulture),
-        [Keys.AnimationsEnabled] = settings.AnimationsEnabled ? "true" : "false",
-        [Keys.AnimationSpeed] = settings.AnimationSpeed.ToString(CultureInfo.InvariantCulture),
+        [Keys.MonitorDeviceName] = s.MonitorDeviceName ?? string.Empty,
+        [Keys.TopMargin] = Format(s.TopMargin),
+        [Keys.IsVisible] = Format(s.IsVisible),
+        [Keys.StartHidden] = Format(s.StartHidden),
+        [Keys.HideInFullscreen] = Format(s.HideInFullscreen),
+        [Keys.ExpandedDurationSeconds] = Format(s.ExpandedDurationSeconds),
+        [Keys.AnimationsEnabled] = Format(s.AnimationsEnabled),
+        [Keys.AnimationSpeed] = Format(s.AnimationSpeed),
+        [Keys.AnimationIntensity] = Format(s.AnimationIntensity),
+        [Keys.Theme] = s.Theme.ToString(),
+        [Keys.AccentColor] = s.AccentColor,
+        [Keys.IslandOpacity] = Format(s.IslandOpacity),
+        [Keys.ShadowIntensity] = Format(s.ShadowIntensity),
+        [Keys.Roundness] = Format(s.Roundness),
+        [Keys.CompactWidth] = Format(s.CompactWidth),
+        [Keys.CompactHeight] = Format(s.CompactHeight),
+        [Keys.MaxWidth] = Format(s.MaxWidth),
+        [Keys.CheckForUpdates] = Format(s.CheckForUpdates),
     };
+
+    public static bool IsHexColor(string value) => HexColor().IsMatch(value);
+
+    private static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private static string Format(bool value) => value ? "true" : "false";
 
     private static double ReadDouble(IReadOnlyDictionary<string, string> values, string key, double fallback, double min, double max)
     {
@@ -56,4 +102,7 @@ public static class IslandSettingsMapper
 
     private static bool ReadBool(IReadOnlyDictionary<string, string> values, string key, bool fallback) =>
         values.TryGetValue(key, out var raw) && bool.TryParse(raw, out var value) ? value : fallback;
+
+    [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
+    private static partial Regex HexColor();
 }

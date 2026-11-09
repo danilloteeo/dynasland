@@ -12,17 +12,23 @@ namespace Dynasland.Modules.Notifications;
 public sealed class NotificationsModule(
     INotificationService notifications,
     NotificationPreferences preferences,
+    IModuleOptions options,
     IEventBus bus,
     ILogger<NotificationsModule> logger) : IIslandModule
 {
     public const string ModuleId = "notifications";
     private const int LogoDecodeWidth = 72;
 
+    public static readonly ModuleOption ShowMessageText = ModuleOption.Toggle(
+        "showMessageText", "Mostrar o texto das mensagens", "Desligado, a ilha mostra apenas o aplicativo e o título (mais privacidade).");
+
     public string Id => ModuleId;
 
     public string DisplayName => "Notificações";
 
     public string Description => "Notificações do Windows, com opção de silenciar aplicativos.";
+
+    public IReadOnlyList<ModuleOption> Options => [ShowMessageText];
 
     public static string ActivityIdFor(uint notificationId) => $"notification.{notificationId}";
 
@@ -52,13 +58,31 @@ public sealed class NotificationsModule(
 
     private void OnReceived(object? sender, NotificationInfo info)
     {
-        if (preferences.IsBlocked(info.AppId))
+        _ = RememberAsync(info);
+        if (!preferences.ShouldShow(info.AppId))
         {
             return;
         }
 
-        var content = new NotificationContent(info, ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth), Open, Dismiss, MuteApp);
-        bus.PostActivity(new IslandActivity(ActivityIdFor(info.Id), ModuleId, ActivityKind.Transient, content));
+        var content = new NotificationContent(info, ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth), options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
+        bus.PostActivity(new IslandActivity(ActivityIdFor(info.Id), ModuleId, ActivityKind.Transient, content)
+        {
+            Duration = TimeSpan.FromSeconds(preferences.DurationSeconds),
+            Priority = preferences.CanInterrupt ? ActivityPriority.High : ActivityPriority.Normal,
+        });
+    }
+
+    /// <summary>Guarda o aplicativo para que ele apareça na lista das configurações.</summary>
+    private async Task RememberAsync(NotificationInfo info)
+    {
+        try
+        {
+            await preferences.RememberAppAsync(info.AppId, info.AppName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "Falha ao registrar {App}.", info.AppName);
+        }
     }
 
     private void OnRemoved(object? sender, uint notificationId) => bus.RemoveActivity(ActivityIdFor(notificationId));

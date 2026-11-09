@@ -23,7 +23,7 @@ public sealed class SettingsWindowService(IServiceProvider services)
             return;
         }
 
-        _window = new SettingsWindow(services.GetRequiredService<SettingsViewModel>());
+        _window = new SettingsWindow(services.GetRequiredService<SettingsViewModel>(), services.GetRequiredService<ThemeService>());
         _window.Closed += (_, _) => _window = null;
         _window.Show();
         _window.Activate();

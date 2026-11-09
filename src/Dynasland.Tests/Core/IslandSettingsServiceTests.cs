@@ -74,6 +74,12 @@ public class IslandSettingsServiceTests
 
         public int WriteCount { get; private set; }
 
+        public Task ClearAsync(CancellationToken cancellationToken = default)
+        {
+            _values.Clear();
+            return Task.CompletedTask;
+        }
+
         public Task<IReadOnlyDictionary<string, string>> GetAllAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>(_values));
 

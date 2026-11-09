@@ -9,5 +9,7 @@
     <!-- TFM com SDK do Windows: necessário para Win32 + APIs WinRT (GSMTC, notificações etc.). -->
     <DynaslandWindowsTfm>net10.0-windows10.0.19041.0</DynaslandWindowsTfm>
     <DynaslandMinWindows>10.0.17763.0</DynaslandMinWindows>
+    <!-- Repositório GitHub (dono/nome) cujos Releases públicos indicam novas versões. Vazio desativa a verificação. -->
+    <DynaslandUpdateRepository>danilloteeo/dynasland</DynaslandUpdateRepository>
   </PropertyGroup>
 </Project>

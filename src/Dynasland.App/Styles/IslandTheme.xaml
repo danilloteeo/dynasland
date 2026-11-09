@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="clr-namespace:Dynasland.App.Converters">
+                    xmlns:converters="clr-namespace:Dynasland.App.Converters"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!--
         Tema da ilha. Os DataTemplates dos módulos usam estas chaves via DynamicResource,
@@ -25,6 +26,9 @@
     <SolidColorBrush x:Key="IslandAccentBrush" Color="#FF30D158" />
     <SolidColorBrush x:Key="IslandWarningBrush" Color="#FFFF9F0A" />
     <SolidColorBrush x:Key="IslandCriticalBrush" Color="#FFFF453A" />
+
+    <!-- Opacidade da sombra da ilha (ajustada em Aparência). -->
+    <sys:Double x:Key="IslandShadowOpacity">0.35</sys:Double>
 
     <converters:DoubleToCornerRadiusConverter x:Key="DoubleToCornerRadius" />
 

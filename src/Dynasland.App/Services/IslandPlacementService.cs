@@ -13,6 +13,9 @@ public sealed class IslandPlacementService(
     IIslandSettingsService settings,
     ILogger<IslandPlacementService> logger)
 {
+    /// <summary>Monitor (nome do dispositivo) onde a ilha foi posicionada por último.</summary>
+    public string? CurrentMonitor { get; private set; }
+
     public void Place(Window window)
     {
         var hwnd = new WindowInteropHelper(window).Handle;
@@ -28,6 +31,7 @@ public sealed class IslandPlacementService(
             return;
         }
 
+        CurrentMonitor = monitor.DeviceName;
         var topMargin = settings.Current.TopMargin * monitor.Scale;
 
         // Primeiro movimento usa a largura estimada no DPI do monitor de destino.

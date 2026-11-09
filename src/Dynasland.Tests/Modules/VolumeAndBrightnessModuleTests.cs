@@ -19,7 +19,7 @@ public class VolumeAndBrightnessModuleTests : IDisposable
     public async Task External_volume_change_shows_high_priority_transient()
     {
         var audio = new FakeAudioService();
-        var module = new VolumeModule(audio, _recorder.Bus, _ui);
+        var module = new VolumeModule(audio, _recorder.Bus, _ui, TestOptions.Create());
         await module.StartAsync(CancellationToken.None);
 
         audio.Raise(new VolumeState(0.8f, false, "Fones"), VolumeChangeReason.External);
@@ -37,7 +37,7 @@ public class VolumeAndBrightnessModuleTests : IDisposable
     public async Task Own_volume_change_updates_content_without_announcing()
     {
         var audio = new FakeAudioService();
-        var module = new VolumeModule(audio, _recorder.Bus, _ui);
+        var module = new VolumeModule(audio, _recorder.Bus, _ui, TestOptions.Create());
         await module.StartAsync(CancellationToken.None);
 
         audio.Raise(new VolumeState(0.3f, false, null), VolumeChangeReason.Own);
@@ -49,7 +49,7 @@ public class VolumeAndBrightnessModuleTests : IDisposable
     public async Task Slider_sets_volume_and_unmutes()
     {
         var audio = new FakeAudioService();
-        var module = new VolumeModule(audio, _recorder.Bus, _ui);
+        var module = new VolumeModule(audio, _recorder.Bus, _ui, TestOptions.Create());
         await module.StartAsync(CancellationToken.None);
         audio.Raise(new VolumeState(0.5f, true, null), VolumeChangeReason.External);
         var content = Assert.IsType<VolumeContent>(_recorder.Posted.Single().Content);
@@ -66,7 +66,7 @@ public class VolumeAndBrightnessModuleTests : IDisposable
     [Fact]
     public async Task Volume_is_unavailable_without_output_device()
     {
-        var module = new VolumeModule(new FakeAudioService { HasDevice = false }, _recorder.Bus, _ui);
+        var module = new VolumeModule(new FakeAudioService { HasDevice = false }, _recorder.Bus, _ui, TestOptions.Create());
 
         await Assert.ThrowsAsync<ModuleUnavailableException>(() => module.StartAsync(CancellationToken.None));
     }
@@ -85,7 +85,7 @@ public class VolumeAndBrightnessModuleTests : IDisposable
     [Fact]
     public async Task Brightness_is_unavailable_when_hardware_has_no_control()
     {
-        var module = new BrightnessModule(new FakeBrightnessService { Supported = false }, _recorder.Bus, _ui, new FakeTimeProvider());
+        var module = new BrightnessModule(new FakeBrightnessService { Supported = false }, _recorder.Bus, _ui, new FakeTimeProvider(), TestOptions.Create());
 
         var error = await Assert.ThrowsAsync<ModuleUnavailableException>(() => module.StartAsync(CancellationToken.None));
         Assert.Contains("brilho", error.Message, StringComparison.OrdinalIgnoreCase);
@@ -96,7 +96,7 @@ public class VolumeAndBrightnessModuleTests : IDisposable
     {
         var time = new FakeTimeProvider();
         var brightness = new FakeBrightnessService();
-        var module = new BrightnessModule(brightness, _recorder.Bus, _ui, time);
+        var module = new BrightnessModule(brightness, _recorder.Bus, _ui, time, TestOptions.Create());
         await module.StartAsync(CancellationToken.None);
 
         brightness.Raise(70);

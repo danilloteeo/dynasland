@@ -7,7 +7,7 @@ using Dynasland.Core.Modules;
 namespace Dynasland.Modules.Volume;
 
 /// <summary>Mostra o volume quando ele muda fora do Dynasland e permite controlá-lo pela ilha.</summary>
-public sealed class VolumeModule(IAudioVolumeService audio, IEventBus bus, IUiDispatcher ui) : IIslandModule
+public sealed class VolumeModule(IAudioVolumeService audio, IEventBus bus, IUiDispatcher ui, IModuleOptions options) : IIslandModule
 {
     public const string ModuleId = "volume";
     public const string ActivityId = "volume.level";
@@ -21,6 +21,11 @@ public sealed class VolumeModule(IAudioVolumeService audio, IEventBus bus, IUiDi
     public string DisplayName => "Volume";
 
     public string Description => "Mostra e controla o volume do sistema.";
+
+    public static readonly ModuleOption ShowOnChange = ModuleOption.Toggle(
+        "showOnChange", "Mostrar ao mudar o volume", "Expande a ilha quando o volume é alterado pelas teclas ou por outro aplicativo.");
+
+    public IReadOnlyList<ModuleOption> Options => [ShowOnChange];
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -54,7 +59,7 @@ public sealed class VolumeModule(IAudioVolumeService audio, IEventBus bus, IUiDi
         ui.Post(() => content.Apply(e.State));
 
         // Mudanças feitas pela própria ilha já estão visíveis para o usuário.
-        if (e.Reason == VolumeChangeReason.Own)
+        if (e.Reason == VolumeChangeReason.Own || !options.IsOn(ModuleId, ShowOnChange))
         {
             return;
         }

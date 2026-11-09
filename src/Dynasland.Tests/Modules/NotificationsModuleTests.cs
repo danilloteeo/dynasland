@@ -17,7 +17,7 @@ public class NotificationsModuleTests : IDisposable
     public NotificationsModuleTests()
     {
         _preferences = new NotificationPreferences(_store);
-        _module = new NotificationsModule(_service, _preferences, _recorder.Bus, NullLogger<NotificationsModule>.Instance);
+        _module = new NotificationsModule(_service, _preferences, TestOptions.Create(), _recorder.Bus, NullLogger<NotificationsModule>.Instance);
     }
 
     public void Dispose() => _recorder.Dispose();
@@ -85,7 +85,7 @@ public class NotificationsModuleTests : IDisposable
         _service.Receive(FakeNotificationService.Message(3, appId: "WhatsApp"));
 
         Assert.Equal(["notification.1", "notification.3"], _recorder.Posted.Select(a => a.Id));
-        Assert.Equal("Discord", _store.Values[NotificationPreferences.BlockedAppsKey]);
+        Assert.Equal("Discord\t0", _store.Values[NotificationPreferences.RulesKey]);
 
         var reloaded = new NotificationPreferences(_store);
         await reloaded.LoadAsync();

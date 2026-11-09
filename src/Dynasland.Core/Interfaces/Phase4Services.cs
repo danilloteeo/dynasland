@@ -59,6 +59,9 @@ public interface IShellService
     bool Open(string path);
 
     bool RevealInFolder(string path);
+
+    /// <summary>Abre um endereço https no navegador padrão.</summary>
+    bool OpenUrl(string url);
 }
 
 /// <summary>Som de alerta (ex.: fim do temporizador).</summary>

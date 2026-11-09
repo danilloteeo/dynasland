@@ -17,6 +17,7 @@ public sealed class ClipboardModule(
     IUiDispatcher ui,
     TimeProvider time,
     IShortcutRegistry shortcuts,
+    IModuleOptions options,
     ILogger<ClipboardModule> logger) : IIslandModule
 {
     public const string ModuleId = "clipboard";
@@ -40,6 +41,11 @@ public sealed class ClipboardModule(
     public string DisplayName => "Área de transferência";
 
     public string Description => "Mostra o que foi copiado e o histórico recente do Windows (Win+V). Ignora conteúdo marcado como privado.";
+
+    public static readonly ModuleOption ShowCopied = ModuleOption.Toggle(
+        "showCopied", "Mostrar o que foi copiado", "Expande a ilha por um instante a cada cópia. O histórico continua disponível pelo atalho.");
+
+    public IReadOnlyList<ModuleOption> Options => [ShowCopied];
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -78,7 +84,7 @@ public sealed class ClipboardModule(
                 }
             }
 
-            if (_content is not { } content || await clipboard.GetCurrentAsync() is not { } entry)
+            if (!options.IsOn(ModuleId, ShowCopied) || _content is not { } content || await clipboard.GetCurrentAsync() is not { } entry)
             {
                 return;
             }

@@ -10,7 +10,7 @@ namespace Dynasland.Modules.Timer;
 /// Cronômetro e temporizador regressivo. Iniciados pelos atalhos da tela inicial; enquanto rodam
 /// aparecem como atividade contínua (indicador no compacto) e o fim do temporizador toca um alerta.
 /// </summary>
-public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider time, IShortcutRegistry shortcuts, IAlertSound sound) : IIslandModule
+public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider time, IShortcutRegistry shortcuts, IAlertSound sound, IModuleOptions options) : IIslandModule
 {
     public const string ModuleId = "timer";
     public const string StopwatchActivityId = "timer.stopwatch";
@@ -40,6 +40,11 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
     public string DisplayName => "Cronômetro e temporizador";
 
     public string Description => "Cronômetro e temporizador regressivo direto na ilha, com alerta ao terminar.";
+
+    public static readonly ModuleOption AlarmSound = ModuleOption.Toggle(
+        "alarmSound", "Tocar alarme", "Toca o som de alarme do Windows quando o temporizador termina.");
+
+    public IReadOnlyList<ModuleOption> Options => [AlarmSound];
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -236,7 +241,10 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
             });
         }
 
-        sound.Play();
+        if (options.IsOn(ModuleId, AlarmSound))
+        {
+            sound.Play();
+        }
     }
 
     /// <summary>Agenda o fim exato do temporizador. Chamar com <see cref="_lock"/> adquirido.</summary>

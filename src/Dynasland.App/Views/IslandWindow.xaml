@@ -86,19 +86,19 @@
             </Grid.RenderTransform>
 
             <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
-            <Border Background="{StaticResource IslandBackgroundBrush}"
+            <Border Background="{DynamicResource IslandBackgroundBrush}"
                     CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20"
                                       ShadowDepth="4"
                                       Direction="270"
-                                      Opacity="0.35"
+                                      Opacity="{DynamicResource IslandShadowOpacity}"
                                       Color="Black"
                                       RenderingBias="Performance" />
                 </Border.Effect>
             </Border>
 
-            <Border Background="{StaticResource IslandBackgroundBrush}"
+            <Border Background="{DynamicResource IslandBackgroundBrush}"
                     BorderBrush="{StaticResource IslandEdgeBrush}"
                     BorderThickness="1"
                     CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">

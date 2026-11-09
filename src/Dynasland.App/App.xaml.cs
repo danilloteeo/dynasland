@@ -9,6 +9,7 @@ using Dynasland.Infrastructure;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Logging;
 using Dynasland.Infrastructure.Services;
+using Dynasland.Infrastructure.Windows;
 using Dynasland.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,8 +50,16 @@ public partial class App : Application
             {
                 await _host.Services.GetRequiredService<MigrationRunner>().MigrateAsync();
                 await settings.LoadAsync();
+                await _host.Services.GetRequiredService<IModuleOptions>().LoadAsync();
+
+                // "Iniciar minimizado": abre com a ilha oculta (o usuário mostra pela bandeja).
+                if (settings.Current.StartHidden && settings.Current.IsVisible)
+                {
+                    await settings.UpdateAsync(s => s with { IsVisible = false });
+                }
             });
             MergeModuleTemplates(_host.Services);
+            _host.Services.GetRequiredService<ThemeService>().Initialize(this);
 
             // A ilha (e o controlador que escuta o barramento) existe antes dos módulos iniciarem,
             // para que nenhuma atividade publicada na partida seja perdida.
@@ -75,6 +84,8 @@ public partial class App : Application
 
             _singleInstance.ActivationRequested += (_, _) =>
                 Dispatcher.BeginInvoke(async () => await settings.UpdateAsync(s => s with { IsVisible = true }));
+
+            _ = _host.Services.GetRequiredService<UpdateNotifier>().CheckAfterStartupAsync();
 
             _logger.LogInformation("Dynasland iniciado.");
         }
@@ -136,6 +147,9 @@ public partial class App : Application
         builder.Services.AddSingleton<IAlertSound, AlertSoundPlayer>();
         builder.Services.AddSingleton<SettingsWindowService>();
         builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddSingleton<ThemeService>();
+        builder.Services.AddSingleton<FullscreenDetector>();
+        builder.Services.AddSingleton<UpdateNotifier>();
 
         return builder.Build();
     }

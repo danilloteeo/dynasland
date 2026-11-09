@@ -7,7 +7,7 @@ using Dynasland.Core.Modules;
 namespace Dynasland.Modules.Battery;
 
 /// <summary>Avisos de carregamento, desconexão da energia e bateria fraca (somente com bateria).</summary>
-public sealed class BatteryModule(IPowerService power, IEventBus bus, IUiDispatcher ui) : IIslandModule
+public sealed class BatteryModule(IPowerService power, IEventBus bus, IUiDispatcher ui, IModuleOptions options) : IIslandModule
 {
     public const string ModuleId = "battery";
     public const string ActivityId = "battery.status";
@@ -21,6 +21,13 @@ public sealed class BatteryModule(IPowerService power, IEventBus bus, IUiDispatc
     public string DisplayName => "Bateria";
 
     public string Description => "Carregamento e avisos de bateria fraca (notebooks).";
+
+    public static readonly ModuleOption LowThresholdOption = ModuleOption.Slider(
+        "lowThreshold", "Aviso de bateria fraca", "Carga em que a ilha avisa que a bateria está acabando.", BatteryAlertPolicy.LowThreshold, 10, 40, 5, "%");
+
+    public IReadOnlyList<ModuleOption> Options => [LowThresholdOption];
+
+    private int LowThreshold => (int)options.Get(ModuleId, LowThresholdOption);
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -66,12 +73,13 @@ public sealed class BatteryModule(IPowerService power, IEventBus bus, IUiDispatc
             }
 
             content = _content;
-            alert = BatteryAlertPolicy.Evaluate(_last, state);
+            alert = BatteryAlertPolicy.Evaluate(_last, state, LowThreshold);
             _last = state;
         }
 
         var headline = BatteryAlertPolicy.HeadlineFor(alert, state);
-        ui.Post(() => content.Apply(state, headline));
+        var threshold = LowThreshold;
+        ui.Post(() => content.Apply(state, headline, threshold));
 
         if (alert == BatteryAlert.None)
         {

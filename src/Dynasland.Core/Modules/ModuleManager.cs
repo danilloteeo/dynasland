@@ -35,7 +35,7 @@ public sealed class ModuleManager : IDisposable
     public event EventHandler? ModulesChanged;
 
     public IReadOnlyList<ModuleInfo> GetModules() => _slots
-        .Select(s => new ModuleInfo(s.Module.Id, s.Module.DisplayName, s.Module.Description, s.IsEnabled, s.IsRunning, s.Error, s.IsUnavailable))
+        .Select(s => new ModuleInfo(s.Module.Id, s.Module.DisplayName, s.Module.Description, s.IsEnabled, s.IsRunning, s.Error, s.IsUnavailable, s.Module.Options))
         .ToList();
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -62,7 +62,10 @@ public sealed class ModuleManager : IDisposable
         ModulesChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task SetEnabledAsync(string moduleId, bool enabled, CancellationToken cancellationToken = default)
+    public Task SetEnabledAsync(string moduleId, bool enabled, CancellationToken cancellationToken = default) =>
+        SetEnabledAsync(moduleId, enabled, persist: true, cancellationToken);
+
+    private async Task SetEnabledAsync(string moduleId, bool enabled, bool persist, CancellationToken cancellationToken)
     {
         var slot = _slots.FirstOrDefault(s => s.Module.Id == moduleId)
             ?? throw new ArgumentException($"Módulo desconhecido: {moduleId}.", nameof(moduleId));
@@ -70,7 +73,11 @@ public sealed class ModuleManager : IDisposable
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await _store.SetEnabledAsync(moduleId, enabled, cancellationToken).ConfigureAwait(false);
+            if (persist)
+            {
+                await _store.SetEnabledAsync(moduleId, enabled, cancellationToken).ConfigureAwait(false);
+            }
+
             slot.IsEnabled = enabled;
 
             if (enabled && !slot.IsRunning)
@@ -88,6 +95,16 @@ public sealed class ModuleManager : IDisposable
         }
 
         ModulesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Restaura o estado padrão (ativo ou não) de todos os módulos.</summary>
+    public async Task ResetAsync(CancellationToken cancellationToken = default)
+    {
+        await _store.ClearAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var slot in _slots)
+        {
+            await SetEnabledAsync(slot.Module.Id, slot.Module.EnabledByDefault, persist: false, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)

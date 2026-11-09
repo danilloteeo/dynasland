@@ -15,6 +15,9 @@ public interface IIslandModule
 
     bool EnabledByDefault => true;
 
+    /// <summary>Preferências próprias do módulo, exibidas no cartão dele nas configurações.</summary>
+    IReadOnlyList<ModuleOption> Options => [];
+
     Task StartAsync(CancellationToken cancellationToken);
 
     Task StopAsync(CancellationToken cancellationToken);

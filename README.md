@@ -2,7 +2,7 @@
 
 Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NET 10 / WPF.
 
-> Estado atual: **Fase 3 — Integrações** concluída. Veja `docs/master.md` para o escopo completo.
+> Estado atual: **Fase 5 — Configurações** concluída. Veja `docs/master.md` para o escopo completo.
 
 ## Requisitos
 
@@ -88,6 +88,24 @@ Usuário (clique, hover, roda) ──▶ IslandViewModel ◀──────�
 
 O `ModuleManager` persiste ativo/inativo na tabela `modules`, isola falhas de inicialização e, ao parar
 um módulo, remove suas atividades da ilha.
+
+## Configurações
+
+Abra pelo clique no ícone da bandeja, pelo menu da bandeja ou pela engrenagem da ilha
+(Dynasland.exe --configuracoes abre direto). Categorias:
+
+- **Geral**: iniciar com o Windows (registro Run do usuário), iniciar minimizado, idioma, mostrar a ilha,
+  ocultar em tela cheia, distância do topo e monitor.
+- **Aparência**: tema automático/escuro/claro (janelas; a ilha é sempre preta), cor de destaque,
+  opacidade, sombra, arredondamento, largura mínima/máxima e altura da ilha.
+- **Animações**: ligar/desligar, velocidade, intensidade do efeito de mola e tempo expandida.
+- **Módulos**: ligar/desligar, status (ativo, indisponível com motivo, falha) e opções de cada módulo.
+- **Notificações**: todos exceto bloqueados ou somente permitidos, duração, prioridade alta e lista de aplicativos.
+- **Sistema**: verificar atualizações (Releases públicos do GitHub configurados em DynaslandUpdateRepository),
+  restaurar padrões, versão, privacidade e pasta de logs.
+
+Novas opções de módulo: declare ModuleOptions em IIslandModule.Options e leia com IModuleOptions;
+a janela as exibe automaticamente.
 
 ## Módulos
 

@@ -21,7 +21,7 @@ public class SystemMonitorTests : IDisposable
     public void Dispose() => _recorder.Dispose();
 
     private SystemMonitorModule CreateModule() =>
-        new(_metrics, _recorder.Bus, new InlineDispatcher(), _time, _shortcuts, NullLogger<SystemMonitorModule>.Instance);
+        new(_metrics, _recorder.Bus, new InlineDispatcher(), _time, _shortcuts, TestOptions.Create(), NullLogger<SystemMonitorModule>.Instance);
 
     [Fact]
     public void Memory_alert_requires_two_high_readings_and_respects_cooldown()

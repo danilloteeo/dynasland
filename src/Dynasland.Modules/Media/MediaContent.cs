@@ -10,7 +10,7 @@ using Dynasland.Modules.Common;
 namespace Dynasland.Modules.Media;
 
 /// <summary>View model da mídia em reprodução. Atualizado sempre na thread de UI.</summary>
-public sealed partial class MediaContent(IMediaSessionService media, IUiDispatcher ui, TimeProvider time) : ObservableObject, IActivityContent, IDisposable
+public sealed partial class MediaContent(IMediaSessionService media, IUiDispatcher ui, TimeProvider time, Func<bool> canAnimateIndicator) : ObservableObject, IActivityContent, IDisposable
 {
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromSeconds(1);
 
@@ -115,9 +115,12 @@ public sealed partial class MediaContent(IMediaSessionService media, IUiDispatch
     [RelayCommand]
     private Task PreviousAsync() => media.SkipPreviousAsync();
 
+    /// <summary>Reavalia o equalizador após mudança nas preferências de animação.</summary>
+    public void RefreshAnimation() => UpdateTimers();
+
     private void UpdateTimers()
     {
-        IsIndicatorAnimating = IsPlaying && _presentedIn == IslandState.Compact;
+        IsIndicatorAnimating = IsPlaying && _presentedIn == IslandState.Compact && canAnimateIndicator();
 
         // A barra de progresso só avança enquanto alguém a vê.
         var needsProgress = IsPlaying && HasTimeline && _presentedIn is IslandState.Expanded or IslandState.Interactive;

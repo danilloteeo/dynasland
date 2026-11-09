@@ -19,6 +19,7 @@ public sealed class SystemMonitorModule(
     IUiDispatcher ui,
     TimeProvider time,
     IShortcutRegistry shortcuts,
+    IModuleOptions options,
     ILogger<SystemMonitorModule> logger) : IIslandModule
 {
     public const string ModuleId = "system";
@@ -40,6 +41,17 @@ public sealed class SystemMonitorModule(
     public string DisplayName => "Monitor do sistema";
 
     public string Description => "Uso de CPU, memória, GPU, temperaturas (quando disponíveis) e espaço em disco.";
+
+    public static readonly ModuleOption Alerts = ModuleOption.Toggle(
+        "alerts", "Avisos de memória e disco", "Avisa quando a memória fica quase cheia ou um disco fica com pouco espaço.");
+
+    public static readonly ModuleOption MemoryThreshold = ModuleOption.Slider(
+        "memoryThreshold", "Avisar com memória acima de", "Uso de memória que dispara o aviso (por pelo menos 1 minuto).", SystemAlertPolicy.MemoryThresholdPercent, 75, 98, 1, "%");
+
+    public static readonly ModuleOption DiskThreshold = ModuleOption.Slider(
+        "diskThreshold", "Avisar com disco abaixo de", "Espaço livre em uma unidade que dispara o aviso.", SystemAlertPolicy.DiskFreeThresholdPercent, 3, 25, 1, "% livres");
+
+    public IReadOnlyList<ModuleOption> Options => [Alerts, MemoryThreshold, DiskThreshold];
 
     public static string AlertActivityId(SystemAlert alert) => $"system.alert.{alert.Key}";
 
@@ -117,6 +129,11 @@ public sealed class SystemMonitorModule(
 
     private void CheckAlerts()
     {
+        if (!options.IsOn(ModuleId, Alerts))
+        {
+            return;
+        }
+
         IReadOnlyList<SystemAlert> alerts;
         try
         {
@@ -124,7 +141,7 @@ public sealed class SystemMonitorModule(
             var disks = metrics.GetDisks();
             lock (_lock)
             {
-                alerts = _alertPolicy.Evaluate(memory, disks, time.GetUtcNow());
+                alerts = _alertPolicy.Evaluate(memory, disks, time.GetUtcNow(), options.Get(ModuleId, MemoryThreshold), options.Get(ModuleId, DiskThreshold));
             }
         }
         catch (Exception ex)

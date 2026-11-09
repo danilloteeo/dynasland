@@ -12,4 +12,7 @@ public interface IIslandSettingsService
     Task LoadAsync(CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Func<IslandSettings, IslandSettings> update, CancellationToken cancellationToken = default);
+
+    /// <summary>Volta tudo ao padrão (apaga todas as configurações gravadas).</summary>
+    Task ResetAsync(CancellationToken cancellationToken = default);
 }

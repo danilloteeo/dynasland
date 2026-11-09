@@ -12,7 +12,7 @@ public class MediaModuleTests : IDisposable
     private readonly FakeTimeProvider _time = new();
     private readonly MediaModule _module;
 
-    public MediaModuleTests() => _module = new MediaModule(_media, _recorder.Bus, new InlineDispatcher(), _time);
+    public MediaModuleTests() => _module = new MediaModule(_media, _recorder.Bus, new InlineDispatcher(), _time, TestOptions.Create(), new FakeIslandSettings());
 
     public void Dispose() => _recorder.Dispose();
 

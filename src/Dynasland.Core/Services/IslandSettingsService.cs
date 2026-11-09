@@ -40,5 +40,21 @@ public sealed class IslandSettingsService(ISettingsStore store) : IIslandSetting
         Changed?.Invoke(this, updated);
     }
 
+    public async Task ResetAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            await store.ClearAsync(cancellationToken);
+            Current = IslandSettings.Default;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+
+        Changed?.Invoke(this, IslandSettings.Default);
+    }
+
     public void Dispose() => _gate.Dispose();
 }

@@ -16,7 +16,7 @@ public class TimerTests : IDisposable
 
     public void Dispose() => _recorder.Dispose();
 
-    private TimerModule CreateModule() => new(_recorder.Bus, new InlineDispatcher(), _time, _shortcuts, _sound);
+    private TimerModule CreateModule() => new(_recorder.Bus, new InlineDispatcher(), _time, _shortcuts, _sound, TestOptions.Create());
 
     [Fact]
     public void Stopwatch_counts_pauses_and_resets()

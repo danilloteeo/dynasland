@@ -2,6 +2,7 @@ namespace Dynasland.Core.Modules;
 
 /// <param name="Error">Mensagem da última falha ao iniciar; <c>null</c> se não houve.</param>
 /// <param name="IsUnavailable">O recurso não existe neste computador (ver <see cref="ModuleUnavailableException"/>).</param>
+/// <param name="Options">Preferências do módulo.</param>
 public sealed record ModuleInfo(
     string Id,
     string DisplayName,
@@ -9,4 +10,5 @@ public sealed record ModuleInfo(
     bool IsEnabled,
     bool IsRunning,
     string? Error,
-    bool IsUnavailable = false);
+    bool IsUnavailable = false,
+    IReadOnlyList<ModuleOption>? Options = null);

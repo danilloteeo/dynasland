@@ -12,6 +12,7 @@ namespace Dynasland.Modules.Notifications;
 public sealed partial class NotificationContent(
     NotificationInfo info,
     ImageSource? logo,
+    bool showMessageText,
     Action<NotificationInfo> open,
     Action<NotificationInfo> dismiss,
     Action<NotificationInfo> muteApp) : IActivityContent
@@ -27,7 +28,7 @@ public sealed partial class NotificationContent(
     /// <summary>Título da notificação ou, sem título, o nome do aplicativo.</summary>
     public string Headline => Info.Title ?? Info.AppName;
 
-    public string Body => Info.Body;
+    public string Body => showMessageText ? Info.Body : "Conteúdo oculto";
 
     public string TimeText => Info.Time.ToLocalTime().ToString("HH:mm", CultureInfo.GetCultureInfo("pt-BR"));
 

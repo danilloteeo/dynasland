@@ -22,6 +22,14 @@ public sealed class SqliteSettingsStore(SqliteConnectionFactory connectionFactor
         return values;
     }
 
+    public async Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await connectionFactory.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM settings;";
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task SetManyAsync(IReadOnlyDictionary<string, string> values, CancellationToken cancellationToken = default)
     {
         if (values.Count == 0)

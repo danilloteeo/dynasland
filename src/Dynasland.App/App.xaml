@@ -8,6 +8,7 @@
                 <ResourceDictionary Source="Styles/IslandTheme.xaml" />
                 <!-- Usado por atributos da própria janela de configurações; precisa existir antes dela. -->
                 <ResourceDictionary Source="Styles/SettingsTheme.xaml" />
+                <ResourceDictionary Source="Styles/AppTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

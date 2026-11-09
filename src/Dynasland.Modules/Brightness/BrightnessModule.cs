@@ -9,7 +9,7 @@ namespace Dynasland.Modules.Brightness;
 /// Brilho da tela integrada. Em computadores sem controle de brilho (ex.: desktops com
 /// monitores externos) o módulo fica indisponível em vez de exibir um controle sem efeito.
 /// </summary>
-public sealed class BrightnessModule(IBrightnessService brightness, IEventBus bus, IUiDispatcher ui, TimeProvider time) : IIslandModule
+public sealed class BrightnessModule(IBrightnessService brightness, IEventBus bus, IUiDispatcher ui, TimeProvider time, IModuleOptions options) : IIslandModule
 {
     public const string ModuleId = "brightness";
     public const string ActivityId = "brightness.level";
@@ -30,6 +30,11 @@ public sealed class BrightnessModule(IBrightnessService brightness, IEventBus bu
     public string DisplayName => "Brilho";
 
     public string Description => "Mostra e controla o brilho da tela integrada (notebooks e tablets).";
+
+    public static readonly ModuleOption ShowOnChange = ModuleOption.Toggle(
+        "showOnChange", "Mostrar ao mudar o brilho", "Expande a ilha quando o brilho é alterado pelas teclas ou pelo Windows.");
+
+    public IReadOnlyList<ModuleOption> Options => [ShowOnChange];
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -68,7 +73,7 @@ public sealed class BrightnessModule(IBrightnessService brightness, IEventBus bu
             isEcho = time.GetUtcNow() - _lastOwnChange < OwnChangeWindow;
         }
 
-        if (!isEcho)
+        if (!isEcho && options.IsOn(ModuleId, ShowOnChange))
         {
             bus.PostActivity(new IslandActivity(ActivityId, ModuleId, ActivityKind.Transient, content)
             {

@@ -10,7 +10,7 @@ namespace Dynasland.Modules.Downloads;
 /// Agrega os downloads de todos os provedores: atividade contínua enquanto houver downloads em
 /// andamento (expande ao começar) e aviso com ações quando um download termina.
 /// </summary>
-public sealed class DownloadsModule(IEnumerable<IDownloadProvider> providers, IShellService shell, IEventBus bus, IUiDispatcher ui) : IIslandModule
+public sealed class DownloadsModule(IEnumerable<IDownloadProvider> providers, IShellService shell, IEventBus bus, IUiDispatcher ui, IModuleOptions options) : IIslandModule
 {
     public const string ModuleId = "downloads";
     public const string ActiveActivityId = "downloads.active";
@@ -27,6 +27,14 @@ public sealed class DownloadsModule(IEnumerable<IDownloadProvider> providers, IS
     public string DisplayName => "Downloads";
 
     public string Description => "Acompanha downloads dos navegadores (Chrome, Edge, Opera, Firefox) na pasta Downloads.";
+
+    public static readonly ModuleOption AnnounceStart = ModuleOption.Toggle(
+        "announceStart", "Anunciar início", "Expande a ilha quando um download começa.");
+
+    public static readonly ModuleOption AnnounceCompletion = ModuleOption.Toggle(
+        "announceCompletion", "Avisar conclusão", "Mostra o arquivo concluído com as opções Abrir e Mostrar na pasta.");
+
+    public IReadOnlyList<ModuleOption> Options => [AnnounceStart, AnnounceCompletion];
 
     public static string CompletedActivityId(string key) => $"download.done.{key}";
 
@@ -103,7 +111,7 @@ public sealed class DownloadsModule(IEnumerable<IDownloadProvider> providers, IS
             ui.Post(() => content.Upsert(key, info));
             if (firstActive)
             {
-                bus.PostActivity(new IslandActivity(ActiveActivityId, ModuleId, ActivityKind.Live, content) { ExpandOnStart = true });
+                bus.PostActivity(new IslandActivity(ActiveActivityId, ModuleId, ActivityKind.Live, content) { ExpandOnStart = options.IsOn(ModuleId, AnnounceStart) });
             }
 
             return;
@@ -115,7 +123,7 @@ public sealed class DownloadsModule(IEnumerable<IDownloadProvider> providers, IS
             bus.RemoveActivity(ActiveActivityId);
         }
 
-        if (info.State == DownloadState.Completed && info.FilePath is { } path)
+        if (info.State == DownloadState.Completed && info.FilePath is { } path && options.IsOn(ModuleId, AnnounceCompletion))
         {
             var activityId = CompletedActivityId(key);
             var completed = new DownloadCompletedContent(

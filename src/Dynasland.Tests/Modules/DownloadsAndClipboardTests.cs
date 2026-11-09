@@ -23,7 +23,7 @@ public class DownloadsAndClipboardTests : IDisposable
     {
         var provider = new FakeDownloadProvider();
         var shell = new FakeShell();
-        var module = new DownloadsModule([provider], shell, _recorder.Bus, new InlineDispatcher());
+        var module = new DownloadsModule([provider], shell, _recorder.Bus, new InlineDispatcher(), TestOptions.Create());
         await module.StartAsync(CancellationToken.None);
 
         provider.Raise(Download("a", DownloadState.InProgress, 1_000_000, speed: 500_000));
@@ -63,7 +63,7 @@ public class DownloadsAndClipboardTests : IDisposable
     [Fact]
     public async Task Downloads_module_is_unavailable_without_providers()
     {
-        var module = new DownloadsModule([new FakeDownloadProvider { Available = false }], new FakeShell(), _recorder.Bus, new InlineDispatcher());
+        var module = new DownloadsModule([new FakeDownloadProvider { Available = false }], new FakeShell(), _recorder.Bus, new InlineDispatcher(), TestOptions.Create());
 
         await Assert.ThrowsAsync<ModuleUnavailableException>(() => module.StartAsync(CancellationToken.None));
     }
@@ -74,7 +74,7 @@ public class DownloadsAndClipboardTests : IDisposable
         var time = new FakeTimeProvider();
         var clipboard = new FakeClipboard();
         var shortcuts = new ShortcutRegistry();
-        var module = new ClipboardModule(clipboard, _recorder.Bus, new InlineDispatcher(), time, shortcuts, NullLogger<ClipboardModule>.Instance);
+        var module = new ClipboardModule(clipboard, _recorder.Bus, new InlineDispatcher(), time, shortcuts, TestOptions.Create(), NullLogger<ClipboardModule>.Instance);
         await module.StartAsync(CancellationToken.None);
 
         clipboard.Current = new ClipboardEntry("", ClipboardEntryKind.Text, "linha 1\n   linha 2", null, DateTimeOffset.UnixEpoch);
@@ -104,7 +104,7 @@ public class DownloadsAndClipboardTests : IDisposable
     public async Task Disabled_windows_history_shows_guidance()
     {
         var clipboard = new FakeClipboard { HistoryEnabled = false };
-        var module = new ClipboardModule(clipboard, _recorder.Bus, new InlineDispatcher(), new FakeTimeProvider(), new ShortcutRegistry(), NullLogger<ClipboardModule>.Instance);
+        var module = new ClipboardModule(clipboard, _recorder.Bus, new InlineDispatcher(), new FakeTimeProvider(), new ShortcutRegistry(), TestOptions.Create(), NullLogger<ClipboardModule>.Instance);
         await module.StartAsync(CancellationToken.None);
         module.OpenPanel();
         var content = Assert.IsType<ClipboardContent>(_recorder.Posted.Single().Content);
@@ -151,6 +151,8 @@ public class DownloadsAndClipboardTests : IDisposable
             Opened.Add(path);
             return true;
         }
+
+        public bool OpenUrl(string url) => true;
 
         public bool RevealInFolder(string path)
         {

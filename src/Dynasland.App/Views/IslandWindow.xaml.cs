@@ -35,21 +35,26 @@ public partial class IslandWindow : Window
     /// <summary>Altura do rodapé (abas e configurações), somada à do conteúdo no estado interativo.</summary>
     private const double FooterHeight = 28;
 
-    // Leve overshoot na expansão (sensação de mola) e desaceleração suave no recolhimento.
-    private static readonly IEasingFunction ExpandEasing = Frozen(new BackEase { Amplitude = 0.22, EasingMode = EasingMode.EaseOut });
+    // Overshoot na expansão (sensação de mola, ajustável em Animações) e desaceleração suave no recolhimento.
+    private const double BaseSpringAmplitude = 0.22;
+    private static readonly IEasingFunction NoSpringEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
     private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseInOut });
     private static readonly IEasingFunction SoftEasing = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseOut });
 
     private readonly IslandViewModel _viewModel;
     private readonly IslandPlacementService _placement;
     private readonly IIslandSettingsService _settings;
+    private readonly FullscreenDetector _fullscreen;
     private bool _repositionPending;
+    private IEasingFunction _expandEasing = NoSpringEasing;
+    private double _expandEasingIntensity = -1;
 
-    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings)
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen)
     {
         _viewModel = viewModel;
         _placement = placement;
         _settings = settings;
+        _fullscreen = fullscreen;
 
         InitializeComponent();
         DataContext = viewModel;
@@ -57,6 +62,7 @@ public partial class IslandWindow : Window
         ApplyLayers(viewModel.State, animate: false);
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
+        fullscreen.Changed += OnFullscreenChanged;
     }
 
     public double CornerSize
@@ -73,7 +79,8 @@ public partial class IslandWindow : Window
     public void Start()
     {
         new WindowInteropHelper(this).EnsureHandle();
-        ApplyVisibility(_settings.Current.IsVisible);
+        _fullscreen.Start();
+        UpdateVisibility();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -96,6 +103,7 @@ public partial class IslandWindow : Window
     {
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _settings.Changed -= OnSettingsChanged;
+        _fullscreen.Changed -= OnFullscreenChanged;
         base.OnClosed(e);
     }
 
@@ -144,8 +152,24 @@ public partial class IslandWindow : Window
             return;
         }
 
-        ApplyVisibility(settings.IsVisible);
+        UpdateVisibility();
+        ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
         RequestReposition();
+    }
+
+    private void OnFullscreenChanged(object? sender, string? monitor) => UpdateVisibility();
+
+    /// <summary>
+    /// Visível se o usuário quer a ilha e nenhum aplicativo em tela cheia ocupa o monitor dela
+    /// (quando "Ocultar em tela cheia" está ligado). A ocultação por tela cheia não é gravada.
+    /// </summary>
+    private void UpdateVisibility()
+    {
+        var settings = _settings.Current;
+        var coveredByFullscreen = settings.HideInFullscreen
+            && _fullscreen.FullscreenMonitor is { } fullscreenMonitor
+            && string.Equals(fullscreenMonitor, _placement.CurrentMonitor, StringComparison.OrdinalIgnoreCase);
+        ApplyVisibility(settings.IsVisible && !coveredByFullscreen);
     }
 
     private void ApplyVisibility(bool visible)
@@ -222,8 +246,9 @@ public partial class IslandWindow : Window
         }
     }
 
-    private void ApplyDimensions(IslandDimensions target, bool animate)
+    private void ApplyDimensions(IslandDimensions requested, bool animate)
     {
+        var target = IslandAppearance.Adjust(requested, _viewModel.State, _settings.Current);
         var height = target.Height + (_viewModel.State == IslandState.Interactive ? FooterHeight : 0);
         if (!animate)
         {
@@ -235,7 +260,7 @@ public partial class IslandWindow : Window
 
         var growing = height >= IslandHost.Height;
         var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
-        var easing = growing ? ExpandEasing : CollapseEasing;
+        var easing = growing ? ExpandEasing() : CollapseEasing;
 
         Animate(IslandHost, WidthProperty, target.Width, duration, easing);
         Animate(IslandHost, HeightProperty, height, duration, easing);
@@ -368,6 +393,21 @@ public partial class IslandWindow : Window
     {
         ((IAnimatable)target).BeginAnimation(property, null);
         target.SetValue(property, value);
+    }
+
+    /// <summary>Easing da expansão conforme a intensidade configurada (0 = sem efeito de mola).</summary>
+    private IEasingFunction ExpandEasing()
+    {
+        var intensity = _settings.Current.AnimationIntensity;
+        if (intensity != _expandEasingIntensity)
+        {
+            _expandEasingIntensity = intensity;
+            _expandEasing = intensity <= 0.01
+                ? NoSpringEasing
+                : Frozen(new BackEase { Amplitude = BaseSpringAmplitude * intensity, EasingMode = EasingMode.EaseOut });
+        }
+
+        return _expandEasing;
     }
 
     private static T Frozen<T>(T freezable) where T : Freezable

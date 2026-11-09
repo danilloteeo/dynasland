@@ -1,11 +1,14 @@
 using System.Collections.ObjectModel;
-using System.Reflection;
+using System.IO;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
 using Dynasland.Infrastructure.Database;
+using Dynasland.Infrastructure.Logging;
+using Dynasland.Infrastructure.Updates;
 using Dynasland.Modules.Notifications;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +16,12 @@ namespace Dynasland.App.ViewModels;
 
 public enum SettingsSection
 {
+    General,
+    Appearance,
+    Animations,
     Modules,
-    Island,
     Notifications,
-    About,
+    System,
 }
 
 public enum ModuleStatus
@@ -31,35 +36,63 @@ public enum ModuleStatus
 /// <summary>Janela de configurações: tudo o que é exibido vem dos serviços reais e é aplicado na hora.</summary>
 public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
+    public static readonly IReadOnlyList<(string Name, string Hex)> AccentPresets =
+    [
+        ("Verde", "#30D158"),
+        ("Azul", "#0A84FF"),
+        ("Ciano", "#64D2FF"),
+        ("Roxo", "#BF5AF2"),
+        ("Rosa", "#FF375F"),
+        ("Laranja", "#FF9F0A"),
+        ("Amarelo", "#FFD60A"),
+        ("Grafite", "#8E8E93"),
+    ];
+
     private readonly ModuleManager _modules;
+    private readonly IModuleOptions _moduleOptions;
     private readonly IIslandSettingsService _settings;
     private readonly IMonitorService _monitors;
-    private readonly NotificationPreferences _notificationPreferences;
+    private readonly NotificationPreferences _notifications;
+    private readonly IStartupRegistration _startup;
+    private readonly IUpdateChecker _updates;
+    private readonly IShellService _shell;
     private readonly IUiDispatcher _ui;
     private readonly ILogger<SettingsViewModel> _logger;
     private bool _loading;
 
     public SettingsViewModel(
         ModuleManager modules,
+        IModuleOptions moduleOptions,
         IIslandSettingsService settings,
         IMonitorService monitors,
-        NotificationPreferences notificationPreferences,
+        NotificationPreferences notifications,
+        IStartupRegistration startup,
+        IUpdateChecker updates,
+        IShellService shell,
         DatabaseOptions database,
         IUiDispatcher ui,
         ILogger<SettingsViewModel> logger)
     {
         _modules = modules;
+        _moduleOptions = moduleOptions;
         _settings = settings;
         _monitors = monitors;
-        _notificationPreferences = notificationPreferences;
+        _notifications = notifications;
+        _startup = startup;
+        _updates = updates;
+        _shell = shell;
         _ui = ui;
         _logger = logger;
 
         DataPath = database.DatabasePath;
-        Version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "—";
+        LogPath = FileLoggerProvider.DefaultPath;
+        Version = GitHubUpdateChecker.CurrentVersion.ToString(3);
+        UpdateSource = updates.SourceDescription ?? string.Empty;
+        UpdateStatusText = updates.IsConfigured ? "Ainda não verificado nesta sessão." : "Nenhuma fonte de atualizações configurada nesta versão.";
 
         modules.ModulesChanged += OnModulesChanged;
         settings.Changed += OnSettingsChanged;
+        notifications.Changed += OnNotificationsChanged;
         Refresh();
     }
 
@@ -67,21 +100,67 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<MonitorOptionViewModel> MonitorOptions { get; } = [];
 
-    public ObservableCollection<BlockedAppViewModel> BlockedApps { get; } = [];
+    public ObservableCollection<AccentOptionViewModel> AccentOptions { get; } = [];
+
+    public ObservableCollection<NotificationAppViewModel> NotificationApps { get; } = [];
 
     public string DataPath { get; }
 
+    public string LogPath { get; }
+
     public string Version { get; }
 
+    public string UpdateSource { get; }
+
+    public bool UpdatesConfigured => _updates.IsConfigured;
+
+    public string Language => "Português (Brasil)";
+
     [ObservableProperty]
-    private SettingsSection _section = SettingsSection.Modules;
+    private SettingsSection _section = SettingsSection.General;
 
     [ObservableProperty]
     private string _modulesSummary = string.Empty;
 
+    // Geral
+    [ObservableProperty]
+    private bool _startWithWindows;
+
+    [ObservableProperty]
+    private bool _startHidden;
+
     [ObservableProperty]
     private bool _isIslandVisible;
 
+    [ObservableProperty]
+    private bool _hideInFullscreen;
+
+    [ObservableProperty]
+    private double _topMargin;
+
+    // Aparência
+    [ObservableProperty]
+    private AppTheme _theme;
+
+    [ObservableProperty]
+    private double _islandOpacity;
+
+    [ObservableProperty]
+    private double _shadowIntensity;
+
+    [ObservableProperty]
+    private double _roundness;
+
+    [ObservableProperty]
+    private double _compactWidth;
+
+    [ObservableProperty]
+    private double _compactHeight;
+
+    [ObservableProperty]
+    private double _maxWidth;
+
+    // Animações
     [ObservableProperty]
     private bool _animationsEnabled;
 
@@ -89,12 +168,39 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private double _animationSpeed;
 
     [ObservableProperty]
-    private double _expandedDurationSeconds;
+    private double _animationIntensity;
 
     [ObservableProperty]
-    private double _topMargin;
+    private double _expandedDurationSeconds;
 
-    public bool HasBlockedApps => BlockedApps.Count > 0;
+    // Notificações
+    [ObservableProperty]
+    private NotificationFilterMode _notificationMode;
+
+    [ObservableProperty]
+    private double _notificationDuration;
+
+    [ObservableProperty]
+    private bool _notificationsCanInterrupt;
+
+    // Sistema
+    [ObservableProperty]
+    private bool _checkForUpdates;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CheckUpdatesNowCommand))]
+    private bool _isCheckingUpdates;
+
+    [ObservableProperty]
+    private string _updateStatusText;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasReleaseUrl))]
+    private string? _releaseUrl;
+
+    public bool HasReleaseUrl => !string.IsNullOrEmpty(ReleaseUrl);
+
+    public bool HasNotificationApps => NotificationApps.Count > 0;
 
     [RelayCommand]
     private void Navigate(SettingsSection section) => Section = section;
@@ -106,21 +212,36 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         try
         {
             RefreshModules();
-
-            var current = _settings.Current;
-            IsIslandVisible = current.IsVisible;
-            AnimationsEnabled = current.AnimationsEnabled;
-            AnimationSpeed = current.AnimationSpeed;
-            ExpandedDurationSeconds = current.ExpandedDurationSeconds;
-            TopMargin = current.TopMargin;
-
-            RefreshMonitors(current);
-            RefreshBlockedApps();
+            LoadSettings(_settings.Current);
+            StartWithWindows = _startup.IsEnabled;
+            RefreshNotifications();
         }
         finally
         {
             _loading = false;
         }
+    }
+
+    private void LoadSettings(IslandSettings s)
+    {
+        StartHidden = s.StartHidden;
+        IsIslandVisible = s.IsVisible;
+        HideInFullscreen = s.HideInFullscreen;
+        TopMargin = s.TopMargin;
+        Theme = s.Theme;
+        IslandOpacity = s.IslandOpacity;
+        ShadowIntensity = s.ShadowIntensity;
+        Roundness = s.Roundness;
+        CompactWidth = s.CompactWidth;
+        CompactHeight = s.CompactHeight;
+        MaxWidth = s.MaxWidth;
+        AnimationsEnabled = s.AnimationsEnabled;
+        AnimationSpeed = s.AnimationSpeed;
+        AnimationIntensity = s.AnimationIntensity;
+        ExpandedDurationSeconds = s.ExpandedDurationSeconds;
+        CheckForUpdates = s.CheckForUpdates;
+        RefreshMonitors(s);
+        RefreshAccents(s);
     }
 
     private void RefreshModules()
@@ -129,7 +250,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Modules.Clear();
         foreach (var info in infos)
         {
-            Modules.Add(new ModuleSettingViewModel(info, SetModuleEnabledAsync));
+            var options = (info.Options ?? [])
+                .Select(option => new ModuleOptionViewModel(option, _moduleOptions.Get(info.Id, option), value => SetModuleOptionAsync(info.Id, option, value)))
+                .ToList();
+            Modules.Add(new ModuleSettingViewModel(info, options, SetModuleEnabledAsync));
         }
 
         var active = infos.Count(m => m.IsRunning);
@@ -154,16 +278,41 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void RefreshBlockedApps()
+    private void RefreshAccents(IslandSettings current)
     {
-        BlockedApps.Clear();
-        foreach (var appId in _notificationPreferences.BlockedApps.Order(StringComparer.OrdinalIgnoreCase))
+        AccentOptions.Clear();
+        foreach (var (name, hex) in AccentPresets)
         {
-            BlockedApps.Add(new BlockedAppViewModel(appId, UnblockAsync));
+            AccentOptions.Add(new AccentOptionViewModel(name, hex, string.Equals(hex, current.AccentColor, StringComparison.OrdinalIgnoreCase), SelectAccent));
+        }
+    }
+
+    private void RefreshNotifications()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        try
+        {
+            NotificationMode = _notifications.Mode;
+            NotificationDuration = _notifications.DurationSeconds;
+            NotificationsCanInterrupt = _notifications.CanInterrupt;
+        }
+        finally
+        {
+            _loading = wasLoading;
         }
 
-        OnPropertyChanged(nameof(HasBlockedApps));
+        NotificationApps.Clear();
+        foreach (var app in _notifications.KnownApps)
+        {
+            var shows = app.Rule ?? _notifications.Mode == NotificationFilterMode.AllExceptBlocked;
+            NotificationApps.Add(new NotificationAppViewModel(app.AppId, app.Name, shows, app.Rule is null, SetAppRuleAsync));
+        }
+
+        OnPropertyChanged(nameof(HasNotificationApps));
     }
+
+    // Ações -------------------------------------------------------------
 
     private async Task SetModuleEnabledAsync(string moduleId, bool enabled)
     {
@@ -179,23 +328,142 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _ui.Post(RefreshModules);
     }
 
-    private async Task UnblockAsync(string appId)
-    {
-        await _notificationPreferences.SetBlockedAsync(appId, blocked: false);
-        _ui.Post(RefreshBlockedApps);
-    }
+    private Task SetModuleOptionAsync(string moduleId, ModuleOption option, double value) =>
+        Guard(() => _moduleOptions.SetAsync(moduleId, option, value), "opção do módulo");
+
+    private Task SetAppRuleAsync(string appId, bool show) =>
+        Guard(() => _notifications.SetRuleAsync(appId, show), "regra de notificação");
 
     private void SelectMonitor(string? deviceName) => Save(s => s with { MonitorDeviceName = deviceName });
 
+    private void SelectAccent(string hex) => Save(s => s with { AccentColor = hex });
+
+    partial void OnStartWithWindowsChanged(bool value)
+    {
+        if (!_loading)
+        {
+            _startup.SetEnabled(value);
+        }
+    }
+
+    partial void OnStartHiddenChanged(bool value) => Save(s => s with { StartHidden = value });
+
     partial void OnIsIslandVisibleChanged(bool value) => Save(s => s with { IsVisible = value });
+
+    partial void OnHideInFullscreenChanged(bool value) => Save(s => s with { HideInFullscreen = value });
+
+    partial void OnTopMarginChanged(double value) => Save(s => s with { TopMargin = Math.Round(value) });
+
+    partial void OnThemeChanged(AppTheme value) => Save(s => s with { Theme = value });
+
+    partial void OnIslandOpacityChanged(double value) => Save(s => s with { IslandOpacity = Math.Round(value, 2) });
+
+    partial void OnShadowIntensityChanged(double value) => Save(s => s with { ShadowIntensity = Math.Round(value, 2) });
+
+    partial void OnRoundnessChanged(double value) => Save(s => s with { Roundness = Math.Round(value, 2) });
+
+    partial void OnCompactWidthChanged(double value) => Save(s => s with { CompactWidth = Math.Round(value) });
+
+    partial void OnCompactHeightChanged(double value) => Save(s => s with { CompactHeight = Math.Round(value) });
+
+    partial void OnMaxWidthChanged(double value) => Save(s => s with { MaxWidth = Math.Round(value) });
 
     partial void OnAnimationsEnabledChanged(bool value) => Save(s => s with { AnimationsEnabled = value });
 
     partial void OnAnimationSpeedChanged(double value) => Save(s => s with { AnimationSpeed = Math.Round(value, 2) });
 
+    partial void OnAnimationIntensityChanged(double value) => Save(s => s with { AnimationIntensity = Math.Round(value, 2) });
+
     partial void OnExpandedDurationSecondsChanged(double value) => Save(s => s with { ExpandedDurationSeconds = Math.Round(value) });
 
-    partial void OnTopMarginChanged(double value) => Save(s => s with { TopMargin = Math.Round(value) });
+    partial void OnCheckForUpdatesChanged(bool value) => Save(s => s with { CheckForUpdates = value });
+
+    partial void OnNotificationModeChanged(NotificationFilterMode value)
+    {
+        if (!_loading)
+        {
+            _ = Guard(() => _notifications.SetModeAsync(value), "modo de notificações");
+        }
+    }
+
+    partial void OnNotificationDurationChanged(double value)
+    {
+        if (!_loading)
+        {
+            _ = Guard(() => _notifications.SetDurationAsync(value), "duração das notificações");
+        }
+    }
+
+    partial void OnNotificationsCanInterruptChanged(bool value)
+    {
+        if (!_loading)
+        {
+            _ = Guard(() => _notifications.SetCanInterruptAsync(value), "prioridade das notificações");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCheckUpdates))]
+    private async Task CheckUpdatesNowAsync()
+    {
+        IsCheckingUpdates = true;
+        UpdateStatusText = "Verificando…";
+        try
+        {
+            var result = await _updates.CheckAsync();
+            ReleaseUrl = result.Status == UpdateStatus.UpdateAvailable ? result.ReleaseUrl : null;
+            UpdateStatusText = Describe(result);
+        }
+        finally
+        {
+            IsCheckingUpdates = false;
+        }
+    }
+
+    private bool CanCheckUpdates() => _updates.IsConfigured && !IsCheckingUpdates;
+
+    public static string Describe(UpdateCheckResult result) => result.Status switch
+    {
+        UpdateStatus.UpToDate => $"Você está usando a versão mais recente ({result.LatestVersion}).",
+        UpdateStatus.UpdateAvailable => $"Nova versão disponível: {result.LatestVersion}.",
+        UpdateStatus.NoReleases => "Nenhuma versão publicada ainda.",
+        UpdateStatus.NotConfigured => "Nenhuma fonte de atualizações configurada nesta versão.",
+        _ => result.Message ?? "Não foi possível verificar agora.",
+    };
+
+    [RelayCommand]
+    private void OpenRelease()
+    {
+        if (ReleaseUrl is { } url)
+        {
+            _shell.OpenUrl(url);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenLogsFolder()
+    {
+        var folder = Path.GetDirectoryName(LogPath)!;
+        Directory.CreateDirectory(folder);
+        _shell.Open(folder);
+    }
+
+    /// <summary>Volta tudo ao padrão (a inicialização com o Windows não é alterada). Confirmado pela janela.</summary>
+    public async Task RestoreDefaultsAsync()
+    {
+        try
+        {
+            await _settings.ResetAsync();
+            await _moduleOptions.LoadAsync();
+            await _notifications.LoadAsync();
+            await _modules.ResetAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao restaurar as configurações.");
+        }
+
+        _ui.Post(Refresh);
+    }
 
     private async void Save(Func<IslandSettings, IslandSettings> change)
     {
@@ -214,7 +482,21 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
     }
 
+    private async Task Guard(Func<Task> action, string what)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao salvar {What}.", what);
+        }
+    }
+
     private void OnModulesChanged(object? sender, EventArgs e) => _ui.Post(RefreshModules);
+
+    private void OnNotificationsChanged(object? sender, EventArgs e) => _ui.Post(RefreshNotifications);
 
     private void OnSettingsChanged(object? sender, IslandSettings settings) => _ui.Post(() =>
     {
@@ -224,6 +506,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             IsIslandVisible = settings.IsVisible;
             RefreshMonitors(settings);
+            RefreshAccents(settings);
         }
         finally
         {
@@ -235,6 +518,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         _modules.ModulesChanged -= OnModulesChanged;
         _settings.Changed -= OnSettingsChanged;
+        _notifications.Changed -= OnNotificationsChanged;
     }
 }
 
@@ -242,12 +526,13 @@ public sealed partial class ModuleSettingViewModel : ObservableObject
 {
     private readonly Func<string, bool, Task> _setEnabled;
 
-    public ModuleSettingViewModel(ModuleInfo info, Func<string, bool, Task> setEnabled)
+    public ModuleSettingViewModel(ModuleInfo info, IReadOnlyList<ModuleOptionViewModel> options, Func<string, bool, Task> setEnabled)
     {
         _setEnabled = setEnabled;
         Id = info.Id;
         Name = info.DisplayName;
         Description = info.Description;
+        Options = options;
         _isEnabled = info.IsEnabled;
         CanToggle = !info.IsUnavailable;
         Status = info switch
@@ -266,6 +551,11 @@ public sealed partial class ModuleSettingViewModel : ObservableObject
 
     public string Description { get; }
 
+    public IReadOnlyList<ModuleOptionViewModel> Options { get; }
+
+    /// <summary>Opções só fazem sentido para módulos disponíveis e ligados.</summary>
+    public bool ShowOptions => Options.Count > 0 && Status == ModuleStatus.Active;
+
     public bool CanToggle { get; }
 
     /// <summary>Motivo de indisponibilidade ou falha.</summary>
@@ -274,7 +564,7 @@ public sealed partial class ModuleSettingViewModel : ObservableObject
     public bool HasReason => !string.IsNullOrWhiteSpace(Reason);
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(StatusText), nameof(ShowOptions))]
     private ModuleStatus _status;
 
     [ObservableProperty]
@@ -296,6 +586,48 @@ public sealed partial class ModuleSettingViewModel : ObservableObject
     }
 }
 
+/// <summary>Uma opção de módulo (interruptor ou controle deslizante).</summary>
+public sealed partial class ModuleOptionViewModel : ObservableObject
+{
+    private readonly ModuleOption _option;
+    private readonly Func<double, Task> _save;
+
+    public ModuleOptionViewModel(ModuleOption option, double value, Func<double, Task> save)
+    {
+        _option = option;
+        _save = save;
+        _value = value;
+    }
+
+    public string Label => _option.Label;
+
+    public string Description => _option.Description;
+
+    public bool IsToggle => _option.Kind == ModuleOptionKind.Toggle;
+
+    public bool IsSlider => _option.Kind == ModuleOptionKind.Slider;
+
+    public double Minimum => _option.Minimum;
+
+    public double Maximum => _option.Maximum;
+
+    public double Step => _option.Step;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOn), nameof(ValueText))]
+    private double _value;
+
+    public bool IsOn
+    {
+        get => Value >= 0.5;
+        set => Value = value ? 1 : 0;
+    }
+
+    public string ValueText => $"{Value:0.##} {_option.Unit}".Trim();
+
+    partial void OnValueChanged(double value) => _ = _save(_option.Normalize(value));
+}
+
 public sealed partial class MonitorOptionViewModel(string? deviceName, string name, string detail, bool isSelected, Action<string?> select) : ObservableObject
 {
     public string Name { get; } = name;
@@ -314,10 +646,62 @@ public sealed partial class MonitorOptionViewModel(string? deviceName, string na
     }
 }
 
-public sealed partial class BlockedAppViewModel(string appId, Func<string, Task> unblock)
+public sealed partial class AccentOptionViewModel : ObservableObject
 {
-    public string AppId { get; } = appId;
+    private readonly Action<string> _select;
 
-    [RelayCommand]
-    private Task Unblock() => unblock(AppId);
+    public AccentOptionViewModel(string name, string hex, bool isSelected, Action<string> select)
+    {
+        _select = select;
+        Name = name;
+        Hex = hex;
+        _isSelected = isSelected;
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        brush.Freeze();
+        Brush = brush;
+    }
+
+    public string Name { get; }
+
+    public string Hex { get; }
+
+    public Brush Brush { get; }
+
+    [ObservableProperty]
+    private bool _isSelected;
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            _select(Hex);
+        }
+    }
+}
+
+/// <summary>Aplicativo que já enviou notificações: mostrar ou não na ilha.</summary>
+public sealed partial class NotificationAppViewModel : ObservableObject
+{
+    private readonly Func<string, bool, Task> _setRule;
+
+    public NotificationAppViewModel(string appId, string name, bool shows, bool followsMode, Func<string, bool, Task> setRule)
+    {
+        _setRule = setRule;
+        AppId = appId;
+        Name = name;
+        FollowsMode = followsMode;
+        _shows = shows;
+    }
+
+    public string AppId { get; }
+
+    public string Name { get; }
+
+    /// <summary>Sem escolha explícita: segue o modo (todos ou somente permitidos).</summary>
+    public bool FollowsMode { get; }
+
+    [ObservableProperty]
+    private bool _shows;
+
+    partial void OnShowsChanged(bool value) => _ = _setRule(AppId, value);
 }

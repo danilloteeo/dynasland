@@ -92,6 +92,23 @@ public class ModuleManagerTests
     }
 
     [Fact]
+    public async Task Reset_restores_default_enabled_state()
+    {
+        var module = new FakeModule("media");
+        var optIn = new FakeModule("extra", enabledByDefault: false);
+        using var manager = CreateManager(module, optIn);
+        await manager.StartAsync();
+        await manager.SetEnabledAsync("media", false);
+        await manager.SetEnabledAsync("extra", true);
+
+        await manager.ResetAsync();
+
+        Assert.Empty(_store.Values);
+        Assert.True(manager.GetModules().Single(m => m.Id == "media").IsRunning);
+        Assert.False(manager.GetModules().Single(m => m.Id == "extra").IsEnabled);
+    }
+
+    [Fact]
     public async Task Stop_stops_only_running_modules()
     {
         var running = new FakeModule("running");
@@ -158,6 +175,12 @@ public class ModuleManagerTests
     private sealed class InMemoryModuleStateStore : IModuleStateStore
     {
         public Dictionary<string, bool> Values { get; } = [];
+
+        public Task ClearAsync(CancellationToken cancellationToken = default)
+        {
+            Values.Clear();
+            return Task.CompletedTask;
+        }
 
         public Task<IReadOnlyDictionary<string, bool>> GetAllAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyDictionary<string, bool>>(new Dictionary<string, bool>(Values));
