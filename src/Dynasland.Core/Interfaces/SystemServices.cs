@@ -5,24 +5,29 @@ namespace Dynasland.Core.Interfaces;
 // Contratos das integrações com o Windows consumidas pelos módulos.
 // Eventos podem ser disparados em qualquer thread.
 
+/// <summary>Todas as sessões de mídia do Windows (música, vídeos no navegador...), simultâneas.</summary>
 public interface IMediaSessionService
 {
-    MediaSnapshot? Current { get; }
+    /// <summary>Sessões com mídia carregada; a sessão atual do Windows vem primeiro.</summary>
+    IReadOnlyList<MediaSnapshot> Sessions { get; }
 
-    /// <summary>Nova sessão, faixa, estado ou posição; <c>null</c> quando não há sessão.</summary>
-    event EventHandler<MediaSnapshot?>? Changed;
+    /// <summary>Sessão que o Windows considera atual (teclas de mídia agem nela); <c>null</c> se nenhuma.</summary>
+    string? CurrentSessionId { get; }
+
+    /// <summary>Alguma sessão mudou, surgiu ou terminou.</summary>
+    event EventHandler? Changed;
 
     Task StartAsync(CancellationToken cancellationToken = default);
 
     Task StopAsync();
 
-    Task<bool> PlayAsync();
+    Task<bool> PlayAsync(string sessionId);
 
-    Task<bool> PauseAsync();
+    Task<bool> PauseAsync(string sessionId);
 
-    Task<bool> SkipNextAsync();
+    Task<bool> SkipNextAsync(string sessionId);
 
-    Task<bool> SkipPreviousAsync();
+    Task<bool> SkipPreviousAsync(string sessionId);
 }
 
 public interface IAudioVolumeService

@@ -53,7 +53,14 @@ public class SystemIntegrationTests
         await service.StartAsync();
         try
         {
-            if (service.Current is { } snapshot)
+            var sessions = service.Sessions;
+            Assert.Equal(sessions.Count, sessions.Select(s => s.Id).Distinct().Count());
+            if (service.CurrentSessionId is { } current && sessions.Count > 0)
+            {
+                Assert.Equal(current, sessions[0].Id);
+            }
+
+            foreach (var snapshot in sessions)
             {
                 Assert.False(string.IsNullOrWhiteSpace(snapshot.Title));
                 Assert.False(string.IsNullOrWhiteSpace(snapshot.AppName));

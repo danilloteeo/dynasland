@@ -24,7 +24,7 @@ public class MediaModuleTests : IDisposable
         await _module.StartAsync(CancellationToken.None);
 
         var session = Assert.Single(_recorder.Posted);
-        Assert.Equal(MediaModule.SessionActivityId, session.Id);
+        Assert.Equal(MediaModule.SessionActivityId("Spotify.exe"), session.Id);
         Assert.Equal(ActivityKind.Live, session.Kind);
         Assert.Equal("Música A", Assert.IsType<MediaContent>(session.Content).Title);
     }
@@ -37,7 +37,7 @@ public class MediaModuleTests : IDisposable
         await _module.StartAsync(CancellationToken.None);
 
         Assert.Empty(_recorder.PostedWithId(MediaModule.TrackActivityId));
-        Assert.Single(_recorder.PostedWithId(MediaModule.SessionActivityId));
+        Assert.Single(_recorder.PostedWithId(MediaModule.SessionActivityId("Spotify.exe")));
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class MediaModuleTests : IDisposable
         var announcements = _recorder.PostedWithId(MediaModule.TrackActivityId).ToList();
         Assert.Equal(2, announcements.Count);
         Assert.All(announcements, a => Assert.Equal(ActivityKind.Transient, a.Kind));
-        Assert.Single(_recorder.PostedWithId(MediaModule.SessionActivityId));
+        Assert.Single(_recorder.PostedWithId(MediaModule.SessionActivityId("Spotify.exe")));
     }
 
     [Fact]
@@ -78,10 +78,10 @@ public class MediaModuleTests : IDisposable
         await _module.StartAsync(CancellationToken.None);
 
         _media.Raise(null);
-        Assert.Contains(MediaModule.SessionActivityId, _recorder.Removed);
+        Assert.Contains(MediaModule.SessionActivityId("Spotify.exe"), _recorder.Removed);
 
         _media.Raise(FakeMediaService.Track("Música A"));
-        Assert.Equal(2, _recorder.PostedWithId(MediaModule.SessionActivityId).Count());
+        Assert.Equal(2, _recorder.PostedWithId(MediaModule.SessionActivityId("Spotify.exe")).Count());
         Assert.Single(_recorder.PostedWithId(MediaModule.TrackActivityId));
     }
 

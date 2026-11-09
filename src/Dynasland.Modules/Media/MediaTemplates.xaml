@@ -75,7 +75,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <ContentControl Width="22" Height="22" Tag="6" Content="{Binding}" ContentTemplate="{StaticResource MediaArtwork}" Focusable="False" />
-            <ContentControl Grid.Column="2" Content="{Binding}" ContentTemplate="{StaticResource MediaEqualizer}" Focusable="False" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource MediaEqualizer}" Focusable="False" />
+                <!-- Outras mídias tocando ou pausadas (alterne pelas abas no estado interativo). -->
+                <TextBlock Text="{Binding OtherSessionsText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Margin="6,0,0,0"
+                           Visibility="{Binding HasOtherSessions, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
         </Grid>
     </DataTemplate>
 

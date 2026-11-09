@@ -9,8 +9,8 @@ using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Media;
 
-/// <summary>View model da mídia em reprodução. Atualizado sempre na thread de UI.</summary>
-public sealed partial class MediaContent(IMediaSessionService media, IUiDispatcher ui, TimeProvider time, Func<bool> canAnimateIndicator) : ObservableObject, IActivityContent, IDisposable
+/// <summary>View model de uma sessão de mídia. Atualizado sempre na thread de UI.</summary>
+public sealed partial class MediaContent(string sessionId, IMediaSessionService media, IUiDispatcher ui, TimeProvider time, Func<bool> canAnimateIndicator) : ObservableObject, IActivityContent, IDisposable
 {
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromSeconds(1);
 
@@ -63,6 +63,17 @@ public sealed partial class MediaContent(IMediaSessionService media, IUiDispatch
     [ObservableProperty]
     private bool _isIndicatorAnimating;
 
+    /// <summary>Quantas outras mídias existem (exibido como "+N" no compacto).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasOtherSessions), nameof(OtherSessionsText))]
+    private int _otherSessions;
+
+    public string SessionId => sessionId;
+
+    public bool HasOtherSessions => OtherSessions > 0;
+
+    public string OtherSessionsText => $"+{OtherSessions}";
+
     public bool HasArtwork => Artwork is not null;
 
     public string Subtitle => string.IsNullOrWhiteSpace(Artist) ? AppName : Artist;
@@ -75,9 +86,10 @@ public sealed partial class MediaContent(IMediaSessionService media, IUiDispatch
 
     public string NextGlyph => Glyphs.Next;
 
-    public void Update(MediaSnapshot snapshot, ImageSource? artwork)
+    public void Update(MediaSnapshot snapshot, ImageSource? artwork, int otherSessions = 0)
     {
         _snapshot = snapshot;
+        OtherSessions = otherSessions;
         Title = snapshot.Title;
         Artist = snapshot.Artist;
         AppName = snapshot.AppName;
@@ -93,7 +105,7 @@ public sealed partial class MediaContent(IMediaSessionService media, IUiDispatch
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
-        IslandState.Compact => new IslandDimensions(232, 34, 17),
+        IslandState.Compact => new IslandDimensions(HasOtherSessions ? 252 : 232, 34, 17),
         IslandState.Expanded => new IslandDimensions(360, 72, 30),
         IslandState.Interactive => new IslandDimensions(400, 168, 36),
         _ => null,
@@ -107,13 +119,13 @@ public sealed partial class MediaContent(IMediaSessionService media, IUiDispatch
     }
 
     [RelayCommand]
-    private Task PlayPauseAsync() => IsPlaying ? media.PauseAsync() : media.PlayAsync();
+    private Task PlayPauseAsync() => IsPlaying ? media.PauseAsync(sessionId) : media.PlayAsync(sessionId);
 
     [RelayCommand]
-    private Task NextAsync() => media.SkipNextAsync();
+    private Task NextAsync() => media.SkipNextAsync(sessionId);
 
     [RelayCommand]
-    private Task PreviousAsync() => media.SkipPreviousAsync();
+    private Task PreviousAsync() => media.SkipPreviousAsync(sessionId);
 
     /// <summary>Reavalia o equalizador após mudança nas preferências de animação.</summary>
     public void RefreshAnimation() => UpdateTimers();

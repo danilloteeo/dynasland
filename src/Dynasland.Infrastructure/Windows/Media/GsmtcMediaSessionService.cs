@@ -1,6 +1,7 @@
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Models;
 using Microsoft.Extensions.Logging;
+using Windows.Media;
 using Windows.Media.Control;
 using Session = Windows.Media.Control.GlobalSystemMediaTransportControlsSession;
 using SessionManager = Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager;
@@ -8,22 +9,37 @@ using SessionManager = Windows.Media.Control.GlobalSystemMediaTransportControlsS
 namespace Dynasland.Infrastructure.Windows.Media;
 
 /// <summary>
-/// Sessão de mídia atual do Windows via Global System Media Transport Controls.
-/// Totalmente orientado a eventos: a sessão notifica mudanças de faixa, estado e linha do tempo.
+/// Todas as sessões de mídia do Windows via Global System Media Transport Controls (ex.: Spotify
+/// tocando música e um navegador exibindo um filme ao mesmo tempo). Totalmente orientado a eventos.
 /// </summary>
+/// <remarks>
+/// Sessões não têm identificador próprio: usamos o AppUserModelId (com sufixo se o mesmo aplicativo
+/// tiver mais de uma sessão) e reaproveitamos o identificador enquanto o objeto da sessão existir.
+/// Chamadas WinRT são feitas no pool (MTA), porque objetos obtidos lá não funcionam a partir da UI.
+/// </remarks>
 public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMediaSessionService> logger) : IMediaSessionService
 {
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private readonly Lock _lock = new();
+    private readonly List<Tracked> _tracked = [];
 
     private SessionManager? _manager;
-    private Session? _session;
-    private string? _thumbnailTrackKey;
-    private byte[]? _thumbnail;
+    private IReadOnlyList<MediaSnapshot> _sessions = [];
 
-    public MediaSnapshot? Current { get; private set; }
+    public IReadOnlyList<MediaSnapshot> Sessions
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _sessions;
+            }
+        }
+    }
 
-    public event EventHandler<MediaSnapshot?>? Changed;
+    public string? CurrentSessionId { get; private set; }
+
+    public event EventHandler? Changed;
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -31,11 +47,11 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         lock (_lock)
         {
             _manager = manager;
-            manager.CurrentSessionChanged += OnCurrentSessionChanged;
-            AttachSession(manager.GetCurrentSession());
         }
 
-        await RefreshAsync();
+        manager.SessionsChanged += OnSessionsChanged;
+        manager.CurrentSessionChanged += OnCurrentSessionChanged;
+        await RefreshAsync(resync: true);
     }
 
     public Task StopAsync()
@@ -44,31 +60,38 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         {
             if (_manager is not null)
             {
+                _manager.SessionsChanged -= OnSessionsChanged;
                 _manager.CurrentSessionChanged -= OnCurrentSessionChanged;
                 _manager = null;
             }
 
-            AttachSession(null);
+            foreach (var tracked in _tracked)
+            {
+                Detach(tracked.Session);
+            }
+
+            _tracked.Clear();
+            _sessions = [];
+            CurrentSessionId = null;
         }
 
-        Current = null;
         return Task.CompletedTask;
     }
 
-    public Task<bool> PlayAsync() => Control(s => s.TryPlayAsync());
+    public Task<bool> PlayAsync(string sessionId) => Control(sessionId, s => s.TryPlayAsync());
 
-    public Task<bool> PauseAsync() => Control(s => s.TryPauseAsync());
+    public Task<bool> PauseAsync(string sessionId) => Control(sessionId, s => s.TryPauseAsync());
 
-    public Task<bool> SkipNextAsync() => Control(s => s.TrySkipNextAsync());
+    public Task<bool> SkipNextAsync(string sessionId) => Control(sessionId, s => s.TrySkipNextAsync());
 
-    public Task<bool> SkipPreviousAsync() => Control(s => s.TrySkipPreviousAsync());
+    public Task<bool> SkipPreviousAsync(string sessionId) => Control(sessionId, s => s.TrySkipPreviousAsync());
 
-    private async Task<bool> Control(Func<Session, global::Windows.Foundation.IAsyncOperation<bool>> command)
+    private async Task<bool> Control(string sessionId, Func<Session, global::Windows.Foundation.IAsyncOperation<bool>> command)
     {
         Session? session;
         lock (_lock)
         {
-            session = _session;
+            session = _tracked.FirstOrDefault(t => t.Id == sessionId)?.Session;
         }
 
         if (session is null)
@@ -83,60 +106,76 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Comando de mídia recusado por {App}.", session.SourceAppUserModelId);
+            logger.LogWarning(ex, "Comando de mídia recusado por {Session}.", sessionId);
             return false;
         }
     }
 
-    private void OnCurrentSessionChanged(SessionManager sender, CurrentSessionChangedEventArgs args)
-    {
-        lock (_lock)
-        {
-            AttachSession(sender.GetCurrentSession());
-        }
+    private void OnSessionsChanged(SessionManager sender, SessionsChangedEventArgs args) => _ = RefreshAsync(resync: true);
 
-        _ = RefreshAsync();
-    }
+    private void OnCurrentSessionChanged(SessionManager sender, CurrentSessionChangedEventArgs args) => _ = RefreshAsync(resync: false);
 
-    /// <summary>Troca a sessão observada. Chamar com <see cref="_lock"/> adquirido.</summary>
-    private void AttachSession(Session? session)
-    {
-        if (_session is not null)
-        {
-            _session.MediaPropertiesChanged -= OnSessionChanged;
-            _session.PlaybackInfoChanged -= OnSessionChanged;
-            _session.TimelinePropertiesChanged -= OnSessionChanged;
-        }
+    private void OnSessionChanged(Session sender, object args) => _ = RefreshAsync(resync: false);
 
-        _session = session;
-
-        if (session is not null)
-        {
-            session.MediaPropertiesChanged += OnSessionChanged;
-            session.PlaybackInfoChanged += OnSessionChanged;
-            session.TimelinePropertiesChanged += OnSessionChanged;
-        }
-    }
-
-    private void OnSessionChanged(Session sender, object args) => _ = RefreshAsync();
-
-    private async Task RefreshAsync()
+    /// <summary>Relê todas as sessões. Com <paramref name="resync"/>, também detecta sessões novas e encerradas.</summary>
+    private async Task RefreshAsync(bool resync)
     {
         await _refreshGate.WaitAsync();
         try
         {
-            Session? session;
+            SessionManager? manager;
             lock (_lock)
             {
-                session = _session;
+                manager = _manager;
             }
 
-            Publish(session is null ? null : await ReadAsync(session));
+            if (manager is null)
+            {
+                return;
+            }
+
+            if (resync)
+            {
+                Resync(manager.GetSessions());
+            }
+
+            List<Tracked> tracked;
+            lock (_lock)
+            {
+                tracked = [.. _tracked];
+            }
+
+            // O Windows devolve objetos .NET diferentes para a mesma sessão a cada chamada,
+            // então a sessão atual é identificada pelo aplicativo (a primeira sessão dele).
+            var currentAppId = manager.GetCurrentSession()?.SourceAppUserModelId;
+            var currentId = tracked.FirstOrDefault(t => currentAppId is not null && t.AppId == currentAppId)?.Id;
+            var snapshots = new List<MediaSnapshot>();
+            foreach (var entry in tracked)
+            {
+                try
+                {
+                    if (await ReadAsync(entry) is { } snapshot)
+                    {
+                        snapshots.Add(snapshot);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Sessão encerrada durante a leitura; a próxima notificação corrige a lista.
+                    logger.LogDebug(ex, "Falha ao ler a sessão {Session}.", entry.Id);
+                }
+            }
+
+            // A sessão atual do Windows primeiro, depois as que estão tocando.
+            snapshots = [.. snapshots
+                .OrderByDescending(s => s.Id == currentId)
+                .ThenByDescending(s => s.IsPlaying)];
+
+            Publish(snapshots, currentId);
         }
         catch (Exception ex)
         {
-            // Sessões encerradas durante a leitura lançam COMException; a próxima notificação corrige o estado.
-            logger.LogDebug(ex, "Falha ao ler a sessão de mídia.");
+            logger.LogDebug(ex, "Falha ao ler as sessões de mídia.");
         }
         finally
         {
@@ -144,8 +183,57 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         }
     }
 
-    private async Task<MediaSnapshot?> ReadAsync(Session session)
+    /// <summary>
+    /// Refaz a lista de sessões acompanhadas. A identidade é o aplicativo (com sufixo <c>#2</c>, <c>#3</c>...
+    /// para várias sessões do mesmo app), porque os objetos .NET mudam a cada consulta; a capa já lida
+    /// é preservada por identificador.
+    /// </summary>
+    private void Resync(IReadOnlyList<Session> sessions)
     {
+        lock (_lock)
+        {
+            var previous = _tracked.ToDictionary(t => t.Id);
+            foreach (var old in _tracked)
+            {
+                Detach(old.Session);
+            }
+
+            _tracked.Clear();
+            foreach (var session in sessions)
+            {
+                var appId = session.SourceAppUserModelId ?? string.Empty;
+                var id = appId;
+                for (var n = 2; _tracked.Any(t => t.Id == id); n++)
+                {
+                    id = $"{appId}#{n}";
+                }
+
+                session.MediaPropertiesChanged += OnSessionChanged;
+                session.PlaybackInfoChanged += OnSessionChanged;
+                session.TimelinePropertiesChanged += OnSessionChanged;
+
+                var tracked = new Tracked(id, appId, session);
+                if (previous.TryGetValue(id, out var before))
+                {
+                    tracked.ThumbnailTrackKey = before.ThumbnailTrackKey;
+                    tracked.Thumbnail = before.Thumbnail;
+                }
+
+                _tracked.Add(tracked);
+            }
+        }
+    }
+
+    private void Detach(Session session)
+    {
+        session.MediaPropertiesChanged -= OnSessionChanged;
+        session.PlaybackInfoChanged -= OnSessionChanged;
+        session.TimelinePropertiesChanged -= OnSessionChanged;
+    }
+
+    private async Task<MediaSnapshot?> ReadAsync(Tracked entry)
+    {
+        var session = entry.Session;
         var properties = await session.TryGetMediaPropertiesAsync();
         if (properties is null || string.IsNullOrWhiteSpace(properties.Title))
         {
@@ -153,17 +241,16 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         }
 
         var playback = session.GetPlaybackInfo();
-        var timeline = session.GetTimelineProperties();
         var appId = session.SourceAppUserModelId ?? string.Empty;
 
-        var trackKey = $"{appId}\u001f{properties.Title}\u001f{properties.Artist}\u001f{properties.AlbumTitle}";
-        if (trackKey != _thumbnailTrackKey)
+        var trackKey = $"{properties.Title}\u001f{properties.Artist}\u001f{properties.AlbumTitle}";
+        if (trackKey != entry.ThumbnailTrackKey)
         {
-            _thumbnailTrackKey = trackKey;
-            _thumbnail = await TryReadThumbnailAsync(properties.Thumbnail);
+            entry.ThumbnailTrackKey = trackKey;
+            entry.Thumbnail = await TryReadThumbnailAsync(properties.Thumbnail);
         }
 
-        var (position, duration, updatedAt) = ReadTimeline(timeline);
+        var (position, duration, updatedAt) = ReadTimeline(session.GetTimelineProperties());
         var controls = playback.Controls;
 
         return new MediaSnapshot(
@@ -172,7 +259,7 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
             properties.Title,
             properties.Artist ?? string.Empty,
             properties.AlbumTitle ?? string.Empty,
-            _thumbnail,
+            entry.Thumbnail,
             MapStatus(playback.PlaybackStatus),
             position,
             duration,
@@ -180,7 +267,11 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
             controls.IsPlayEnabled,
             controls.IsPauseEnabled,
             controls.IsNextEnabled,
-            controls.IsPreviousEnabled);
+            controls.IsPreviousEnabled)
+        {
+            SessionId = entry.Id,
+            Kind = MapKind(playback.PlaybackType ?? properties.PlaybackType),
+        };
     }
 
     private (TimeSpan? Position, TimeSpan? Duration, DateTimeOffset UpdatedAt) ReadTimeline(
@@ -225,14 +316,39 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         _ => MediaPlaybackState.Stopped,
     };
 
-    private void Publish(MediaSnapshot? snapshot)
+    private static MediaKind MapKind(MediaPlaybackType? type) => type switch
     {
-        if (snapshot == Current)
+        MediaPlaybackType.Music => MediaKind.Music,
+        MediaPlaybackType.Video => MediaKind.Video,
+        _ => MediaKind.Unknown,
+    };
+
+    private void Publish(IReadOnlyList<MediaSnapshot> snapshots, string? currentId)
+    {
+        lock (_lock)
         {
-            return;
+            if (currentId == CurrentSessionId && snapshots.SequenceEqual(_sessions))
+            {
+                return;
+            }
+
+            _sessions = snapshots;
+            CurrentSessionId = currentId;
         }
 
-        Current = snapshot;
-        Changed?.Invoke(this, snapshot);
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private sealed class Tracked(string id, string appId, Session session)
+    {
+        public string Id { get; } = id;
+
+        public string AppId { get; } = appId;
+
+        public Session Session { get; } = session;
+
+        public string? ThumbnailTrackKey { get; set; }
+
+        public byte[]? Thumbnail { get; set; }
     }
 }

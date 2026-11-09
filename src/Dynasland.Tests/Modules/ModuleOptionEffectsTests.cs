@@ -30,7 +30,7 @@ public class ModuleOptionEffectsTests : IDisposable
         media.Raise(FakeMediaService.Track("Nova música"));
 
         Assert.Empty(_recorder.PostedWithId(MediaModule.TrackActivityId));
-        Assert.Single(_recorder.PostedWithId(MediaModule.SessionActivityId));
+        Assert.Single(_recorder.PostedWithId(MediaModule.SessionActivityId("Spotify.exe")));
     }
 
     [Fact]

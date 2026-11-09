@@ -8,7 +8,15 @@ public enum MediaPlaybackState
     Changing,
 }
 
-/// <summary>Estado da sessão de mídia atual do Windows (GSMTC).</summary>
+/// <summary>Tipo informado pela sessão (muitos navegadores informam <see cref="Unknown"/>).</summary>
+public enum MediaKind
+{
+    Unknown,
+    Music,
+    Video,
+}
+
+/// <summary>Estado de uma sessão de mídia do Windows (GSMTC).</summary>
 /// <param name="SourceAppId">AppUserModelId do aplicativo que reproduz (ex.: <c>Spotify.exe</c>).</param>
 /// <param name="AppName">Nome amigável do aplicativo.</param>
 /// <param name="Thumbnail">Bytes da capa (PNG/JPEG), quando disponibilizada pela sessão.</param>
@@ -30,6 +38,13 @@ public sealed record MediaSnapshot(
     bool CanSkipNext,
     bool CanSkipPrevious)
 {
+    /// <summary>Identifica a sessão entre várias simultâneas (padrão: o aplicativo).</summary>
+    public string SessionId { get; init; } = string.Empty;
+
+    public MediaKind Kind { get; init; }
+
+    public string Id => SessionId.Length > 0 ? SessionId : SourceAppId;
+
     public bool IsPlaying => PlaybackState == MediaPlaybackState.Playing;
 
     /// <summary>Identifica a faixa, para detectar troca de música.</summary>

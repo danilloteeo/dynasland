@@ -52,18 +52,44 @@ internal sealed class ActivityRecorder : IDisposable
 
 internal sealed class FakeMediaService : IMediaSessionService
 {
-    public MediaSnapshot? Current { get; set; }
+    private List<MediaSnapshot> _sessions = [];
 
-    public int PlayCalls { get; private set; }
+    public IReadOnlyList<MediaSnapshot> Sessions => _sessions;
 
-    public int PauseCalls { get; private set; }
+    public string? CurrentSessionId { get; set; }
 
-    public event EventHandler<MediaSnapshot?>? Changed;
+    /// <summary>Atalho para cenários com uma única sessão (ela vira a atual).</summary>
+    public MediaSnapshot? Current
+    {
+        set => SetSessions(value?.Id, value is null ? [] : [value]);
+    }
+
+    public List<string> Played { get; } = [];
+
+    public List<string> Paused { get; } = [];
+
+    public int PlayCalls => Played.Count;
+
+    public int PauseCalls => Paused.Count;
+
+    public event EventHandler? Changed;
+
+    public void SetSessions(string? currentId, params MediaSnapshot[] sessions)
+    {
+        _sessions = [.. sessions];
+        CurrentSessionId = currentId;
+    }
 
     public void Raise(MediaSnapshot? snapshot)
     {
         Current = snapshot;
-        Changed?.Invoke(this, snapshot);
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void RaiseSessions(string? currentId, params MediaSnapshot[] sessions)
+    {
+        SetSessions(currentId, sessions);
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Simula o serviço real, que publica a primeira leitura durante o StartAsync.</summary>
@@ -81,25 +107,28 @@ internal sealed class FakeMediaService : IMediaSessionService
 
     public Task StopAsync() => Task.CompletedTask;
 
-    public Task<bool> PlayAsync()
+    public Task<bool> PlayAsync(string sessionId)
     {
-        PlayCalls++;
+        Played.Add(sessionId);
         return Task.FromResult(true);
     }
 
-    public Task<bool> PauseAsync()
+    public Task<bool> PauseAsync(string sessionId)
     {
-        PauseCalls++;
+        Paused.Add(sessionId);
         return Task.FromResult(true);
     }
 
-    public Task<bool> SkipNextAsync() => Task.FromResult(true);
+    public Task<bool> SkipNextAsync(string sessionId) => Task.FromResult(true);
 
-    public Task<bool> SkipPreviousAsync() => Task.FromResult(true);
+    public Task<bool> SkipPreviousAsync(string sessionId) => Task.FromResult(true);
 
-    public static MediaSnapshot Track(string title, MediaPlaybackState state = MediaPlaybackState.Playing, string app = "Spotify.exe") =>
-        new(app, "Spotify", title, "Artista", "Álbum", null, state, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(3),
-            DateTimeOffset.UnixEpoch, true, true, true, true);
+    public static MediaSnapshot Track(string title, MediaPlaybackState state = MediaPlaybackState.Playing, string app = "Spotify.exe", MediaKind kind = MediaKind.Music) =>
+        new(app, app == "Spotify.exe" ? "Spotify" : app, title, "Artista", "Álbum", null, state, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(3),
+            DateTimeOffset.UnixEpoch, true, true, true, true)
+        {
+            Kind = kind,
+        };
 }
 
 internal sealed class FakeAudioService : IAudioVolumeService
