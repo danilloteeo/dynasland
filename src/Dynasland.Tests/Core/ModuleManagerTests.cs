@@ -56,6 +56,21 @@ public class ModuleManagerTests
     }
 
     [Fact]
+    public async Task Unavailable_module_is_reported_as_unavailable_not_as_failure()
+    {
+        var battery = new FakeModule("battery") { UnavailableReason = "Este computador não possui bateria." };
+        using var manager = CreateManager(battery);
+
+        await manager.StartAsync();
+
+        var info = manager.GetModules().Single();
+        Assert.True(info.IsUnavailable);
+        Assert.False(info.IsRunning);
+        Assert.True(info.IsEnabled);
+        Assert.Equal("Este computador não possui bateria.", info.Error);
+    }
+
+    [Fact]
     public async Task Disabling_stops_persists_and_removes_activities()
     {
         var module = new FakeModule("media");
@@ -120,9 +135,16 @@ public class ModuleManagerTests
 
         public int StopCount { get; private set; }
 
+        public string? UnavailableReason { get; init; }
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
             StartCount++;
+            if (UnavailableReason is not null)
+            {
+                return Task.FromException(new ModuleUnavailableException(UnavailableReason));
+            }
+
             return FailOnStart ? Task.FromException(new InvalidOperationException("falha simulada")) : Task.CompletedTask;
         }
 

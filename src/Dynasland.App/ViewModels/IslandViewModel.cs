@@ -10,6 +10,8 @@ namespace Dynasland.App.ViewModels;
 public sealed partial class IslandViewModel : ObservableObject, IDisposable
 {
     private readonly IslandController _controller;
+    private IActivityContent? _presented;
+    private IslandState _presentedState;
 
     [ObservableProperty]
     private IslandState _state;
@@ -63,6 +65,26 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
         State = snapshot.State;
         Dimensions = snapshot.Dimensions;
+
+        NotifyPresentation(snapshot.State == IslandState.Compact ? snapshot.Indicator?.Content : snapshot.Focused?.Content, snapshot.State);
+    }
+
+    /// <summary>Avisa o conteúdo que ficou visível (e o que deixou de estar), para pausar trabalho invisível.</summary>
+    private void NotifyPresentation(IActivityContent? content, IslandState state)
+    {
+        if (ReferenceEquals(content, _presented) && state == _presentedState)
+        {
+            return;
+        }
+
+        if (_presented is not null && !ReferenceEquals(_presented, content))
+        {
+            _presented.OnPresentationChanged(null);
+        }
+
+        _presented = content;
+        _presentedState = state;
+        content?.OnPresentationChanged(state);
     }
 
     public void Dispose() => _controller.Changed -= OnSnapshotChanged;

@@ -1,0 +1,78 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+    <!-- Ícone de bateria desenhado: o preenchimento acompanha a carga. -->
+    <DataTemplate x:Key="BatteryGauge">
+        <Grid Width="30" Height="15" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="3" />
+            </Grid.ColumnDefinitions>
+            <Border BorderBrush="{DynamicResource IslandSecondaryTextBrush}" BorderThickness="1.5" CornerRadius="4" Padding="2">
+                <Border x:Name="Fill" CornerRadius="2" Background="{DynamicResource IslandFillBrush}" RenderTransformOrigin="0,0.5">
+                    <Border.RenderTransform>
+                        <ScaleTransform ScaleX="{Binding Fraction}" />
+                    </Border.RenderTransform>
+                </Border>
+            </Border>
+            <Border Grid.Column="1" Width="2" Height="5" CornerRadius="0,1,1,0" HorizontalAlignment="Left"
+                    Background="{DynamicResource IslandSecondaryTextBrush}" />
+            <TextBlock Text="{Binding ChargingGlyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="10"
+                       Foreground="{DynamicResource IslandBackgroundBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Visibility="{Binding IsCharging, Converter={StaticResource BoolToVisibility}}" />
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsCharging}" Value="True">
+                <Setter TargetName="Fill" Property="Background" Value="{DynamicResource IslandAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsLow}" Value="True">
+                <Setter TargetName="Fill" Property="Background" Value="{DynamicResource IslandCriticalBrush}" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Battery.BatteryContent:Expanded">
+        <Grid Margin="20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="Headline" Text="{Binding Headline}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="1" Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <ContentControl Grid.Column="2" Content="{Binding}" ContentTemplate="{StaticResource BatteryGauge}" Focusable="False" />
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsLow}" Value="True">
+                <Setter TargetName="Headline" Property="Foreground" Value="{DynamicResource IslandCriticalBrush}" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Battery.BatteryContent:Interactive">
+        <Grid Margin="24,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandFont}" FontSize="34" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                <TextBlock Text="{Binding StateText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                <TextBlock Text="{Binding RemainingText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+            </StackPanel>
+            <ContentControl Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource BatteryGauge}" Focusable="False">
+                <ContentControl.LayoutTransform>
+                    <ScaleTransform ScaleX="1.8" ScaleY="1.8" />
+                </ContentControl.LayoutTransform>
+            </ContentControl>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>

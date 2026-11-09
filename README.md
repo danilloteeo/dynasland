@@ -2,7 +2,7 @@
 
 Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NET 10 / WPF.
 
-> Estado atual: **Fase 2 — Interface dinâmica** concluída. Veja `docs/master.md` para o escopo completo.
+> Estado atual: **Fase 3 — Integrações** concluída. Veja `docs/master.md` para o escopo completo.
 
 ## Requisitos
 
@@ -25,7 +25,7 @@ O executável fica em `src/Dynasland.App/bin/Debug/net10.0-windows10.0.19041.0/D
 - **Passar o mouse**: leve ampliação. **Clicar**: abre o estado interativo com a atividade principal
   (sem outras atividades, o módulo Relógio mostra hora e data); clicar de novo recolhe.
   Sem interação, recolhe sozinha após 6 s. **Roda do mouse** no estado interativo alterna entre atividades.
-- Eventos dos módulos (ex.: volume, notificações — Fase 3) expandem a ilha automaticamente pelo tempo configurado.
+- Eventos dos módulos (volume, nova música, notificação, bateria) expandem a ilha automaticamente.
 - A ilha nunca rouba o foco do aplicativo em uso e deixa passar os cliques fora da cápsula.
 - **Ícone na bandeja**: clique esquerdo mostra/oculta a ilha; o menu permite escolher o monitor, ativar/desativar módulos e sair.
 - Executar o app novamente com ele aberto apenas reexibe a ilha (instância única).
@@ -45,10 +45,12 @@ src/
   Dynasland.Infrastructure/  Implementações dependentes do sistema
     Database/                Conexão SQLite e migrações versionadas (schema_migrations)
     Repositories/            Armazenamento de configurações
-    Windows/                 Interop Win32: monitores/DPI, estilos de janela, mensagens
+    Windows/                 Interop Win32 (monitores/DPI, janela) e integrações:
+                             Media (GSMTC), Audio (Core Audio/COM), Brightness (WMI),
+                             Power (PowerManager), Notifications (UserNotificationListener)
     Services/                Instância única (Mutex + EventWaitHandle)
-  Dynasland.Modules/         Módulos (serviço + view model + DataTemplates de cada um)
-    Clock/                   Relógio
+  Dynasland.Modules/         Módulos (lógica + view model + DataTemplates de cada um)
+    Media/ Volume/ Brightness/ Notifications/ Battery/ Clock/
   Dynasland.App/             WPF + MVVM (CommunityToolkit.Mvvm) + Generic Host/DI
     Views/                   IslandWindow (janela transparente, camadas por estado, animações)
     ViewModels/              IslandViewModel (projeção do estado do coordenador)
@@ -86,6 +88,31 @@ Usuário (clique, hover, roda) ──▶ IslandViewModel ◀──────�
 
 O `ModuleManager` persiste ativo/inativo na tabela `modules`, isola falhas de inicialização e, ao parar
 um módulo, remove suas atividades da ilha.
+
+## Módulos
+
+| Módulo | Integração | Na ilha |
+|---|---|---|
+| Música e mídia | GSMTC (`GlobalSystemMediaTransportControlsSessionManager`) | Compacto: capa + equalizador. Nova faixa expande. Interativo: capa, título, artista, app, progresso, anterior/play-pausa/próxima |
+| Volume | Core Audio (`IAudioEndpointVolume` + callbacks, troca de dispositivo padrão) | Mudança externa expande com nível. Interativo: dispositivo, slider e mudo |
+| Brilho | WMI (`WmiMonitorBrightness*`) | Mudança externa expande. Interativo: slider |
+| Notificações | `UserNotificationListener` | Nova notificação expande. Interativo: texto completo, Abrir, Dispensar, Silenciar app |
+| Bateria | `Windows.System.Power.PowerManager` | Conectar/desconectar, bateria fraca (20%) e muito fraca (10%). Interativo: carga, estado e autonomia |
+| Relógio | Hora local | Conteúdo padrão ao abrir a ilha sem outras atividades |
+
+Módulos sem suporte no computador (sem bateria, brilho não controlável, acesso às notificações negado)
+aparecem como **indisponível** no menu e não exibem controles.
+
+### Limitações conhecidas
+
+- **Brilho** só em telas integradas (notebooks/tablets). Monitores externos (DDC/CI) não expõem
+  notificação de mudança via WMI e não são suportados nesta versão.
+- **Notificações**: sem identidade de pacote (MSIX), o Windows não entrega o evento
+  `NotificationChanged`; o serviço compara a lista a cada 1,5 s (custo baixo, só processa diferenças).
+  O Windows continua exibindo o próprio toast — não há API pública para suprimi-lo.
+- **Volume**: o indicador nativo de volume do Windows também aparece ao usar as teclas de volume.
+- APIs WinRT/COM obtidas em threads MTA são chamadas fora da thread de UI (comandos de mídia e
+  remoção de notificações não têm efeito se chamados da thread STA).
 
 ## Integrações com o Windows (notas técnicas)
 

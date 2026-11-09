@@ -97,7 +97,12 @@ public sealed class TrayIconService(
         {
             var id = module.Id;
             var enabled = module.IsEnabled;
-            var label = module.Error is null ? module.DisplayName : $"{module.DisplayName} (falhou ao iniciar)";
+            var label = module switch
+            {
+                { IsUnavailable: true } => $"{module.DisplayName} (indisponível)",
+                { Error: not null } => $"{module.DisplayName} (falhou ao iniciar)",
+                _ => module.DisplayName,
+            };
             root.DropDownItems.Add(new ToolStripMenuItem(label, null, (_, _) => SetModuleEnabled(id, !enabled))
             {
                 Checked = enabled,

@@ -35,7 +35,7 @@ public sealed class ModuleManager : IDisposable
     public event EventHandler? ModulesChanged;
 
     public IReadOnlyList<ModuleInfo> GetModules() => _slots
-        .Select(s => new ModuleInfo(s.Module.Id, s.Module.DisplayName, s.Module.Description, s.IsEnabled, s.IsRunning, s.Error))
+        .Select(s => new ModuleInfo(s.Module.Id, s.Module.DisplayName, s.Module.Description, s.IsEnabled, s.IsRunning, s.Error, s.IsUnavailable))
         .ToList();
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -113,7 +113,16 @@ public sealed class ModuleManager : IDisposable
             await slot.Module.StartAsync(cancellationToken).ConfigureAwait(false);
             slot.IsRunning = true;
             slot.Error = null;
+            slot.IsUnavailable = false;
             _logger.LogInformation("Módulo {Module} iniciado.", slot.Module.Id);
+        }
+        catch (ModuleUnavailableException ex)
+        {
+            slot.IsRunning = false;
+            slot.Error = ex.Message;
+            slot.IsUnavailable = true;
+            _logger.LogInformation("Módulo {Module} indisponível: {Reason}", slot.Module.Id, ex.Message);
+            await TryStopAsync(slot, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -159,5 +168,7 @@ public sealed class ModuleManager : IDisposable
         public bool IsRunning { get; set; }
 
         public string? Error { get; set; }
+
+        public bool IsUnavailable { get; set; }
     }
 }

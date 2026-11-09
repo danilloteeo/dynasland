@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -199,6 +200,12 @@ public partial class IslandWindow : Window
 
     private void OnIslandMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        // Cliques em botões e sliders dos módulos não abrem/fecham a ilha.
+        if (IsInsideInteractiveControl(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
+
         AnimateHover(false);
         _viewModel.ToggleInteractiveCommand.Execute(null);
         e.Handled = true;
@@ -292,6 +299,23 @@ public partial class IslandWindow : Window
         var duration = Scaled(HoverMilliseconds);
         Animate(HoverScaleTransform, ScaleTransform.ScaleXProperty, scale, duration, SoftEasing);
         Animate(HoverScaleTransform, ScaleTransform.ScaleYProperty, scale, duration, SoftEasing);
+    }
+
+    private bool IsInsideInteractiveControl(DependencyObject? element)
+    {
+        while (element is not null && element != IslandHost)
+        {
+            if (element is ButtonBase or RangeBase or Thumb)
+            {
+                return true;
+            }
+
+            element = element is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(element)
+                : LogicalTreeHelper.GetParent(element);
+        }
+
+        return false;
     }
 
     private ContentPresenter LayerFor(IslandState state) => state switch

@@ -2,14 +2,160 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:converters="clr-namespace:Dynasland.App.Converters">
 
+    <!--
+        Tema da ilha. Os DataTemplates dos módulos usam estas chaves via DynamicResource,
+        então módulos não dependem de cores ou fontes fixas.
+    -->
+
     <FontFamily x:Key="IslandFont">Segoe UI Variable Display, Segoe UI</FontFamily>
     <FontFamily x:Key="IslandTextFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <!-- Segoe Fluent Icons no Windows 11; Segoe MDL2 Assets (mesmos códigos) no Windows 10. -->
+    <FontFamily x:Key="IslandIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#FF000000" />
     <SolidColorBrush x:Key="IslandEdgeBrush" Color="#1AFFFFFF" />
     <SolidColorBrush x:Key="IslandPrimaryTextBrush" Color="#FFF5F5F7" />
     <SolidColorBrush x:Key="IslandSecondaryTextBrush" Color="#99F5F5F7" />
+    <SolidColorBrush x:Key="IslandTertiaryTextBrush" Color="#66F5F5F7" />
+    <SolidColorBrush x:Key="IslandSurfaceBrush" Color="#1CFFFFFF" />
+    <SolidColorBrush x:Key="IslandHoverBrush" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="IslandPressedBrush" Color="#38FFFFFF" />
+    <SolidColorBrush x:Key="IslandTrackBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="IslandFillBrush" Color="#FFF5F5F7" />
+    <SolidColorBrush x:Key="IslandAccentBrush" Color="#FF30D158" />
+    <SolidColorBrush x:Key="IslandWarningBrush" Color="#FFFF9F0A" />
+    <SolidColorBrush x:Key="IslandCriticalBrush" Color="#FFFF453A" />
 
     <converters:DoubleToCornerRadiusConverter x:Key="DoubleToCornerRadius" />
+
+    <!-- Botão circular com ícone (controles de mídia, mudo...). Nunca recebe foco. -->
+    <Style x:Key="IslandIconButtonStyle" TargetType="Button">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource IslandPrimaryTextBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource IslandIconFont}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource DoubleToCornerRadius}}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource IslandHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource IslandPressedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Botão de texto em pílula (Abrir, Dispensar...). -->
+    <Style x:Key="IslandTextButtonStyle" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
+        <Setter Property="Width" Value="NaN" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="{StaticResource IslandSurfaceBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource IslandTextFont}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="15" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource IslandHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource IslandPressedBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="IslandProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Height" Value="4" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource IslandFillBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Grid>
+                        <Border x:Name="PART_Track" Background="{StaticResource IslandTrackBrush}" CornerRadius="2" />
+                        <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="2" HorizontalAlignment="Left" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="IslandSliderRepeatButtonStyle" TargetType="RepeatButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <!-- Área de clique alta e trilho fino desenhado no centro. -->
+                    <Grid Background="Transparent">
+                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="IslandSliderStyle" TargetType="Slider">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="IsMoveToPointEnabled" Value="True" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Track x:Name="PART_Track" VerticalAlignment="Stretch">
+                        <Track.DecreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource IslandSliderRepeatButtonStyle}"
+                                          Background="{StaticResource IslandFillBrush}"
+                                          Command="Slider.DecreaseLarge" />
+                        </Track.DecreaseRepeatButton>
+                        <Track.IncreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource IslandSliderRepeatButtonStyle}"
+                                          Background="{StaticResource IslandTrackBrush}"
+                                          Command="Slider.IncreaseLarge" />
+                        </Track.IncreaseRepeatButton>
+                        <Track.Thumb>
+                            <Thumb Focusable="False" Width="14" Height="14">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="Thumb">
+                                        <Ellipse Fill="{StaticResource IslandFillBrush}" />
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
 </ResourceDictionary>
