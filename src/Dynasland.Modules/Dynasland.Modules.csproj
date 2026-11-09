@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(DynaslandWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(DynaslandMinWindows)</SupportedOSPlatformVersion>
+    <!-- WPF apenas para os DataTemplates de cada módulo; a lógica dos módulos não depende de UI. -->
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Dynasland.Modules</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dynasland.Core\Dynasland.Core.csproj" />
+  </ItemGroup>
+
+</Project>

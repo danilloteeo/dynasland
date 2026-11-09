@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynasland.App", "src\Dynasl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynasland.Tests", "src\Dynasland.Tests\Dynasland.Tests.csproj", "{36086522-5779-4ECD-BCC5-0D20EA62E0F3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynasland.Modules", "src\Dynasland.Modules\Dynasland.Modules.csproj", "{AAF5373E-8E96-461D-BF30-784679BAFFF6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,18 @@ Global
 		{36086522-5779-4ECD-BCC5-0D20EA62E0F3}.Release|x64.Build.0 = Release|Any CPU
 		{36086522-5779-4ECD-BCC5-0D20EA62E0F3}.Release|x86.ActiveCfg = Release|Any CPU
 		{36086522-5779-4ECD-BCC5-0D20EA62E0F3}.Release|x86.Build.0 = Release|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Debug|x64.Build.0 = Debug|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Debug|x86.Build.0 = Debug|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Release|x64.ActiveCfg = Release|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Release|x64.Build.0 = Release|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Release|x86.ActiveCfg = Release|Any CPU
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +94,6 @@ Global
 		{D8C1A5E1-0556-474D-BEA3-27FC124C4DDB} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{DE5B1B66-7AE0-46F6-8A6B-AE1A427C4C04} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{36086522-5779-4ECD-BCC5-0D20EA62E0F3} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{AAF5373E-8E96-461D-BF30-784679BAFFF6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

@@ -4,12 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
+        xmlns:views="clr-namespace:Dynasland.App.Views"
+        xmlns:models="clr-namespace:Dynasland.Core.Models;assembly=Dynasland.Core"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:IslandViewModel}"
         x:Name="Root"
         Title="Dynasland"
-        Width="460"
-        Height="200"
+        Width="480"
+        Height="220"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -21,10 +23,21 @@
         UseLayoutRounding="True">
 
     <!--
-        A janela tem tamanho fixo (maior estado + margem para a sombra) e é totalmente
-        transparente: pixels com alfa 0 deixam os cliques passarem para o que está atrás.
-        Apenas a cápsula (IslandHost) é animada, evitando redimensionar a janela a cada frame.
+        A janela tem tamanho fixo (IslandLayout.Maximum + folga para overshoot e sombra) e Ã©
+        totalmente transparente: pixels com alfa 0 deixam os cliques passarem para o que estÃ¡ atrÃ¡s.
+        Apenas a cÃ¡psula (IslandHost) Ã© animada, evitando redimensionar o HWND a cada frame.
     -->
+    <Window.Resources>
+        <views:ActivityTemplateSelector x:Key="CompactTemplates" Mode="{x:Static models:IslandState.Compact}" />
+        <views:ActivityTemplateSelector x:Key="ExpandedTemplates" Mode="{x:Static models:IslandState.Expanded}" />
+        <views:ActivityTemplateSelector x:Key="InteractiveTemplates" Mode="{x:Static models:IslandState.Interactive}" />
+
+        <Style x:Key="LayerStyle" TargetType="ContentPresenter">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid x:Name="IslandHost"
               HorizontalAlignment="Center"
@@ -33,12 +46,13 @@
               Cursor="Hand"
               MouseEnter="OnIslandMouseEnter"
               MouseLeave="OnIslandMouseLeave"
-              MouseLeftButtonUp="OnIslandMouseLeftButtonUp">
+              MouseLeftButtonUp="OnIslandMouseLeftButtonUp"
+              MouseWheel="OnIslandMouseWheel">
             <Grid.RenderTransform>
                 <ScaleTransform x:Name="HoverScaleTransform" />
             </Grid.RenderTransform>
 
-            <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
+            <!-- Camada separada para a sombra: o efeito nÃ£o afeta a renderizaÃ§Ã£o do texto. -->
             <Border Background="{StaticResource IslandBackgroundBrush}"
                     CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
                 <Border.Effect>
@@ -55,28 +69,31 @@
                     BorderBrush="{StaticResource IslandEdgeBrush}"
                     BorderThickness="1"
                     CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
-                <Grid>
-                    <!-- Reservado para os indicadores discretos dos módulos (Fase 2+). -->
-                    <Grid x:Name="CompactContent" />
-
-                    <Grid x:Name="InteractiveContent"
-                          Opacity="0"
-                          IsHitTestVisible="False">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding TimeText}"
-                                       FontFamily="{StaticResource IslandFont}"
-                                       FontSize="46"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource IslandPrimaryTextBrush}"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock Text="{Binding DateText}"
-                                       FontFamily="{StaticResource IslandTextFont}"
-                                       FontSize="14"
-                                       Foreground="{StaticResource IslandSecondaryTextBrush}"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,4" />
-                        </StackPanel>
-                    </Grid>
+                <Grid ClipToBounds="True">
+                    <ContentPresenter x:Name="CompactLayer"
+                                      Style="{StaticResource LayerStyle}"
+                                      Content="{Binding CompactContent}"
+                                      ContentTemplateSelector="{StaticResource CompactTemplates}">
+                        <ContentPresenter.RenderTransform>
+                            <TranslateTransform />
+                        </ContentPresenter.RenderTransform>
+                    </ContentPresenter>
+                    <ContentPresenter x:Name="ExpandedLayer"
+                                      Style="{StaticResource LayerStyle}"
+                                      Content="{Binding ExpandedContent}"
+                                      ContentTemplateSelector="{StaticResource ExpandedTemplates}">
+                        <ContentPresenter.RenderTransform>
+                            <TranslateTransform />
+                        </ContentPresenter.RenderTransform>
+                    </ContentPresenter>
+                    <ContentPresenter x:Name="InteractiveLayer"
+                                      Style="{StaticResource LayerStyle}"
+                                      Content="{Binding InteractiveContent}"
+                                      ContentTemplateSelector="{StaticResource InteractiveTemplates}">
+                        <ContentPresenter.RenderTransform>
+                            <TranslateTransform />
+                        </ContentPresenter.RenderTransform>
+                    </ContentPresenter>
                 </Grid>
             </Border>
         </Grid>

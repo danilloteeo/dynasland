@@ -33,6 +33,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dynasland.Core\Dynasland.Core.csproj" />
     <ProjectReference Include="..\Dynasland.Infrastructure\Dynasland.Infrastructure.csproj" />
+    <ProjectReference Include="..\Dynasland.Modules\Dynasland.Modules.csproj" />
   </ItemGroup>
 
 </Project>

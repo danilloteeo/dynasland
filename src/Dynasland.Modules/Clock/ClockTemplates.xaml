@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Chave: "{NomeCompletoDoTipo}:{Estado}". Os pincéis/fontes vêm do tema da aplicação. -->
+    <DataTemplate x:Key="Dynasland.Modules.Clock.ClockContent:Interactive">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="{Binding TimeText}"
+                       FontFamily="{DynamicResource IslandFont}"
+                       FontSize="46"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding DateText}"
+                       FontFamily="{DynamicResource IslandTextFont}"
+                       FontSize="14"
+                       Foreground="{DynamicResource IslandSecondaryTextBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,4" />
+        </StackPanel>
+    </DataTemplate>
+
+</ResourceDictionary>

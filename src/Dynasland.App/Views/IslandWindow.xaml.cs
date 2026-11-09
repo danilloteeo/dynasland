@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Dynasland.App.Services;
@@ -23,13 +25,16 @@ public partial class IslandWindow : Window
 
     private const double ExpandMilliseconds = 460;
     private const double CollapseMilliseconds = 340;
+    private const double FadeOutMilliseconds = 120;
+    private const double SwapMilliseconds = 240;
     private const double HoverMilliseconds = 160;
     private const double HoverScale = 1.05;
+    private const double SwapOffset = 6;
 
     // Leve overshoot na expansão (sensação de mola) e desaceleração suave no recolhimento.
     private static readonly IEasingFunction ExpandEasing = Frozen(new BackEase { Amplitude = 0.22, EasingMode = EasingMode.EaseOut });
     private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseInOut });
-    private static readonly IEasingFunction HoverEasing = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction SoftEasing = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseOut });
 
     private readonly IslandViewModel _viewModel;
     private readonly IslandPlacementService _placement;
@@ -45,7 +50,8 @@ public partial class IslandWindow : Window
         InitializeComponent();
         DataContext = viewModel;
 
-        ApplyState(viewModel.State, animate: false);
+        ApplyDimensions(viewModel.Dimensions, animate: false);
+        ApplyLayers(viewModel.State, animate: false);
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
     }
@@ -55,6 +61,10 @@ public partial class IslandWindow : Window
         get => (double)GetValue(CornerSizeProperty);
         set => SetValue(CornerSizeProperty, value);
     }
+
+    private bool ShouldAnimate => IsVisible && _settings.Current.AnimationsEnabled;
+
+    private double Speed => Math.Clamp(_settings.Current.AnimationSpeed, 0.25, 3);
 
     /// <summary>Cria o HWND, aplica estilos Win32, posiciona e exibe (se configurado) sem roubar o foco.</summary>
     public void Start()
@@ -144,16 +154,31 @@ public partial class IslandWindow : Window
         }
         else if (!visible && IsVisible)
         {
-            _viewModel.State = IslandState.Compact;
+            _viewModel.Collapse();
             Hide();
         }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(IslandViewModel.State))
+        switch (e.PropertyName)
         {
-            ApplyState(_viewModel.State, animate: IsVisible);
+            case nameof(IslandViewModel.State):
+                ApplyLayers(_viewModel.State, ShouldAnimate);
+                break;
+
+            case nameof(IslandViewModel.Dimensions):
+                ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
+                break;
+
+            // Troca de conteúdo sem mudar de estado (outra notificação, alternância entre atividades).
+            case nameof(IslandViewModel.ExpandedContent) when _viewModel.State == IslandState.Expanded:
+                PlaySwap(ExpandedLayer);
+                break;
+
+            case nameof(IslandViewModel.InteractiveContent) when _viewModel.State == IslandState.Interactive:
+                PlaySwap(InteractiveLayer);
+                break;
         }
     }
 
@@ -179,58 +204,104 @@ public partial class IslandWindow : Window
         e.Handled = true;
     }
 
-    private void ApplyState(IslandState state, bool animate)
+    private void OnIslandMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        var target = IslandLayout.For(state);
-        var settings = _settings.Current;
-        var showDetails = state == IslandState.Interactive;
-        InteractiveContent.IsHitTestVisible = showDetails;
+        if (_viewModel.State == IslandState.Interactive)
+        {
+            _viewModel.Cycle(e.Delta > 0 ? -1 : 1);
+            e.Handled = true;
+        }
+    }
 
-        if (!animate || !settings.AnimationsEnabled)
+    private void ApplyDimensions(IslandDimensions target, bool animate)
+    {
+        if (!animate)
         {
             SetImmediate(IslandHost, WidthProperty, target.Width);
             SetImmediate(IslandHost, HeightProperty, target.Height);
             SetImmediate(this, CornerSizeProperty, target.CornerRadius);
-            SetImmediate(InteractiveContent, OpacityProperty, showDetails ? 1 : 0);
             return;
         }
 
-        var speed = Math.Clamp(settings.AnimationSpeed, 0.25, 3);
         var growing = target.Height >= IslandHost.Height;
-        var duration = TimeSpan.FromMilliseconds((growing ? ExpandMilliseconds : CollapseMilliseconds) / speed);
+        var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
         var easing = growing ? ExpandEasing : CollapseEasing;
 
         Animate(IslandHost, WidthProperty, target.Width, duration, easing);
         Animate(IslandHost, HeightProperty, target.Height, duration, easing);
         Animate(this, CornerSizeProperty, target.CornerRadius, duration, easing);
+    }
 
-        if (showDetails)
+    private void ApplyLayers(IslandState state, bool animate)
+    {
+        var active = LayerFor(state);
+        var resizeDuration = Scaled(state == IslandState.Compact ? CollapseMilliseconds : ExpandMilliseconds);
+
+        foreach (var layer in new[] { CompactLayer, ExpandedLayer, InteractiveLayer })
         {
-            // O conteúdo aparece depois que a cápsula já ganhou espaço, evitando corte do texto.
-            Animate(InteractiveContent, OpacityProperty, 1, duration * 0.6, null, beginTime: duration * 0.4);
+            var isActive = layer == active;
+            layer.IsHitTestVisible = isActive;
+
+            if (!animate)
+            {
+                SetImmediate(layer, OpacityProperty, isActive ? 1 : 0);
+            }
+            else if (isActive)
+            {
+                // O conteúdo aparece depois que a cápsula já ganhou espaço, evitando corte do texto.
+                Animate(layer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+            }
+            else
+            {
+                Animate(layer, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+            }
         }
-        else
+
+        if (state != IslandState.Compact)
         {
-            Animate(InteractiveContent, OpacityProperty, 0, TimeSpan.FromMilliseconds(120 / speed), null);
+            AnimateHover(false);
+        }
+    }
+
+    private void PlaySwap(ContentPresenter layer)
+    {
+        if (!ShouldAnimate)
+        {
+            return;
+        }
+
+        var duration = Scaled(SwapMilliseconds);
+        layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
+        if (layer.RenderTransform is TranslateTransform translate)
+        {
+            translate.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(SwapOffset, 0, duration) { EasingFunction = SoftEasing }));
         }
     }
 
     private void AnimateHover(bool hovering)
     {
         var scale = hovering ? HoverScale : 1.0;
-        var settings = _settings.Current;
 
-        if (!settings.AnimationsEnabled)
+        if (!ShouldAnimate)
         {
-            SetImmediate(HoverScaleTransform, System.Windows.Media.ScaleTransform.ScaleXProperty, scale);
-            SetImmediate(HoverScaleTransform, System.Windows.Media.ScaleTransform.ScaleYProperty, scale);
+            SetImmediate(HoverScaleTransform, ScaleTransform.ScaleXProperty, scale);
+            SetImmediate(HoverScaleTransform, ScaleTransform.ScaleYProperty, scale);
             return;
         }
 
-        var duration = TimeSpan.FromMilliseconds(HoverMilliseconds / Math.Clamp(settings.AnimationSpeed, 0.25, 3));
-        Animate(HoverScaleTransform, System.Windows.Media.ScaleTransform.ScaleXProperty, scale, duration, HoverEasing);
-        Animate(HoverScaleTransform, System.Windows.Media.ScaleTransform.ScaleYProperty, scale, duration, HoverEasing);
+        var duration = Scaled(HoverMilliseconds);
+        Animate(HoverScaleTransform, ScaleTransform.ScaleXProperty, scale, duration, SoftEasing);
+        Animate(HoverScaleTransform, ScaleTransform.ScaleYProperty, scale, duration, SoftEasing);
     }
+
+    private ContentPresenter LayerFor(IslandState state) => state switch
+    {
+        IslandState.Expanded => ExpandedLayer,
+        IslandState.Interactive => InteractiveLayer,
+        _ => CompactLayer,
+    };
+
+    private TimeSpan Scaled(double milliseconds) => TimeSpan.FromMilliseconds(milliseconds / Speed);
 
     private static void Animate(
         IAnimatable target,
@@ -240,13 +311,11 @@ public partial class IslandWindow : Window
         IEasingFunction? easing,
         TimeSpan beginTime = default)
     {
-        var animation = new DoubleAnimation(to, new Duration(duration))
+        target.BeginAnimation(property, Frozen(new DoubleAnimation(to, new Duration(duration))
         {
             EasingFunction = easing,
             BeginTime = beginTime,
-        };
-        animation.Freeze();
-        target.BeginAnimation(property, animation);
+        }));
     }
 
     private static void SetImmediate(DependencyObject target, DependencyProperty property, double value)

@@ -1,4 +1,6 @@
+using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Modules;
 using Dynasland.Core.Services;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Database.Migrations;
@@ -18,8 +20,13 @@ public static class DependencyInjection
         services.AddSingleton<MigrationRunner>();
 
         services.AddSingleton<ISettingsStore, SqliteSettingsStore>();
+        services.AddSingleton<IModuleStateStore, SqliteModuleStateStore>();
         services.AddSingleton<IIslandSettingsService, IslandSettingsService>();
         services.AddSingleton<IMonitorService, MonitorService>();
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IEventBus, EventBus>();
+        services.AddSingleton<ModuleManager>();
 
         return services;
     }

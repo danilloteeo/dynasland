@@ -7,6 +7,7 @@ using Dynasland.Core.Interfaces;
 using Dynasland.Infrastructure;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Services;
+using Dynasland.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -47,10 +48,14 @@ public partial class App : Application
                 await _host.Services.GetRequiredService<MigrationRunner>().MigrateAsync();
                 await settings.LoadAsync();
             });
-            await _host.StartAsync();
+            MergeModuleTemplates(_host.Services);
 
+            // A ilha (e o controlador que escuta o barramento) existe antes dos módulos iniciarem,
+            // para que nenhuma atividade publicada na partida seja perdida.
             var island = _host.Services.GetRequiredService<IslandWindow>();
             island.Start();
+
+            await _host.StartAsync();
 
             var tray = _host.Services.GetRequiredService<TrayIconService>();
             tray.ExitRequested += (_, _) => Shutdown();
@@ -86,7 +91,15 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    private static IHost BuildHost()
+    private void MergeModuleTemplates(IServiceProvider services)
+    {
+        foreach (var templates in services.GetServices<ModuleTemplates>())
+        {
+            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = templates.Source });
+        }
+    }
+
+    private IHost BuildHost()
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
@@ -98,6 +111,11 @@ public partial class App : Application
         builder.Logging.AddDebug();
 
         builder.Services.AddDynaslandInfrastructure(new DatabaseOptions(DatabaseOptions.DefaultPath));
+        builder.Services.AddDynaslandModules();
+        builder.Services.AddSingleton<IUiDispatcher>(new WpfUiDispatcher(Dispatcher));
+        builder.Services.AddHostedService<ModuleHostedService>();
+
+        builder.Services.AddSingleton<IslandController>();
         builder.Services.AddSingleton<IslandPlacementService>();
         builder.Services.AddSingleton<IslandViewModel>();
         builder.Services.AddSingleton<IslandWindow>();

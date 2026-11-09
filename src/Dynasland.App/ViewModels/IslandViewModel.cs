@@ -1,104 +1,69 @@
-using System.Globalization;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Dynasland.Core.Interfaces;
+using Dynasland.App.Services;
+using Dynasland.Core.Activities;
+using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
 
 namespace Dynasland.App.ViewModels;
 
 public sealed partial class IslandViewModel : ObservableObject, IDisposable
 {
-    private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
-
-    private readonly IIslandSettingsService _settings;
-    private readonly DispatcherTimer _clockTimer;
-    private readonly DispatcherTimer _collapseTimer;
-    private bool _isPointerOver;
+    private readonly IslandController _controller;
 
     [ObservableProperty]
-    private IslandState _state = IslandState.Compact;
+    private IslandState _state;
 
     [ObservableProperty]
-    private string _timeText = string.Empty;
+    private IslandDimensions _dimensions = IslandLayout.Compact;
 
     [ObservableProperty]
-    private string _dateText = string.Empty;
+    private IActivityContent? _compactContent;
 
-    public IslandViewModel(IIslandSettingsService settings)
+    [ObservableProperty]
+    private IActivityContent? _expandedContent;
+
+    [ObservableProperty]
+    private IActivityContent? _interactiveContent;
+
+    public IslandViewModel(IslandController controller)
     {
-        _settings = settings;
-
-        _clockTimer = new DispatcherTimer(DispatcherPriority.Background);
-        _clockTimer.Tick += (_, _) => UpdateClock();
-
-        _collapseTimer = new DispatcherTimer(DispatcherPriority.Background);
-        _collapseTimer.Tick += (_, _) =>
-        {
-            _collapseTimer.Stop();
-            State = IslandState.Compact;
-        };
+        _controller = controller;
+        controller.Changed += OnSnapshotChanged;
+        Apply(controller.Snapshot);
     }
 
     [RelayCommand]
-    private void ToggleInteractive() =>
-        State = State == IslandState.Interactive ? IslandState.Compact : IslandState.Interactive;
+    private void ToggleInteractive() => _controller.ToggleInteractive();
 
-    public void OnPointerEntered()
-    {
-        _isPointerOver = true;
-        _collapseTimer.Stop();
-    }
+    public void Cycle(int direction) => _controller.Cycle(direction);
 
-    public void OnPointerExited()
+    public void OnPointerEntered() => _controller.PointerEntered();
+
+    public void OnPointerExited() => _controller.PointerExited();
+
+    /// <summary>Volta ao compacto e descarta o que estava pendente (ex.: ilha ocultada).</summary>
+    public void Collapse() => _controller.Reset();
+
+    private void OnSnapshotChanged(object? sender, IslandSnapshot snapshot) => Apply(snapshot);
+
+    private void Apply(IslandSnapshot snapshot)
     {
-        _isPointerOver = false;
-        if (State != IslandState.Compact)
+        // Conteúdo antes do estado, para a view animar a transição já com o conteúdo certo.
+        // O conteúdo de um estado que está saindo é mantido até o fade terminar.
+        CompactContent = snapshot.Indicator?.Content;
+        if (snapshot.State == IslandState.Expanded)
         {
-            RestartCollapseTimer();
+            ExpandedContent = snapshot.Focused?.Content;
         }
-    }
-
-    partial void OnStateChanged(IslandState value)
-    {
-        if (value == IslandState.Compact)
+        else if (snapshot.State == IslandState.Interactive)
         {
-            // O relógio só é exibido expandido; compacto não consome timers.
-            _clockTimer.Stop();
-            _collapseTimer.Stop();
-            return;
+            InteractiveContent = snapshot.Focused?.Content;
         }
 
-        UpdateClock();
-        if (!_isPointerOver)
-        {
-            RestartCollapseTimer();
-        }
+        State = snapshot.State;
+        Dimensions = snapshot.Dimensions;
     }
 
-    private void UpdateClock()
-    {
-        var now = DateTime.Now;
-        TimeText = now.ToString("HH:mm", PtBr);
-        var date = now.ToString("dddd, d 'de' MMMM", PtBr);
-        DateText = char.ToUpper(date[0], PtBr) + date[1..];
-
-        // Próximo tick na virada do minuto: uma atualização por minuto em vez de polling.
-        _clockTimer.Stop();
-        _clockTimer.Interval = TimeSpan.FromMilliseconds((60 - now.Second) * 1000 - now.Millisecond + 50);
-        _clockTimer.Start();
-    }
-
-    private void RestartCollapseTimer()
-    {
-        _collapseTimer.Stop();
-        _collapseTimer.Interval = TimeSpan.FromSeconds(_settings.Current.ExpandedDurationSeconds);
-        _collapseTimer.Start();
-    }
-
-    public void Dispose()
-    {
-        _clockTimer.Stop();
-        _collapseTimer.Stop();
-    }
+    public void Dispose() => _controller.Changed -= OnSnapshotChanged;
 }
