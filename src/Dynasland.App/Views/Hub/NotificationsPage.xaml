@@ -1,0 +1,80 @@
+<UserControl x:Class="Dynasland.App.Views.Hub.NotificationsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:hub="clr-namespace:Dynasland.App.ViewModels.Hub"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=hub:NotificationsPageViewModel}"
+             Loaded="OnLoaded">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Notificações" Style="{StaticResource SettingsTitle}" />
+            <TextBlock Text="{Binding RetentionText}" Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
+        </StackPanel>
+
+        <ComboBox Grid.Row="1" HorizontalAlignment="Left" MinWidth="260" Margin="0,18,0,12" ItemsSource="{Binding Apps}"
+                  SelectedItem="{Binding SelectedApp}" DisplayMemberPath="Name" AutomationProperties.Name="Filtrar por aplicativo" />
+
+        <Grid Grid.Row="2">
+            <ListBox x:Name="List" ItemsSource="{Binding Items}" Background="Transparent" BorderThickness="0"
+                     ItemContainerStyle="{StaticResource HubListItem}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel" AutomationProperties.Name="Notificações recebidas">
+                <ListBox.Resources>
+                    <Style TargetType="ScrollBar" BasedOn="{StaticResource SettingsScrollBar}" />
+                </ListBox.Resources>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type hub:NotificationItemViewModel}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Style="{StaticResource StatusChip}" Margin="8,0,0,0"
+                                            Visibility="{Binding WasHidden, Converter={StaticResource BoolToVisibility}}"
+                                            ToolTip="Este aplicativo está configurado para só guardar no histórico">
+                                        <TextBlock Text="não exibida" FontSize="11" Foreground="{DynamicResource SettingsSecondaryTextBrush}" />
+                                    </Border>
+                                    <TextBlock>
+                                        <Run Text="{Binding AppName, Mode=OneWay}" FontWeight="SemiBold" />
+                                        <Run Text=" · " Foreground="{DynamicResource SettingsTertiaryTextBrush}" />
+                                        <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource SettingsTertiaryTextBrush}" FontSize="12" />
+                                    </TextBlock>
+                                </DockPanel>
+                                <TextBlock Text="{Binding Title}" FontSize="13" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Body}" Style="{StaticResource CardDescription}" TextWrapping="Wrap" MaxHeight="54" TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding HasBody, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,0">
+                                <Button Style="{StaticResource HubIconButton}" Content="&#xE8A7;" ToolTip="Abrir o aplicativo"
+                                        Command="{Binding DataContext.OpenAppCommand, ElementName=List}" CommandParameter="{Binding}" />
+                                <Button Style="{StaticResource HubIconButton}" Content="&#xE74D;" ToolTip="Excluir"
+                                        Command="{Binding DataContext.DeleteCommand, ElementName=List}" CommandParameter="{Binding}" />
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Text="{Binding EmptyText}" Style="{StaticResource CardDescription}" Margin="4,6,0,0"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+        </Grid>
+
+        <DockPanel Grid.Row="3" Margin="0,10,0,0">
+            <Button DockPanel.Dock="Right" Style="{StaticResource SettingsButton}" Content="Limpar histórico" Command="{Binding ClearCommand}" />
+            <TextBlock Text="{Binding StatusText}" Style="{StaticResource CardDescription}" VerticalAlignment="Center" />
+        </DockPanel>
+    </Grid>
+</UserControl>

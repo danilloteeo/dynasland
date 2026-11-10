@@ -201,6 +201,7 @@ public partial class App : Application
         builder.Services.AddSingleton<HotkeyService>();
         builder.Services.AddSingleton<IHubService>(sp => new HubWindowService(sp, Dispatcher));
         builder.Services.AddTransient<IHubPage, ClipboardPageViewModel>();
+        builder.Services.AddTransient<IHubPage, NotificationsPageViewModel>();
         builder.Services.AddTransient<IHubPage, FocusPageViewModel>();
         builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());

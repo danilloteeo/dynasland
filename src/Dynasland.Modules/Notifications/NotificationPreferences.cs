@@ -12,8 +12,27 @@ public enum NotificationFilterMode
     OnlyAllowed,
 }
 
+/// <summary>O que acontece com as notificações de um aplicativo.</summary>
+public enum NotificationVisibility
+{
+    /// <summary>Aparecem na ilha e ficam no histórico.</summary>
+    Show,
+
+    /// <summary>Não aparecem na ilha, mas ficam no histórico da Central.</summary>
+    HistoryOnly,
+
+    /// <summary>Ignoradas: nem ilha nem histórico.</summary>
+    Block,
+}
+
+/// <summary>Como tratar uma notificação recebida, já combinando as regras do app com as gerais.</summary>
+public sealed record NotificationDecision(NotificationVisibility Visibility, bool HighPriority, TimeSpan Duration);
+
 /// <param name="Rule"><c>true</c> permitido, <c>false</c> bloqueado, <c>null</c> segue o modo.</param>
-public sealed record KnownNotificationApp(string AppId, string Name, bool? Rule);
+/// <param name="HistoryOnly">Permitido, mas só no histórico (não aparece na ilha).</param>
+/// <param name="HighPriority">Interrompe a ilha mesmo durante o uso.</param>
+/// <param name="DurationSeconds">Tempo na ilha só deste app; <c>null</c> usa o geral.</param>
+public sealed record KnownNotificationApp(string AppId, string Name, bool? Rule, bool HistoryOnly = false, bool HighPriority = false, double? DurationSeconds = null);
 
 /// <summary>
 /// Preferências de notificações: quais aplicativos aparecem na ilha, por quanto tempo e se podem
@@ -26,6 +45,9 @@ public sealed class NotificationPreferences(ISettingsStore store)
     public const string InterruptKey = "notifications.interrupt";
     public const string RulesKey = "notifications.rules";
     public const string KnownAppsKey = "notifications.knownApps";
+    public const string HistoryOnlyKey = "notifications.appHistoryOnly";
+    public const string PriorityKey = "notifications.appPriority";
+    public const string DurationsKey = "notifications.appDurations";
 
     /// <summary>Formato da Fase 3 (somente bloqueados); migrado para <see cref="RulesKey"/> ao carregar.</summary>
     public const string LegacyBlockedAppsKey = "notifications.blockedApps";
@@ -35,6 +57,9 @@ public sealed class NotificationPreferences(ISettingsStore store)
     private readonly Lock _lock = new();
     private Dictionary<string, bool> _rules = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> _knownApps = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _historyOnly = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _highPriority = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, double> _durations = new(StringComparer.OrdinalIgnoreCase);
 
     public event EventHandler? Changed;
 
@@ -53,7 +78,13 @@ public sealed class NotificationPreferences(ISettingsStore store)
             {
                 return _knownApps.Keys
                     .Union(_rules.Keys, StringComparer.OrdinalIgnoreCase)
-                    .Select(id => new KnownNotificationApp(id, _knownApps.GetValueOrDefault(id, id), _rules.TryGetValue(id, out var rule) ? rule : null))
+                    .Select(id => new KnownNotificationApp(
+                        id,
+                        _knownApps.GetValueOrDefault(id, id),
+                        _rules.TryGetValue(id, out var rule) ? rule : null,
+                        _historyOnly.Contains(id),
+                        _highPriority.Contains(id),
+                        _durations.TryGetValue(id, out var seconds) ? seconds : null))
                     .OrderBy(app => app.Name, StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
             }
@@ -80,7 +111,69 @@ public sealed class NotificationPreferences(ISettingsStore store)
                 ? Math.Clamp(duration, 2, 30)
                 : DefaultDurationSeconds;
             CanInterrupt = values.GetValueOrDefault(InterruptKey) == "true";
+            _historyOnly = new HashSet<string>(Lines(values.GetValueOrDefault(HistoryOnlyKey)), StringComparer.OrdinalIgnoreCase);
+            _highPriority = new HashSet<string>(Lines(values.GetValueOrDefault(PriorityKey)), StringComparer.OrdinalIgnoreCase);
+            _durations = ParsePairs(values.GetValueOrDefault(DurationsKey))
+                .Where(p => double.TryParse(p.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                .ToDictionary(p => p.Key, p => Math.Clamp(double.Parse(p.Value, CultureInfo.InvariantCulture), 2, 30), StringComparer.OrdinalIgnoreCase);
         }
+    }
+
+    /// <summary>Decide visibilidade, prioridade e duração de uma notificação do aplicativo.</summary>
+    public NotificationDecision Decide(string appId)
+    {
+        lock (_lock)
+        {
+            var allowed = _rules.TryGetValue(appId, out var rule) ? rule : Mode == NotificationFilterMode.AllExceptBlocked;
+            var visibility = !allowed
+                ? NotificationVisibility.Block
+                : _historyOnly.Contains(appId) ? NotificationVisibility.HistoryOnly : NotificationVisibility.Show;
+            var seconds = _durations.TryGetValue(appId, out var custom) ? custom : DurationSeconds;
+            return new NotificationDecision(visibility, CanInterrupt || _highPriority.Contains(appId), TimeSpan.FromSeconds(seconds));
+        }
+    }
+
+    public Task SetHistoryOnlyAsync(string appId, bool historyOnly, CancellationToken cancellationToken = default) =>
+        SetFlagAsync(_historyOnly, HistoryOnlyKey, appId, historyOnly, cancellationToken);
+
+    public Task SetHighPriorityAsync(string appId, bool highPriority, CancellationToken cancellationToken = default) =>
+        SetFlagAsync(_highPriority, PriorityKey, appId, highPriority, cancellationToken);
+
+    /// <param name="seconds"><c>null</c> volta a usar a duração geral.</param>
+    public Task SetAppDurationAsync(string appId, double? seconds, CancellationToken cancellationToken = default)
+    {
+        string serialized;
+        lock (_lock)
+        {
+            if (seconds is { } value)
+            {
+                _durations[appId] = Math.Clamp(Math.Round(value), 2, 30);
+            }
+            else
+            {
+                _durations.Remove(appId);
+            }
+
+            serialized = SerializePairs(_durations.Select(d => (d.Key, d.Value.ToString(CultureInfo.InvariantCulture))));
+        }
+
+        return SaveAsync(new() { [DurationsKey] = serialized }, cancellationToken);
+    }
+
+    private Task SetFlagAsync(HashSet<string> set, string key, string appId, bool on, CancellationToken cancellationToken)
+    {
+        string serialized;
+        lock (_lock)
+        {
+            if (!(on ? set.Add(appId) : set.Remove(appId)))
+            {
+                return Task.CompletedTask;
+            }
+
+            serialized = string.Join('\n', set.Order(StringComparer.OrdinalIgnoreCase));
+        }
+
+        return SaveAsync(new() { [key] = serialized }, cancellationToken);
     }
 
     public bool ShouldShow(string appId)

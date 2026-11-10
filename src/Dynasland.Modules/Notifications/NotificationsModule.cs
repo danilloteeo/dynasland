@@ -8,10 +8,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Dynasland.Modules.Notifications;
 
-/// <summary>Exibe notificações do Windows na ilha, com ações de abrir, dispensar e silenciar o aplicativo.</summary>
+/// <summary>
+/// Notification Center: exibe notificações do Windows na ilha (agrupadas por aplicativo), com ações de
+/// abrir, dispensar e silenciar, e guarda o histórico conforme as regras de cada aplicativo.
+/// </summary>
 public sealed class NotificationsModule(
     INotificationService notifications,
     NotificationPreferences preferences,
+    INotificationHistoryStore history,
+    IIslandSettingsService settings,
     IModuleOptions options,
     IEventBus bus,
     ILogger<NotificationsModule> logger) : IIslandModule
@@ -26,7 +31,7 @@ public sealed class NotificationsModule(
 
     public string DisplayName => "Notificações";
 
-    public string Description => "Notificações do Windows, com opção de silenciar aplicativos.";
+    public string Description => "Notificações do Windows com histórico, filtros e prioridade por aplicativo.";
 
     public IReadOnlyList<ModuleOption> Options => [ShowMessageText];
 
@@ -59,7 +64,14 @@ public sealed class NotificationsModule(
     private void OnReceived(object? sender, NotificationInfo info)
     {
         _ = RememberAsync(info);
-        if (!preferences.ShouldShow(info.AppId))
+        var decision = preferences.Decide(info.AppId);
+        if (decision.Visibility == NotificationVisibility.Block)
+        {
+            return;
+        }
+
+        _ = SaveAsync(info, shown: decision.Visibility == NotificationVisibility.Show);
+        if (decision.Visibility != NotificationVisibility.Show)
         {
             return;
         }
@@ -67,9 +79,29 @@ public sealed class NotificationsModule(
         var content = new NotificationContent(info, ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth), options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
         bus.PostActivity(new IslandActivity(ActivityIdFor(info.Id), ModuleId, ActivityKind.Transient, content)
         {
-            Duration = TimeSpan.FromSeconds(preferences.DurationSeconds),
-            Priority = preferences.CanInterrupt ? ActivityPriority.High : ActivityPriority.Normal,
+            Duration = decision.Duration,
+            Priority = decision.HighPriority ? ActivityPriority.High : ActivityPriority.Normal,
+
+            // Várias mensagens seguidas do mesmo aplicativo aparecem como uma só, com "+N".
+            GroupKey = $"notification.{info.AppId}",
         });
+    }
+
+    private async Task SaveAsync(NotificationInfo info, bool shown)
+    {
+        if (!settings.Current.NotificationHistoryEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            await history.AddAsync(new NotificationRecord(0, info.AppId, info.AppName, info.Title ?? string.Empty, info.Body, info.Time, shown));
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Falha ao guardar a notificação no histórico.");
+        }
     }
 
     /// <summary>Guarda o aplicativo para que ele apareça na lista das configurações.</summary>

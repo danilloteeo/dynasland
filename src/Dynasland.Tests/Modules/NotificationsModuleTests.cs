@@ -11,13 +11,14 @@ public class NotificationsModuleTests : IDisposable
     private readonly ActivityRecorder _recorder = new();
     private readonly FakeNotificationService _service = new();
     private readonly InMemorySettingsStore _store = new();
+    private readonly FakeNotificationHistory _history = new();
     private readonly NotificationPreferences _preferences;
     private readonly NotificationsModule _module;
 
     public NotificationsModuleTests()
     {
         _preferences = new NotificationPreferences(_store);
-        _module = new NotificationsModule(_service, _preferences, TestOptions.Create(), _recorder.Bus, NullLogger<NotificationsModule>.Instance);
+        _module = new NotificationsModule(_service, _preferences, _history, new FakeIslandSettings(), TestOptions.Create(), _recorder.Bus, NullLogger<NotificationsModule>.Instance);
     }
 
     public void Dispose() => _recorder.Dispose();
@@ -35,6 +36,47 @@ public class NotificationsModuleTests : IDisposable
         var content = Assert.IsType<NotificationContent>(activity.Content);
         Assert.Equal("Maria", content.Headline);
         Assert.Equal("Oi!", content.Body);
+    }
+
+    [Fact]
+    public async Task Per_app_rules_control_island_history_priority_and_duration()
+    {
+        await _module.StartAsync(CancellationToken.None);
+        var message = FakeNotificationService.Message(1);
+        await _preferences.SetHighPriorityAsync(message.AppId, true);
+        await _preferences.SetAppDurationAsync(message.AppId, 12);
+
+        _service.Receive(message);
+        var shown = Assert.Single(_recorder.Posted);
+        Assert.Equal(ActivityPriority.High, shown.Priority);
+        Assert.Equal(TimeSpan.FromSeconds(12), shown.Duration);
+        Assert.Equal($"notification.{message.AppId}", shown.GroupKey);
+
+        await _preferences.SetHistoryOnlyAsync(message.AppId, true);
+        _service.Receive(FakeNotificationService.Message(2));
+        Assert.Single(_recorder.Posted);
+
+        await _preferences.SetBlockedAsync(message.AppId, true);
+        _service.Receive(FakeNotificationService.Message(3));
+
+        await Task.Delay(50);
+        Assert.Equal([true, false], _history.Records.Select(r => r.WasShown));
+    }
+
+    [Fact]
+    public async Task Rules_survive_reload()
+    {
+        await _preferences.SetHistoryOnlyAsync("app", true);
+        await _preferences.SetHighPriorityAsync("app", true);
+        await _preferences.SetAppDurationAsync("app", 9);
+
+        var reloaded = new NotificationPreferences(_store);
+        await reloaded.LoadAsync();
+
+        var decision = reloaded.Decide("app");
+        Assert.Equal(NotificationVisibility.HistoryOnly, decision.Visibility);
+        Assert.True(decision.HighPriority);
+        Assert.Equal(TimeSpan.FromSeconds(9), decision.Duration);
     }
 
     [Fact]
@@ -102,5 +144,33 @@ public class NotificationsModuleTests : IDisposable
         var error = await Assert.ThrowsAsync<ModuleUnavailableException>(() => _module.StartAsync(CancellationToken.None));
 
         Assert.Contains(hint, error.Message);
+    }
+}
+
+internal sealed class FakeNotificationHistory : Dynasland.Core.Interfaces.INotificationHistoryStore
+{
+    public List<NotificationRecord> Records { get; } = [];
+
+    public Task AddAsync(NotificationRecord record, CancellationToken cancellationToken = default)
+    {
+        lock (Records)
+        {
+            Records.Add(record);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<NotificationRecord>> ListAsync(int limit = 300, string? appId = null, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<NotificationRecord>>([.. Records]);
+
+    public Task DeleteAsync(long id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task DeleteOlderThanAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        Records.Clear();
+        return Task.CompletedTask;
     }
 }

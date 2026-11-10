@@ -26,6 +26,9 @@
         <DataTemplate DataType="{x:Type hub:FocusPageViewModel}">
             <views:FocusPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type hub:NotificationsPageViewModel}">
+            <views:NotificationsPage />
+        </DataTemplate>
         <!-- PAGINAS_PENDENTES -->
     </Window.Resources>
 

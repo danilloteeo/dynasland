@@ -86,7 +86,7 @@ public class ModuleOptionEffectsTests : IDisposable
         var store = new InMemorySettingsStore();
         var preferences = new NotificationPreferences(store);
         var service = new FakeNotificationService();
-        var module = new NotificationsModule(service, preferences, _options, _recorder.Bus, NullLogger<NotificationsModule>.Instance);
+        var module = new NotificationsModule(service, preferences, new FakeNotificationHistory(), new FakeIslandSettings(), _options, _recorder.Bus, NullLogger<NotificationsModule>.Instance);
         await module.StartAsync(CancellationToken.None);
         await preferences.SetDurationAsync(12);
         await preferences.SetCanInterruptAsync(true);
@@ -105,7 +105,7 @@ public class ModuleOptionEffectsTests : IDisposable
     {
         var preferences = new NotificationPreferences(new InMemorySettingsStore());
         var service = new FakeNotificationService();
-        var module = new NotificationsModule(service, preferences, _options, _recorder.Bus, NullLogger<NotificationsModule>.Instance);
+        var module = new NotificationsModule(service, preferences, new FakeNotificationHistory(), new FakeIslandSettings(), _options, _recorder.Bus, NullLogger<NotificationsModule>.Instance);
         await module.StartAsync(CancellationToken.None);
         await preferences.SetModeAsync(NotificationFilterMode.OnlyAllowed);
         await preferences.SetRuleAsync("Teams", show: true);
