@@ -3,8 +3,27 @@ namespace Dynasland.Modules.Timer;
 /// <summary>Cronômetro baseado em instantes (não acumula erro de timers). Não é thread-safe.</summary>
 public sealed class StopwatchEngine(TimeProvider time)
 {
+    private readonly List<TimeSpan> _laps = [];
     private TimeSpan _accumulated;
     private DateTimeOffset? _runningSince;
+
+    /// <summary>Tempo total no momento de cada volta, da primeira para a última.</summary>
+    public IReadOnlyList<TimeSpan> Laps => _laps;
+
+    /// <summary>Marca uma volta (só com o cronômetro ativo).</summary>
+    /// <returns>Duração da volta (desde a anterior); <c>null</c> se inativo.</returns>
+    public TimeSpan? Lap()
+    {
+        if (!IsActive)
+        {
+            return null;
+        }
+
+        var total = Elapsed;
+        var previous = _laps.Count > 0 ? _laps[^1] : TimeSpan.Zero;
+        _laps.Add(total);
+        return total - previous;
+    }
 
     public bool IsActive { get; private set; }
 
@@ -14,6 +33,7 @@ public sealed class StopwatchEngine(TimeProvider time)
 
     public void Start()
     {
+        _laps.Clear();
         _accumulated = TimeSpan.Zero;
         _runningSince = time.GetUtcNow();
         IsActive = true;
@@ -38,6 +58,7 @@ public sealed class StopwatchEngine(TimeProvider time)
 
     public void Reset()
     {
+        _laps.Clear();
         _accumulated = TimeSpan.Zero;
         _runningSince = null;
         IsActive = false;

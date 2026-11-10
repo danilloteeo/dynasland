@@ -2,7 +2,9 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
+using Dynasland.Core.Models;
 using Dynasland.Core.Session;
+using Dynasland.Core.Shortcuts;
 using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Timer;
@@ -11,7 +13,15 @@ namespace Dynasland.Modules.Timer;
 /// Cronômetro e temporizador regressivo. Iniciados pelos atalhos da tela inicial; enquanto rodam
 /// aparecem como atividade contínua (indicador no compacto) e o fim do temporizador toca um alerta.
 /// </summary>
-public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider time, IShortcutRegistry shortcuts, IAlertSound sound, IModuleOptions options) : IIslandModule
+public sealed class TimerModule(
+    IEventBus bus,
+    IUiDispatcher ui,
+    TimeProvider time,
+    IShortcutRegistry shortcuts,
+    IAlertSound sound,
+    IModuleOptions options,
+    IFocusSessionStore history,
+    IGlobalShortcutRegistry globalShortcuts) : IIslandModule
 {
     public const string ModuleId = "timer";
     public const string StopwatchActivityId = "timer.stopwatch";
@@ -35,17 +45,22 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
     private ITimer? _ticker;
     private ITimer? _finishTimer;
     private TimeSpan _lastDuration;
+    private DateTimeOffset _stopwatchStartedAt;
+    private DateTimeOffset _countdownStartedAt;
+    private PomodoroController? _pomodoro;
 
     public string Id => ModuleId;
 
-    public string DisplayName => "Cronômetro e temporizador";
+    public string DisplayName => "Focus Center";
 
-    public string Description => "Cronômetro e temporizador regressivo direto na ilha, com alerta ao terminar.";
+    public string Description => "Cronômetro com voltas, temporizador e Pomodoro direto na ilha, com alerta e histórico de foco.";
 
     public static readonly ModuleOption AlarmSound = ModuleOption.Toggle(
         "alarmSound", "Tocar alarme", "Toca o som de alarme do Windows quando o temporizador termina.");
 
-    public IReadOnlyList<ModuleOption> Options => [AlarmSound];
+    public IReadOnlyList<ModuleOption> Options => [AlarmSound, .. PomodoroController.Options];
+
+    public PomodoroController? Pomodoro => _pomodoro;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -53,7 +68,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         {
             _stopwatch = new StopwatchEngine(time);
             _countdown = new CountdownEngine(time);
-            _stopwatchContent = new StopwatchContent(ToggleStopwatch, StopStopwatch);
+            _stopwatchContent = new StopwatchContent(ToggleStopwatch, StopStopwatch, MarkLap);
             _countdownContent = new CountdownContent(ToggleCountdown, AddMinute, CancelCountdown);
             _setupContent = new TimerSetupContent(PresetMinutes, minutes => StartCountdown(TimeSpan.FromMinutes(minutes)));
             _finishedContent = new TimerFinishedContent(
@@ -64,6 +79,15 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         _registrations.Add(shortcuts.Register(new IslandShortcut("timer.stopwatch", ModuleId, Glyphs.Stopwatch, "Cronômetro", StartStopwatch)));
         _registrations.Add(shortcuts.Register(new IslandShortcut("timer.countdown", ModuleId, Glyphs.Timer, "Temporizador", OpenSetup)));
         _registrations.Add(bus.Subscribe<SessionChangedEvent>(OnSessionChanged));
+
+        _pomodoro = new PomodoroController(bus, ui, time, sound, options, history);
+        _pomodoro.Initialize(_ => options.IsOn(ModuleId, AlarmSound));
+        _registrations.Add(shortcuts.Register(new IslandShortcut("timer.pomodoro", ModuleId, Glyphs.Flag, "Pomodoro", _pomodoro.StartOrToggle)));
+        _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
+            "timer.pomodoro", "Pomodoro: iniciar/pausar", "Focus Center",
+            new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'P'), _pomodoro.StartOrToggle)));
+        _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
+            "timer.stopwatch", "Cronômetro: iniciar/pausar", "Focus Center", null, StartOrToggleStopwatch)));
         return Task.CompletedTask;
     }
 
@@ -75,6 +99,8 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         }
 
         _registrations.Clear();
+        _pomodoro?.Dispose();
+        _pomodoro = null;
         lock (_lock)
         {
             _ticker?.Dispose();
@@ -98,6 +124,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
             }
 
             _stopwatch.Start();
+            _stopwatchStartedAt = time.GetUtcNow();
             UpdateTicker();
         }
 
@@ -124,6 +151,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
 
             _lastDuration = duration;
             _countdown.Start(duration);
+            _countdownStartedAt = time.GetUtcNow();
             ScheduleFinish();
             UpdateTicker();
         }
@@ -158,12 +186,48 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         Refresh();
     }
 
-    private void StopStopwatch()
+    /// <summary>Atalho global: inicia o cronômetro, ou pausa/continua se já estiver ativo.</summary>
+    private void StartOrToggleStopwatch()
+    {
+        bool active;
+        lock (_lock)
+        {
+            active = _stopwatch?.IsActive == true;
+        }
+
+        if (active)
+        {
+            ToggleStopwatch();
+        }
+        else
+        {
+            StartStopwatch();
+        }
+    }
+
+    private void MarkLap()
     {
         lock (_lock)
         {
+            _stopwatch?.Lap();
+        }
+
+        Refresh();
+    }
+
+    private void StopStopwatch()
+    {
+        TimeSpan elapsed;
+        lock (_lock)
+        {
+            elapsed = _stopwatch?.Elapsed ?? TimeSpan.Zero;
             _stopwatch?.Reset();
             UpdateTicker();
+        }
+
+        if (elapsed >= TimeSpan.FromMinutes(1))
+        {
+            Save(FocusSessionKind.Stopwatch, _stopwatchStartedAt, elapsed, elapsed, completed: true);
         }
 
         bus.RemoveActivity(StopwatchActivityId);
@@ -209,6 +273,11 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
     {
         lock (_lock)
         {
+            if (_countdown is { IsActive: true } running && running.Duration - running.Remaining >= TimeSpan.FromMinutes(1))
+            {
+                Save(FocusSessionKind.Timer, _countdownStartedAt, running.Duration, running.Duration - running.Remaining, completed: false);
+            }
+
             _countdown?.Cancel();
             ScheduleFinish();
             UpdateTicker();
@@ -226,6 +295,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
                 return;
             }
 
+            Save(FocusSessionKind.Timer, _countdownStartedAt, _countdown.Duration, _countdown.Duration, completed: true);
             _countdown.Cancel();
             ScheduleFinish();
             UpdateTicker();
@@ -265,7 +335,24 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
             ScheduleFinish();
         }
 
+        _pomodoro?.OnResumed();
         Refresh();
+    }
+
+    private void Save(FocusSessionKind kind, DateTimeOffset startedAt, TimeSpan planned, TimeSpan actual, bool completed)
+    {
+        var session = new FocusSession(0, kind, startedAt, time.GetUtcNow(), planned, actual, completed);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await history.AddAsync(session);
+            }
+            catch (Exception)
+            {
+                // Histórico é complementar: falha no banco não afeta o cronômetro.
+            }
+        });
     }
 
     /// <summary>Agenda o fim exato do temporizador. Chamar com <see cref="_lock"/> adquirido.</summary>
@@ -297,6 +384,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         TimeSpan elapsed, remaining, duration;
         bool stopwatchRunning, countdownRunning;
         double progress;
+        TimeSpan[] laps;
         lock (_lock)
         {
             if (_stopwatch is null || _countdown is null)
@@ -305,6 +393,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
             }
 
             elapsed = _stopwatch.Elapsed;
+            laps = [.. _stopwatch.Laps];
             stopwatchRunning = _stopwatch.IsRunning;
             remaining = _countdown.Remaining;
             duration = _countdown.Duration;
@@ -317,6 +406,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         ui.Post(() =>
         {
             stopwatchContent?.Update(elapsed, stopwatchRunning);
+            stopwatchContent?.SetLaps(laps);
             countdownContent?.Update(remaining, duration, progress, countdownRunning);
         });
     }

@@ -7,8 +7,38 @@ using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Timer;
 
-public sealed partial class StopwatchContent(Action pauseResume, Action stop) : ObservableObject, IActivityContent
+/// <summary>Volta do cronômetro: número, duração da volta e tempo total.</summary>
+public sealed record LapItem(int Number, string LapText, string TotalText);
+
+public sealed partial class StopwatchContent(Action pauseResume, Action stop, Action lap) : ObservableObject, IActivityContent
 {
+    /// <summary>Últimas voltas, a mais recente primeiro.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<LapItem> Laps { get; } = [];
+
+    public bool HasLaps => Laps.Count > 0;
+
+    public string LapGlyph => Glyphs.Flag;
+
+    public void SetLaps(IReadOnlyList<TimeSpan> totals)
+    {
+        if (totals.Count == (Laps.Count == 0 ? 0 : Laps[0].Number))
+        {
+            return;
+        }
+
+        Laps.Clear();
+        for (var i = totals.Count - 1; i >= 0 && Laps.Count < 3; i--)
+        {
+            var previous = i > 0 ? totals[i - 1] : TimeSpan.Zero;
+            Laps.Add(new LapItem(i + 1, TextFormat.Timer(totals[i] - previous), TextFormat.Timer(totals[i])));
+        }
+
+        OnPropertyChanged(nameof(HasLaps));
+    }
+
+    [RelayCommand]
+    private void Lap() => lap();
+
     [ObservableProperty]
     private string _elapsedText = "00:00";
 
@@ -32,7 +62,7 @@ public sealed partial class StopwatchContent(Action pauseResume, Action stop) : 
     {
         IslandState.Compact => new IslandDimensions(220, 34, 17),
         IslandState.Expanded => new IslandDimensions(300, 56, 28),
-        IslandState.Interactive => new IslandDimensions(360, 120, 32),
+        IslandState.Interactive => new IslandDimensions(360, HasLaps ? 196 : 120, 32),
         _ => null,
     };
 

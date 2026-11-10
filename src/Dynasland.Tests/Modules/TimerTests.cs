@@ -1,4 +1,5 @@
 using Dynasland.Core.Activities;
+using Dynasland.Core.Shortcuts;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
 using Dynasland.Modules.Common;
@@ -16,7 +17,9 @@ public class TimerTests : IDisposable
 
     public void Dispose() => _recorder.Dispose();
 
-    private TimerModule CreateModule() => new(_recorder.Bus, new InlineDispatcher(), _time, _shortcuts, _sound, TestOptions.Create());
+    private readonly FakeFocusStore _history = new();
+
+    private TimerModule CreateModule() => new(_recorder.Bus, new InlineDispatcher(), _time, _shortcuts, _sound, TestOptions.Create(), _history, new GlobalShortcutRegistry(new InMemorySettingsStore()));
 
     [Fact]
     public void Stopwatch_counts_pauses_and_resets()
@@ -65,7 +68,7 @@ public class TimerTests : IDisposable
         var module = CreateModule();
 
         await module.StartAsync(CancellationToken.None);
-        Assert.Equal(["Cronômetro", "Temporizador"], _shortcuts.Shortcuts.Select(s => s.Label));
+        Assert.Equal(["Cronômetro", "Temporizador", "Pomodoro"], _shortcuts.Shortcuts.Select(s => s.Label));
 
         await module.StopAsync(CancellationToken.None);
         Assert.Empty(_shortcuts.Shortcuts);

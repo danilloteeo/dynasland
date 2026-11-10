@@ -29,4 +29,21 @@ public static class Glyphs
     public const string OpenFile = "";
     public const string Warning = "";
     public const string Accept = "";
+    public const string Flag = "";
+    public const string Skip = "";
+    public const string History = "";
+    public const string Search = "";
+    public const string Delete = "";
+    public const string FavoriteStar = "";
+    public const string FavoriteStarFill = "";
+    public const string Camera = "";
+    public const string Record = "";
+    public const string Microphone = "";
+    public const string Speakers = "";
+    public const string Calendar = "";
+    public const string Weather = "";
+    public const string Game = "";
+    public const string Monitor = "";
+    public const string Refresh = "";
+    public const string Settings = "";
 }

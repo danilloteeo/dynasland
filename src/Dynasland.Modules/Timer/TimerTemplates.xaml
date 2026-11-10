@@ -28,6 +28,10 @@
 
     <DataTemplate x:Key="Dynasland.Modules.Timer.StopwatchContent:Interactive">
         <Grid Margin="24,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -38,11 +42,32 @@
                            Foreground="{StaticResource TimerBrush}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding LapGlyph}" Command="{Binding LapCommand}"
+                        IsEnabled="{Binding IsRunning}" Background="{DynamicResource IslandSurfaceBrush}" Width="44" Height="44" ToolTip="Marcar volta" />
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding StopGlyph}" Command="{Binding StopCommand}"
-                        Background="{DynamicResource IslandSurfaceBrush}" Width="44" Height="44" ToolTip="Parar e zerar" />
+                        Background="{DynamicResource IslandSurfaceBrush}" Width="44" Height="44" Margin="10,0,0,0" ToolTip="Parar e zerar" />
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PauseResumeGlyph}" Command="{Binding PauseResumeCommand}"
                         Background="{DynamicResource IslandSurfaceBrush}" Width="44" Height="44" Margin="10,0,0,0" ToolTip="Pausar/continuar" />
             </StackPanel>
+            <ItemsControl Grid.Row="1" Grid.ColumnSpan="2" ItemsSource="{Binding Laps}" Focusable="False" Margin="0,8,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Number, StringFormat=Volta {0}}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                       Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding LapText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                       Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                            <TextBlock Grid.Column="2" Text="{Binding TotalText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                       Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </Grid>
     </DataTemplate>
 
@@ -157,6 +182,87 @@
                 <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Repetir" Command="{Binding RepeatCommand}" />
                 <Button Style="{DynamicResource IslandTextButtonStyle}" Content="OK" Command="{Binding DismissCommand}" Margin="8,0,0,0" />
             </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+
+    <!-- Pomodoro: vermelho no foco, verde nas pausas. -->
+    <SolidColorBrush x:Key="FocusBrush" Color="#FFFF6B5B" />
+    <SolidColorBrush x:Key="BreakBrush" Color="#FF30D158" />
+
+    <Style x:Key="PomodoroAccent" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource FocusBrush}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsBreak}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource BreakBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="Dynasland.Modules.Timer.PomodoroContent:Compact">
+        <Grid Margin="14,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13" Style="{StaticResource PomodoroAccent}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding PhaseText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Margin="8,0,0,0"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Text="{Binding RemainingText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                       Style="{StaticResource PomodoroAccent}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Timer.PomodoroContent:Expanded">
+        <Grid Margin="20,0">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding PhaseText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold" Style="{StaticResource PomodoroAccent}" />
+                <TextBlock Text="{Binding CycleText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+            </StackPanel>
+            <TextBlock Text="{Binding RemainingText}" FontFamily="{DynamicResource IslandFont}" FontSize="24" FontWeight="SemiBold"
+                       Style="{StaticResource PomodoroAccent}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Timer.PomodoroContent:Interactive">
+        <Grid Margin="24,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock FontFamily="{DynamicResource IslandTextFont}" FontSize="12">
+                    <Run Text="{Binding PhaseText, Mode=OneWay}" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                    <Run Text=" · " Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                    <Run Text="{Binding CycleText, Mode=OneWay}" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </TextBlock>
+                <TextBlock Text="{Binding RemainingText}" FontFamily="{DynamicResource IslandFont}" FontSize="42" FontWeight="SemiBold" Style="{StaticResource PomodoroAccent}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding StopGlyph}" Command="{Binding StopCommand}"
+                        Background="{DynamicResource IslandSurfaceBrush}" Width="42" Height="42" ToolTip="Encerrar Pomodoro" />
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding SkipGlyph}" Command="{Binding SkipCommand}"
+                        Background="{DynamicResource IslandSurfaceBrush}" Width="42" Height="42" Margin="8,0,0,0" ToolTip="Pular para a próxima fase" />
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PauseResumeGlyph}" Command="{Binding PauseResumeCommand}"
+                        Background="{DynamicResource IslandSurfaceBrush}" Width="42" Height="42" Margin="8,0,0,0" ToolTip="Pausar/continuar" />
+            </StackPanel>
+            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0" Maximum="1" Value="{Binding Progress, Mode=OneWay}">
+                <ProgressBar.Style>
+                    <Style TargetType="ProgressBar" BasedOn="{StaticResource IslandProgressBarStyle}">
+                        <Setter Property="Foreground" Value="{StaticResource FocusBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsBreak}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource BreakBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ProgressBar.Style>
+            </ProgressBar>
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TodayText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
+                       Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="0,6,0,0" />
         </Grid>
     </DataTemplate>
 
