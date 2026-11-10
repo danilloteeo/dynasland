@@ -22,7 +22,8 @@ namespace Dynasland.Infrastructure.Spotify;
 public sealed class SpotifyService : ISpotifyService, IDisposable
 {
     public const int CallbackPort = 43821;
-    private const string Scopes = "user-read-playback-state user-read-currently-playing";
+    private const string Scopes = "user-read-playback-state user-read-currently-playing user-modify-playback-state";
+    private const string ModifyScope = "user-modify-playback-state";
     private const string AuthorizeUrl = "https://accounts.spotify.com/authorize";
     private const string TokenUrl = "https://accounts.spotify.com/api/token";
     private const string ApiUrl = "https://api.spotify.com/v1";
@@ -59,6 +60,8 @@ public sealed class SpotifyService : ISpotifyService, IDisposable
         : SpotifyConnectionState.Connected;
 
     public string? AccountName => _token?.AccountName;
+
+    public bool CanControlPlayback => _token?.Scope?.Contains(ModifyScope, StringComparison.Ordinal) == true;
 
     public event EventHandler? Changed;
 
@@ -197,6 +200,82 @@ public sealed class SpotifyService : ISpotifyService, IDisposable
         }
     }
 
+    public async Task<int?> GetVolumeAsync(CancellationToken cancellationToken = default)
+    {
+        if (await ValidTokenAsync(cancellationToken) is not { } token)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiUrl}/me/player");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _http.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return null;
+            }
+
+            var player = await response.Content.ReadFromJsonAsync<PlayerResponse>(Json, cancellationToken);
+            return player?.Device is { SupportsVolume: true, VolumePercent: { } volume } ? volume : null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<string?> SetVolumeAsync(int percent, CancellationToken cancellationToken = default)
+    {
+        if (!CanControlPlayback)
+        {
+            return "Para ajustar o volume do Spotify, desconecte e conecte de novo em Configurações › Geral (nova permissão).";
+        }
+
+        if (await ValidTokenAsync(cancellationToken) is not { } token)
+        {
+            return "Conecte o Spotify em Configurações › Geral.";
+        }
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Put, $"{ApiUrl}/me/player/volume?volume_percent={Math.Clamp(percent, 0, 100)}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _http.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var error = await TryReadErrorAsync(response, cancellationToken);
+            return response.StatusCode switch
+            {
+                HttpStatusCode.NotFound => "Nenhum player do Spotify ativo agora.",
+                HttpStatusCode.Forbidden when error?.Reason == "PREMIUM_REQUIRED" => "Ajustar o volume pelo Dynasland exige Spotify Premium.",
+                HttpStatusCode.Forbidden => "Este dispositivo do Spotify não permite mudar o volume.",
+                (HttpStatusCode)429 => null, // limite de requisições: o próximo ajuste é enviado normalmente
+                _ => "O Spotify não aceitou a mudança de volume agora.",
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return "Sem conexão com o Spotify.";
+        }
+    }
+
+    private static async Task<ErrorBody?> TryReadErrorAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return (await response.Content.ReadFromJsonAsync<ErrorResponse>(Json, cancellationToken))?.Error;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     public async Task<byte[]?> GetImageAsync(string url, CancellationToken cancellationToken = default)
     {
         if (_images.TryGetValue(url, out var cached))
@@ -326,7 +405,7 @@ public sealed class SpotifyService : ISpotifyService, IDisposable
                 return null;
             }
 
-            _token = refreshed with { AccountName = token.AccountName };
+            _token = refreshed with { AccountName = token.AccountName, Scope = refreshed.Scope ?? token.Scope };
             SaveToken(_token);
             return _token.AccessToken;
         }
@@ -357,7 +436,7 @@ public sealed class SpotifyService : ISpotifyService, IDisposable
 
         // Na renovação, o Spotify pode omitir um novo refresh token: o anterior continua valendo.
         var refresh = token.RefreshToken ?? previousRefreshToken ?? string.Empty;
-        return new TokenSet(access, refresh, DateTimeOffset.UtcNow.AddSeconds(token.ExpiresIn), null);
+        return new TokenSet(access, refresh, DateTimeOffset.UtcNow.AddSeconds(token.ExpiresIn), null) { Scope = token.Scope };
     }
 
     private async Task<string?> ReadAccountNameAsync(string accessToken, CancellationToken cancellationToken)
@@ -411,12 +490,27 @@ public sealed class SpotifyService : ISpotifyService, IDisposable
 
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-    internal sealed record TokenSet(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt, string? AccountName);
+    internal sealed record TokenSet(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt, string? AccountName)
+    {
+        /// <summary>Escopos concedidos (separados por espaço).</summary>
+        public string? Scope { get; init; }
+    }
 
     private sealed record TokenResponse(
         [property: JsonPropertyName("access_token")] string? AccessToken,
         [property: JsonPropertyName("refresh_token")] string? RefreshToken,
-        [property: JsonPropertyName("expires_in")] int ExpiresIn);
+        [property: JsonPropertyName("expires_in")] int ExpiresIn,
+        [property: JsonPropertyName("scope")] string? Scope);
+
+    private sealed record PlayerResponse([property: JsonPropertyName("device")] DeviceItem? Device);
+
+    private sealed record DeviceItem(
+        [property: JsonPropertyName("volume_percent")] int? VolumePercent,
+        [property: JsonPropertyName("supports_volume")] bool SupportsVolume);
+
+    private sealed record ErrorResponse([property: JsonPropertyName("error")] ErrorBody? Error);
+
+    private sealed record ErrorBody([property: JsonPropertyName("message")] string? Message, [property: JsonPropertyName("reason")] string? Reason);
 
     private sealed record ProfileResponse([property: JsonPropertyName("display_name")] string? DisplayName);
 

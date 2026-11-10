@@ -195,7 +195,7 @@ public sealed class MediaModule(
                             RefreshVolume(sessionId);
                         },
                         () => _ = ShowFullQueueAsync(sessionId),
-                        level => volume?.SetLevel((float)level));
+                        level => SetVolume(sessionId, level));
                     state = new SessionState(new MediaContent(snapshot.Id, media, ui, time, CanAnimateIndicator, actions), now);
                     _sessions[snapshot.Id] = state;
                 }
@@ -358,15 +358,16 @@ public sealed class MediaModule(
         }
     }
 
-    /// <summary>Volume geral do sistema no painel (o mesmo das teclas de volume).</summary>
-    private void RefreshVolume(string sessionId)
-    {
-        if (volume?.Current is not { } current)
-        {
-            return;
-        }
+    /// <summary>
+    /// Volume do painel: no Spotify conectado, o volume do próprio app (API Web; ajustar exige Premium);
+    /// nos outros players, o volume geral do sistema.
+    /// </summary>
+    private void RefreshVolume(string sessionId) => _ = RefreshVolumeAsync(sessionId);
 
+    private async Task RefreshVolumeAsync(string sessionId)
+    {
         MediaContent content;
+        bool useSpotify;
         lock (_lock)
         {
             if (!_sessions.TryGetValue(sessionId, out var state))
@@ -375,15 +376,111 @@ public sealed class MediaModule(
             }
 
             content = state.Content;
+            useSpotify = state.IsSpotify && spotify is { State: SpotifyConnectionState.Connected };
+            state.SpotifyVolume = useSpotify;
+        }
+
+        float? level;
+        string label;
+        string? message = null;
+        if (useSpotify && await spotify!.GetVolumeAsync() is { } spotifyVolume)
+        {
+            level = spotifyVolume / 100f;
+            label = "Volume do Spotify";
+            message = !spotify.CanControlPlayback
+                ? "Reconecte o Spotify em Configurações › Geral para poder ajustar este volume."
+                : spotifyVolume == 0 ? "O volume do Spotify está em 0%." : null;
+        }
+        else
+        {
+            lock (_lock)
+            {
+                if (_sessions.TryGetValue(sessionId, out var state))
+                {
+                    state.SpotifyVolume = false;
+                }
+            }
+
+            level = volume?.Current is { } current ? (current.IsMuted ? 0 : current.Level) : null;
+            label = "Volume do sistema";
         }
 
         ui.Post(() =>
         {
-            var resized = !content.HasAppVolume;
-            content.ApplyAppVolume(current.IsMuted ? 0 : current.Level);
+            var resized = content.HasAppVolume != (level is not null) || content.HasVolumeMessage != (message is not null);
+            content.VolumeLabel = label;
+            content.VolumeMessage = message;
+            content.ApplyAppVolume(level);
             if (resized)
             {
                 Repost(sessionId);
+            }
+        });
+    }
+
+    private readonly Lock _spotifyVolumeLock = new();
+    private int? _pendingSpotifyVolume;
+    private bool _sendingSpotifyVolume;
+
+    private void SetVolume(string sessionId, double level)
+    {
+        bool toSpotify;
+        MediaContent? content;
+        lock (_lock)
+        {
+            toSpotify = _sessions.TryGetValue(sessionId, out var state) && state.SpotifyVolume;
+            content = state?.Content;
+        }
+
+        if (!toSpotify)
+        {
+            volume?.SetLevel((float)level);
+            return;
+        }
+
+        // A API do Spotify é remota: enquanto um ajuste está a caminho, guarda só o valor mais recente.
+        lock (_spotifyVolumeLock)
+        {
+            _pendingSpotifyVolume = (int)Math.Round(level * 100);
+            if (_sendingSpotifyVolume)
+            {
+                return;
+            }
+
+            _sendingSpotifyVolume = true;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                int percent;
+                lock (_spotifyVolumeLock)
+                {
+                    if (_pendingSpotifyVolume is not { } next)
+                    {
+                        _sendingSpotifyVolume = false;
+                        return;
+                    }
+
+                    percent = next;
+                    _pendingSpotifyVolume = null;
+                }
+
+                var error = await spotify!.SetVolumeAsync(percent);
+                if (content is not null)
+                {
+                    var message = error ?? (percent == 0 ? "O volume do Spotify está em 0%." : null);
+                    ui.Post(() =>
+                    {
+                        var resized = content.HasVolumeMessage != (message is not null);
+                        content.VolumeMessage = message;
+                        if (resized)
+                        {
+                            Repost(sessionId);
+                        }
+                    });
+                }
             }
         });
     }
@@ -442,6 +539,9 @@ public sealed class MediaModule(
         public ImageSource? Artwork { get; set; }
 
         public bool IsSpotify { get; set; }
+
+        /// <summary>O controle de volume do painel age no volume do próprio Spotify (API Web).</summary>
+        public bool SpotifyVolume { get; set; }
 
         /// <summary>Faixa para a qual a fila do Spotify foi lida por último.</summary>
         public string? QueueTrackKey { get; set; }

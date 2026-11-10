@@ -42,6 +42,17 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     [ObservableProperty]
     private bool _hasAppVolume;
 
+    /// <summary>De onde vem o volume do controle ("Volume do Spotify" ou "Volume do sistema").</summary>
+    [ObservableProperty]
+    private string _volumeLabel = "Volume do sistema";
+
+    /// <summary>Aviso abaixo do volume (ex.: volume do Spotify zerado, falta de permissão).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasVolumeMessage))]
+    private string? _volumeMessage;
+
+    public bool HasVolumeMessage => !string.IsNullOrEmpty(VolumeMessage);
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FullQueueText), nameof(HasMoreQueue))]
     private int _queueTotal;
@@ -195,7 +206,7 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     {
         IslandState.Compact => new IslandDimensions(HasOtherSessions ? 252 : 232, 34, 17),
         IslandState.Expanded => new IslandDimensions(360, 72, 30),
-        IslandState.Interactive => new IslandDimensions(400, 168 + (HasAppVolume ? 34 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0), 36),
+        IslandState.Interactive => new IslandDimensions(400, 168 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0), 36),
         _ => null,
     };
 

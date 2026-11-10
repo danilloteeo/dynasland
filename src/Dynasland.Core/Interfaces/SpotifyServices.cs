@@ -41,6 +41,16 @@ public interface ISpotifyService
     /// <summary>Fila atual; <c>null</c> sem conexão, sem player ativo ou se o Spotify não respondeu.</summary>
     Task<SpotifyQueue?> GetQueueAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>A autorização atual permite controlar o player (volume). Contas antigas precisam reconectar.</summary>
+    bool CanControlPlayback { get; }
+
+    /// <summary>Volume do player do Spotify (o do próprio app), 0 a 100; <c>null</c> sem player ativo.</summary>
+    Task<int?> GetVolumeAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Muda o volume do player do Spotify (exige Premium).</summary>
+    /// <returns>Mensagem para o usuário em caso de falha; <c>null</c> se aplicou.</returns>
+    Task<string?> SetVolumeAsync(int percent, CancellationToken cancellationToken = default);
+
     /// <summary>Baixa (com cache em memória) a imagem de uma faixa da fila.</summary>
     Task<byte[]?> GetImageAsync(string url, CancellationToken cancellationToken = default);
 }

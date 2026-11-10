@@ -188,6 +188,10 @@
 
             <!-- Volume do sistema, sem sair do painel de mídia. -->
             <Grid Grid.Row="3" Margin="0,6,0,0" Visibility="{Binding HasAppVolume, Converter={StaticResource BoolToVisibility}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -196,7 +200,10 @@
                            Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="4,0,0,0" />
                 <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="10,0,4,0" VerticalAlignment="Center"
                         Maximum="100" Value="{Binding AppVolume, Mode=TwoWay, Delay=60}"
-                        AutomationProperties.Name="Volume" ToolTip="Volume do sistema" />
+                        AutomationProperties.Name="{Binding VolumeLabel}" ToolTip="{Binding VolumeLabel}" />
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding VolumeMessage}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
+                           Foreground="{DynamicResource IslandWarningBrush}" Margin="4,2,0,0" TextTrimming="CharacterEllipsis"
+                           Visibility="{Binding HasVolumeMessage, Converter={StaticResource BoolToVisibility}}" />
             </Grid>
 
             <!-- A seguir (fila do Spotify, com a conta conectada nas configurações). -->
