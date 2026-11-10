@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Windows.Media;
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
@@ -34,6 +36,9 @@ public sealed class NotificationsModule(
     public string Description => "Notificações do Windows com histórico, filtros e prioridade por aplicativo.";
 
     public IReadOnlyList<ModuleOption> Options => [ShowMessageText];
+
+    /// <summary>Cor dominante do ícone de cada aplicativo (<c>null</c> = ícone sem cor aproveitável).</summary>
+    private readonly ConcurrentDictionary<string, Color?> _accents = new(StringComparer.OrdinalIgnoreCase);
 
     private IDisposable? _gamingSubscription;
     private volatile bool _muteForGame;
@@ -84,7 +89,9 @@ public sealed class NotificationsModule(
             return;
         }
 
-        var content = new NotificationContent(info, ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth), options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
+        var logo = ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth);
+        var accent = _accents.GetOrAdd(info.AppId, _ => AccentColorExtractor.FromImage(logo));
+        var content = new NotificationContent(info, logo, accent, decision.Duration, options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
         bus.PostActivity(new IslandActivity(ActivityIdFor(info.Id), ModuleId, ActivityKind.Transient, content)
         {
             Duration = decision.Duration,

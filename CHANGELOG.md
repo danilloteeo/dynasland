@@ -1,5 +1,15 @@
 # Notas da versão
 
+## 1.0.5 — 2026-11-10
+
+### Novidades
+- **Cartão de notificação redesenhado**: remetente em destaque, mensagem em até duas linhas, ícone
+  maior e "aplicativo · hora" à direita.
+- **Cor do aplicativo**: o cartão ganha um brilho na cor dominante do ícone do aplicativo
+  (ícones sem cor mantêm o visual neutro).
+- **Tempo restante**: uma linha fina mostra quanto falta para a notificação sair da ilha e pausa
+  com o ponteiro em cima.
+
 ## 1.0.4 — 2026-11-10
 
 ### Mudanças

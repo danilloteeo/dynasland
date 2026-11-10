@@ -6,3 +6,6 @@ obj/
 TestResults/
 publish/
 artifacts/
+
+# Mockups do brainstorming
+.superpowers/

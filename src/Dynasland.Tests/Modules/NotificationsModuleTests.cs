@@ -64,6 +64,36 @@ public class NotificationsModuleTests : IDisposable
     }
 
     [Fact]
+    public async Task Card_carries_duration_app_line_and_single_line_body()
+    {
+        await _module.StartAsync(CancellationToken.None);
+        await _preferences.SetAppDurationAsync("Teams", 12);
+
+        _service.Receive(FakeNotificationService.Message(1, body: "Oi!\r\n\nTudo bem?"));
+        _service.Receive(FakeNotificationService.Message(2, appId: "Teams"));
+
+        var first = (NotificationContent)_recorder.Posted[0].Content;
+        var second = (NotificationContent)_recorder.Posted[1].Content;
+        Assert.Equal(TimeSpan.FromSeconds(NotificationPreferences.DefaultDurationSeconds), first.Duration);
+        Assert.Equal(TimeSpan.FromSeconds(12), second.Duration);
+        Assert.Equal("Oi! Tudo bem?", first.ExpandedBody);
+        Assert.Equal($"WhatsApp · {first.TimeText}", first.AppLine);
+        Assert.NotSame(first.Countdown, second.Countdown);
+    }
+
+    [Fact]
+    public async Task Without_logo_the_card_stays_neutral()
+    {
+        await _module.StartAsync(CancellationToken.None);
+
+        _service.Receive(FakeNotificationService.Message(1));
+
+        var content = (NotificationContent)_recorder.Posted.Single().Content;
+        Assert.False(content.HasAccent);
+        Assert.Equal(0, content.GlowColor.A);
+    }
+
+    [Fact]
     public async Task Rules_survive_reload()
     {
         await _preferences.SetHistoryOnlyAsync("app", true);
