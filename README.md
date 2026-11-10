@@ -155,7 +155,7 @@ a janela as exibe automaticamente.
 | Notificações | `UserNotificationListener` | Nova notificação expande. Interativo: texto completo, Abrir, Dispensar, Silenciar app |
 | Bateria | `Windows.System.Power.PowerManager` | Conectar/desconectar, bateria fraca (20%) e muito fraca (10%). Interativo: carga, estado e autonomia |
 | Relógio | Hora local | Tela inicial ao abrir a ilha sem outras atividades, com atalhos (cronômetro, temporizador, sistema, configurações) |
-| Downloads | Pastas de download dos navegadores (Chrome, Edge, Opera, Firefox) | Progresso, velocidade e tempo restante; ao terminar: Abrir e Mostrar na pasta |
+| Downloads | Arquivos temporários dos navegadores na pasta Downloads (Chrome, Edge, Opera, Brave: `.crdownload`; Firefox: `.part`) | Nome, bytes recebidos e velocidade (o navegador não informa o tamanho total, então o progresso é indeterminado); ao terminar: Abrir e Mostrar na pasta |
 | Área de transferência | `AddClipboardFormatListener` + histórico do Windows (Win+V) | Mostra o que foi copiado; interativo: histórico recente para copiar de novo (ignora conteúdo marcado como privado) |
 | Monitor do sistema | PDH (CPU, GPU), memória, discos, NVML/WMI para temperaturas | Painel com uso atual; avisos de memória alta e disco quase cheio |
 | Cronômetro e temporizador | Relógio do sistema (por instante, sem acumular erro) | Contagem no compacto; alarme ao terminar, com Repetir |
