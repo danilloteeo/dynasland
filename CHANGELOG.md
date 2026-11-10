@@ -1,5 +1,36 @@
 # Notas da versão
 
+## 1.0.0 — 2026-11-10
+
+### Novos módulos
+- **Capture Center**: captura de região (sobre a tela congelada), tela inteira e janela ativa, com
+  temporizador; gravação de tela em MP4 (H.264 + AAC) com áudio do sistema, microfone, pausa e retomada.
+- **Gaming Monitor**: detecção de jogos, modo gamer (silencia notificações comuns, pode ocultar a ilha),
+  FPS via ETW do DirectX quando há permissão, CPU, GPU, memória, VRAM, frequência e temperaturas.
+- **Life Center**: clima pelo Open-Meteo com cache e aviso de dado desatualizado; agenda local com
+  calendário, lembretes na ilha (inclusive os perdidos com o app fechado).
+
+### Módulos ampliados
+- **Focus Center**: Pomodoro configurável, voltas no cronômetro e histórico de sessões.
+- **Clipboard Manager**: histórico próprio de texto e imagens, busca, favoritos, exclusão e filtro de
+  senhas, cartões e chaves.
+- **Notification Center**: histórico, regras por aplicativo (mostrar, só histórico, bloquear),
+  prioridade e duração próprias; mensagens seguidas do mesmo app agrupadas.
+- **Hardware Control**: brilho de monitores externos (DDC/CI), troca do dispositivo de saída de áudio,
+  microfone com nível, mudo e atalho.
+
+### Ilha e aplicativo
+- Ciclo de vida e histórico das atividades, agrupamento, fila preservada com a ilha oculta, fechar e
+  fixar atividades, clique fora para recolher, duplo clique configurável, estados de carregamento/vazio/erro.
+- Atalhos de teclado globais configuráveis.
+- **Central** com históricos (área de transferência, notificações, foco, capturas) e agenda.
+- Configurações em 11 categorias, com privacidade, atalhos e armazenamento (retenção, compactação,
+  exportar/importar). Argumentos `--central` e `--configuracoes` também com o app já aberto.
+- Banco com tabelas de histórico, índices, retenção e cópia automática das configurações.
+
+### Correções
+- A leitura da área de transferência falhava fora de thread STA (RPC_E_WRONG_THREAD) e não registrava cópias.
+
 ## 0.1.0 — 2026-11-10
 
 Primeira versão pública.

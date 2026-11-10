@@ -1,9 +1,11 @@
 # Dynasland
 
-Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NET 10 / WPF.
+Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NET 10 / WPF: uma cápsula
+no topo da tela que mostra o que está acontecendo — música, volume, notificações, downloads, timers,
+gravações — e vira uma central de controles com um clique.
 
-> Versão **0.1.0** — todas as fases do escopo (`docs/master.md`) concluídas.
-> [Guia de uso](docs/GUIA_DE_USO.md) · [Notas da versão](CHANGELOG.md) · [Relatório final](docs/RELATORIO_FINAL.md)
+> Versão **1.0.0**. [Guia de uso](docs/GUIA_DE_USO.md) · [Notas da versão](CHANGELOG.md) ·
+> [Especificação](docs/master.md) · [Diagnóstico da evolução](docs/DIAGNOSTICO_EVOLUCAO.md)
 
 ## Instalar
 
@@ -13,17 +15,75 @@ Baixe em [Releases](https://github.com/danilloteeo/dynasland/releases):
   em `%LocalAppData%\Programs\Dynasland`. Cria atalho no Menu Iniciar (e, se marcado, na Área de Trabalho)
   e oferece "Iniciar com o Windows". Instalar uma versão nova por cima mantém as configurações; o
   Dynasland aberto é fechado automaticamente. Desinstale por Configurações › Aplicativos — a
-  desinstalação pergunta se deve apagar também as configurações e os logs (`%LocalAppData%\Dynasland`).
-- **`Dynasland-<versão>-portable.zip`**: um único `Dynasland.exe`, sem instalação (as configurações
-  ficam no mesmo `%LocalAppData%\Dynasland`).
+  desinstalação pergunta se deve apagar também as configurações e os históricos (`%LocalAppData%\Dynasland`).
+- **`Dynasland-<versão>-portable.zip`**: um único `Dynasland.exe`, sem instalação (os dados ficam no
+  mesmo `%LocalAppData%\Dynasland`).
 
 O Windows SmartScreen pode avisar na primeira execução (os arquivos não são assinados digitalmente):
 clique em **Mais informações › Executar assim mesmo**.
 
+## O que ele faz
+
+| Módulo | O que aparece | Integração com o Windows |
+|---|---|---|
+| **Media Center** | Capa, título, artista, progresso e controles; várias mídias ao mesmo tempo viram abas | Global System Media Transport Controls (Spotify, navegadores, players) |
+| **Hardware Control** | Volume com troca do dispositivo de saída e microfone; brilho de cada tela | Core Audio (`IPolicyConfig` para a saída padrão), WMI na tela do notebook, DDC/CI em monitores externos |
+| **Notification Center** | Notificações agrupadas por app, histórico, regras por aplicativo (mostrar, só histórico, bloquear, prioridade, duração) | `UserNotificationListener` |
+| **Download Manager** | Arquivo, bytes recebidos e velocidade; abrir ou mostrar na pasta ao terminar | Arquivos temporários dos navegadores na pasta Downloads |
+| **Clipboard Manager** | Histórico de texto e imagens com busca, favoritos e exclusão | Listener Win32 + área de transferência do Windows; respeita conteúdo marcado como privado |
+| **Gaming Monitor** | Modo gamer automático, FPS, CPU, GPU, memória, VRAM, frequência e temperaturas disponíveis | Detecção de jogos por loja/tela cheia, PDH, NVML, ETW do DirectX (sem injeção) |
+| **Focus Center** | Cronômetro com voltas, temporizador e Pomodoro configurável, com histórico | Baseado em instantes reais (continua certo após suspender) |
+| **Capture Center** | Captura de região, tela ou janela; gravação de tela em MP4 com áudio do sistema e microfone | GDI/PrintWindow, Windows.Graphics.Capture, Media Foundation, WASAPI loopback |
+| **Life Center** | Tempo agora e próximos dias; agenda local com lembretes | [Open-Meteo](https://open-meteo.com) (gratuito, sem chave), SQLite local |
+| Bateria · Monitor do sistema · Relógio | Avisos de carga, uso de recursos, tela inicial com atalhos | `PowerManager`, PDH, discos |
+
+Além da ilha, há a **Central** (históricos da área de transferência, notificações, foco e capturas, e a
+agenda) e as **Configurações** em 11 categorias. Módulos sem suporte no computador aparecem como
+indisponíveis, com o motivo, em vez de mostrar controles que não funcionam.
+
+### Atalhos padrão
+
+| Atalho | Ação |
+|---|---|
+| Ctrl+Alt+D | Abrir/fechar a ilha |
+| Ctrl+Alt+H | Mostrar/ocultar a ilha |
+| Ctrl+Alt+V | Histórico da área de transferência |
+| Ctrl+Alt+A | Agenda |
+| Ctrl+Alt+P | Pomodoro: iniciar/pausar |
+| Ctrl+Alt+M | Microfone: desligar/ligar |
+| Ctrl+Alt+S | Capturar região |
+| Ctrl+Alt+Shift+S | Capturar a tela inteira |
+| Ctrl+Alt+W | Capturar a janela ativa |
+| Ctrl+Alt+R | Gravar a tela: iniciar/parar |
+
+Todos podem ser trocados ou desligados em Configurações › Atalhos (outras ações também podem receber atalho).
+
+## Uso rápido
+
+- **Passar o mouse** amplia a ilha; **clicar** abre o painel da atividade atual; clicar fora (ou esperar) recolhe.
+- Com várias atividades, a **roda do mouse** e os pontos do rodapé trocam de aba. No rodapé também há
+  **fixar** (o módulo fica sempre no compacto), **fechar** a atividade e as configurações.
+- Sem nenhuma atividade, o clique mostra hora, data, tempo, próximo compromisso e atalhos dos módulos.
+- A ilha nunca rouba o foco do programa em uso, deixa passar os cliques fora da cápsula e se esconde em
+  tela cheia (opcional), com o PC bloqueado ou suspenso.
+- **Ícone na bandeja**: clique abre as configurações; o menu mostra/oculta a ilha, escolhe o monitor e sai.
+- Linha de comando (também funciona com o Dynasland já aberto):
+  `Dynasland.exe --central[=agenda|notificacoes|foco|capturas]` e `--configuracoes[=atalhos|privacidade|...]`.
+
+Mais detalhes no [guia de uso](docs/GUIA_DE_USO.md).
+
+## Privacidade e dados
+
+Tudo fica neste computador, em `%LocalAppData%\Dynasland` (banco SQLite `dynasland.db`, cópia automática
+das configurações e logs). Nada é enviado a servidores, exceto a consulta de versão ao GitHub (se ligada)
+e as coordenadas da cidade escolhida para a previsão do tempo. Os históricos têm limites configuráveis e
+podem ser apagados em Configurações › Privacidade e › Armazenamento, onde também é possível exportar e
+importar as configurações.
+
 ## Requisitos
 
-- Windows 10 (1809+) ou Windows 11, x64
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (fixado em `global.json`, com roll-forward)
+- Windows 10 (1809+) ou Windows 11, x64. A gravação de tela exige Windows 10 1903 ou mais recente.
+- Para compilar: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (fixado em `global.json`, com roll-forward).
 
 ## Compilar, testar e executar
 
@@ -33,8 +93,8 @@ dotnet test Dynasland.sln
 dotnet run --project src/Dynasland.App
 ```
 
-O executável fica em `src/Dynasland.App/bin/Debug/net10.0-windows10.0.19041.0/Dynasland.exe`.
-Feche o Dynasland antes de compilar (os DLLs ficam travados enquanto ele roda).
+Feche o Dynasland antes de compilar (os DLLs ficam travados enquanto ele roda). Os testes de captura e
+gravação reais da tela só rodam com `DYNASLAND_CAPTURE_TESTS=1`.
 
 ## Gerar uma versão (instalador e portátil)
 
@@ -44,155 +104,71 @@ Requer o [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSo
 powershell -ExecutionPolicy Bypass -File tools\Build-Release.ps1
 ```
 
-O script lê a versão de `<Version>` em `Directory.Build.props`, roda os testes e gera em `publish\`:
+O script lê a versão de `<Version>` em `Directory.Build.props`, roda os testes e gera em `publish\` o
+instalador (`installer\Dynasland.iss`, publicação self-contained com ReadyToRun) e o zip portátil
+(executável único). Para publicar, crie um Release `v<versão>` no GitHub com os dois arquivos: a
+verificação de atualizações compara a versão instalada com o Release mais recente do repositório
+configurado em `DynaslandUpdateRepository`.
 
-- `DynaslandSetup-<versão>.exe` — publicação self-contained (ReadyToRun) empacotada por `installer\Dynasland.iss`;
-- `Dynasland-<versão>-portable.zip` — executável único self-contained.
-
-Para publicar: crie um Release `v<versão>` no GitHub com os dois arquivos. A verificação de atualizações
-do aplicativo compara a versão instalada com o Release mais recente do repositório configurado em
-`DynaslandUpdateRepository` (`Directory.Build.props`).
-
-## Uso
-
-- A ilha aparece como uma cápsula preta no topo do monitor principal.
-- **Passar o mouse**: leve ampliação. **Clicar**: abre o estado interativo com a atividade principal
-  (sem outras atividades, o módulo Relógio mostra hora e data); clicar de novo recolhe.
-  Sem interação, recolhe sozinha após 6 s. **Roda do mouse** no estado interativo alterna entre atividades.
-- Eventos dos módulos (volume, nova música, notificação, bateria) expandem a ilha automaticamente.
-- A ilha nunca rouba o foco do aplicativo em uso e deixa passar os cliques fora da cápsula.
-- **Ícone na bandeja**: clique esquerdo abre as configurações; o menu permite abrir as configurações, mostrar/ocultar a ilha, escolher o monitor e sair.
-- Executar o app novamente com ele aberto apenas reexibe a ilha (instância única).
-
-Configurações e dados: `%LocalAppData%\Dynasland\dynasland.db` (SQLite, criado automaticamente).
-
-## Estrutura
+## Arquitetura
 
 ```
 src/
-  Dynasland.Core/            Modelos, interfaces e regras puras (sem dependência de Windows/WPF)
-    Activities/              Atividades, eventos e IslandCoordinator (máquina de estados da ilha)
-    Events/                  Barramento de eventos (IEventBus)
-    Modules/                 IIslandModule e ModuleManager
-    Layout/                  Dimensões por estado, cálculo de posição, escolha de monitor
-    Services/                Serviço de configurações da ilha
-  Dynasland.Infrastructure/  Implementações dependentes do sistema
-    Database/                Conexão SQLite e migrações versionadas (schema_migrations)
-    Repositories/            Armazenamento de configurações
-    Windows/                 Interop Win32 (monitores/DPI, janela) e integrações:
-                             Media (GSMTC), Audio (Core Audio/COM), Brightness (WMI),
-                             Power (PowerManager), Notifications (UserNotificationListener)
-    Services/                Instância única (Mutex + EventWaitHandle)
-  Dynasland.Modules/         Módulos (lógica + view model + DataTemplates de cada um)
-    Media/ Volume/ Brightness/ Notifications/ Battery/ Clock/
-    Downloads/ Clipboard/ SystemMonitor/ Timer/
-  Dynasland.App/             WPF + MVVM (CommunityToolkit.Mvvm) + Generic Host/DI
-    Views/                   IslandWindow (janela transparente, camadas por estado, animações)
-    ViewModels/              IslandViewModel (projeção do estado do coordenador)
-    Services/                IslandController, posicionamento, bandeja, hospedagem dos módulos
-  Dynasland.Tests/           xUnit: regras do Core e integração com SQLite/Win32
-tools/New-AppIcon.ps1        Gera Assets/dynasland.ico
-tools/Build-Release.ps1      Testes + instalador + portátil (publish/)
-installer/Dynasland.iss      Script do instalador (Inno Setup 6)
-docs/                        Escopo (master.md), guia de uso, relatório final
+  Dynasland.Core/            Regras puras, sem Windows/WPF: atividades e IslandCoordinator (máquina de
+                             estados da ilha), eventos, contratos dos serviços, módulos, atalhos, layout
+  Dynasland.Infrastructure/  Windows e dados: SQLite (migrações, repositórios, recuperação), Core Audio,
+                             DDC/CI, GSMTC, notificações, área de transferência, captura e gravação,
+                             detecção de jogos e FPS, clima (Open-Meteo), métricas, instância única
+  Dynasland.Modules/         Um módulo por pasta (lógica + view models + DataTemplates da ilha)
+  Dynasland.App/             WPF + MVVM (CommunityToolkit.Mvvm) + Generic Host/DI: janela da ilha,
+                             Central, Configurações (uma página por categoria), bandeja, atalhos globais
+  Dynasland.Tests/           xUnit: regras do Core, integração com SQLite/Win32 e módulos com dublês
+installer/                   Script do instalador (Inno Setup)
+tools/                       Build-Release.ps1 e geração do ícone
+docs/                        Especificação, guia de uso, diagnóstico e relatórios
 ```
 
-## Como funciona a ilha
-
 ```
-Módulo ──PostActivity──▶ IEventBus ──▶ IslandController (thread de UI) ──▶ IslandCoordinator
-                                                                              │ IslandSnapshot
-Usuário (clique, hover, roda) ──▶ IslandViewModel ◀───────────────────────────┘
-                                         │
-                                  IslandWindow (anima tamanho e camadas)
+Módulo ──PostActivity──▶ IEventBus ──▶ IslandController (UI) ──▶ IslandCoordinator ──▶ IslandSnapshot
+Usuário (clique, hover, roda, atalhos) ──────────────────────────────▲                       │
+                                                       IslandWindow ◀── IslandViewModel ◀────┘
 ```
 
-- **Atividade contínua** (`ActivityKind.Live`): existe enquanto durar (música, download). A de maior
-  prioridade aparece como indicador no estado compacto. `ExpandOnStart` expande a ilha ao começar.
-- **Atividade transitória** (`ActivityKind.Transient`): expande a ilha por um tempo e some (volume,
-  notificação). Chegando várias, formam fila por prioridade; prioridade maior substitui a atual.
-  Republicar o mesmo `Id` atualiza a atividade e reinicia o tempo.
-- Com a ilha interativa, só prioridade `High`+ interrompe o usuário. Com o ponteiro sobre a ilha, nada expira.
+- **Atividades contínuas** (música, download, gravação, jogo) ficam enquanto durarem; a de maior prioridade
+  (ou a do módulo fixado) é o indicador do compacto. **Transitórias** (volume, notificação, lembrete)
+  expandem a ilha por um tempo e formam fila por prioridade; as do mesmo grupo se juntam ("+N").
+- Com a ilha oculta, as de prioridade alta esperam e as demais são descartadas com registro no histórico
+  de atividades — nada some em silêncio.
 - O coordenador não usa timers: informa o próximo prazo e o controlador agenda um único `DispatcherTimer`.
+  Os módulos trabalham orientados a eventos e pausam o que não está visível.
 
-## Criando um módulo
+### Criando um módulo
 
-1. Implemente `IIslandModule` (em `Dynasland.Modules/<Nome>/`). O módulo não conhece a janela:
-   publica atividades com `IEventBus.PostActivity(...)` e atualiza seus view models via `IUiDispatcher`.
-2. Crie o view model do conteúdo implementando `IActivityContent`.
-3. Crie um `ResourceDictionary` com DataTemplates de chave `"{NomeCompletoDoTipo}:{Estado}"`
-   (`Compact`, `Expanded`, `Interactive`; o interativo recorre ao expandido se ausente).
-4. Registre em `Dynasland.Modules/DependencyInjection.cs` o módulo e `ModuleTemplates.FromComponent(...)`.
+1. Implemente `IIslandModule` em `Dynasland.Modules/<Nome>/`. O módulo não conhece a janela: publica
+   atividades com `IEventBus.PostActivity(...)` e atualiza seus view models via `IUiDispatcher`.
+2. Crie o conteúdo implementando `IActivityContent` e um `ResourceDictionary` com DataTemplates de chave
+   `"{NomeCompletoDoTipo}:{Compact|Expanded|Interactive}"`.
+3. Declare opções em `IIslandModule.Options` (aparecem sozinhas nas configurações), atalhos da tela inicial
+   em `IShortcutRegistry`, atalhos globais em `IGlobalShortcutRegistry` e informações rápidas em `IGlanceRegistry`.
+4. Registre o módulo e o dicionário em `Dynasland.Modules/DependencyInjection.cs`.
 
-O `ModuleManager` persiste ativo/inativo na tabela `modules`, isola falhas de inicialização e, ao parar
-um módulo, remove suas atividades da ilha.
+O `ModuleManager` persiste ativo/inativo, isola falhas (um módulo que falha aparece como erro na ilha e
+nas configurações) e remove as atividades de um módulo parado.
 
-## Configurações
+## Limitações conhecidas
 
-Abra pelo clique no ícone da bandeja, pelo menu da bandeja ou pela engrenagem da ilha
-(Dynasland.exe --configuracoes abre direto). Categorias:
-
-- **Geral**: iniciar com o Windows (registro Run do usuário), iniciar minimizado, idioma, mostrar a ilha,
-  ocultar em tela cheia, distância do topo e monitor.
-- **Aparência**: tema automático/escuro/claro (janelas; a ilha é sempre preta), cor de destaque,
-  opacidade, sombra, arredondamento, largura mínima/máxima e altura da ilha.
-- **Animações**: ligar/desligar, velocidade, intensidade do efeito de mola e tempo expandida.
-- **Módulos**: ligar/desligar, status (ativo, indisponível com motivo, falha) e opções de cada módulo.
-- **Notificações**: todos exceto bloqueados ou somente permitidos, duração, prioridade alta e lista de aplicativos.
-- **Sistema**: verificar atualizações (Releases públicos do GitHub configurados em DynaslandUpdateRepository),
-  restaurar padrões, versão, privacidade e pasta de logs.
-
-Novas opções de módulo: declare ModuleOptions em IIslandModule.Options e leia com IModuleOptions;
-a janela as exibe automaticamente.
-
-## Módulos
-
-| Módulo | Integração | Na ilha |
-|---|---|---|
-| Música e mídia | GSMTC (`GlobalSystemMediaTransportControlsSessionManager`) | Compacto: capa + equalizador. Nova faixa expande. Interativo: capa, título, artista, app, progresso, anterior/play-pausa/próxima |
-| Volume | Core Audio (`IAudioEndpointVolume` + callbacks, troca de dispositivo padrão) | Mudança externa expande com nível. Interativo: dispositivo, slider e mudo |
-| Brilho | WMI (`WmiMonitorBrightness*`) | Mudança externa expande. Interativo: slider |
-| Notificações | `UserNotificationListener` | Nova notificação expande. Interativo: texto completo, Abrir, Dispensar, Silenciar app |
-| Bateria | `Windows.System.Power.PowerManager` | Conectar/desconectar, bateria fraca (20%) e muito fraca (10%). Interativo: carga, estado e autonomia |
-| Relógio | Hora local | Tela inicial ao abrir a ilha sem outras atividades, com atalhos (cronômetro, temporizador, sistema, configurações) |
-| Downloads | Arquivos temporários dos navegadores na pasta Downloads (Chrome, Edge, Opera, Brave: `.crdownload`; Firefox: `.part`) | Nome, bytes recebidos e velocidade (o navegador não informa o tamanho total, então o progresso é indeterminado); ao terminar: Abrir e Mostrar na pasta |
-| Área de transferência | `AddClipboardFormatListener` + histórico do Windows (Win+V) | Mostra o que foi copiado; interativo: histórico recente para copiar de novo (ignora conteúdo marcado como privado) |
-| Monitor do sistema | PDH (CPU, GPU), memória, discos, NVML/WMI para temperaturas | Painel com uso atual; avisos de memória alta e disco quase cheio |
-| Cronômetro e temporizador | Relógio do sistema (por instante, sem acumular erro) | Contagem no compacto; alarme ao terminar, com Repetir |
-
-Módulos sem suporte no computador (sem bateria, brilho não controlável, acesso às notificações negado)
-aparecem como **indisponível** no menu e não exibem controles.
-
-### Limitações conhecidas
-
-- **Brilho** só em telas integradas (notebooks/tablets). Monitores externos (DDC/CI) não expõem
-  notificação de mudança via WMI e não são suportados nesta versão.
-- **Notificações**: sem identidade de pacote (MSIX), o Windows não entrega o evento
-  `NotificationChanged`; o serviço compara a lista a cada 1,5 s (custo baixo, só processa diferenças).
-  O Windows continua exibindo o próprio toast — não há API pública para suprimi-lo.
-- **Volume**: o indicador nativo de volume do Windows também aparece ao usar as teclas de volume.
-- APIs WinRT/COM obtidas em threads MTA são chamadas fora da thread de UI (comandos de mídia e
-  remoção de notificações não têm efeito se chamados da thread STA).
-
-## Integrações com o Windows (notas técnicas)
-
-- **Bloqueio e suspensão**: `SystemEvents.SessionSwitch`/`PowerModeChanged` (`SessionStateService`). Com a
-  sessão bloqueada ou o computador suspenso a ilha fica oculta (o conteúdo para de animar); ao voltar, ela
-  reaparece e recalcula a posição (monitores podem ter mudado). O temporizador reagenda o término ao
-  retomar, porque os timers do .NET não contam o tempo em suspensão.
-- **Banco corrompido**: na inicialização, `DatabaseRecovery` roda `PRAGMA quick_check`; se o arquivo estiver
-  danificado, ele é guardado como `dynasland.db.corrompido-<data>` e recriado com os padrões (o usuário é avisado).
-
-- **Janela sem foco**: `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` + resposta `MA_NOACTIVATE` a `WM_MOUSEACTIVATE`.
-  A janela fica fora da barra de tarefas e do Alt+Tab.
-- **Cliques atravessando**: janela WPF com `AllowsTransparency` (layered); pixels com alfa 0 não capturam o mouse.
-  A janela tem tamanho fixo e só a cápsula é animada, evitando redimensionar o HWND a cada frame.
-- **DPI**: manifest `PerMonitorV2`. A posição é calculada em pixels físicos (`GetDpiForMonitor`,
-  `GetMonitorInfo`) e recalculada em `WM_DPICHANGED`, `WM_DISPLAYCHANGE` e mudança da área útil
-  (`WM_SETTINGCHANGE`/`SPI_SETWORKAREA`). Se o monitor escolhido for desconectado, usa o principal.
-- **Bandeja**: `System.Windows.Forms.NotifyIcon` (parte do runtime Windows Desktop, sem pacote extra).
-
-## Migrações
-
-Cada migração implementa `IMigration` (ou herda `SqlMigration`) com versão crescente e é registrada
-em `Infrastructure/DependencyInjection.cs`. São aplicadas na inicialização, cada uma em transação própria.
+- **Notificações**: sem empacotamento MSIX o Windows não entrega o evento de nova notificação; a lista é
+  comparada a cada 1,5 s (só processa diferenças). O toast do próprio Windows continua aparecendo — não há
+  API pública para suprimi-lo; desligue as faixas do app no Windows se quiser só a ilha.
+- **Downloads**: os navegadores não informam o tamanho total nos arquivos temporários, então o progresso é
+  indeterminado (nome, bytes recebidos e velocidade são reais).
+- **Brilho**: monitores externos precisam ter DDC/CI ligado no menu do monitor; não há aviso de mudança
+  feita pelos botões do monitor (os valores são lidos ao abrir o painel).
+- **Troca de saída de áudio**: usa `IPolicyConfig`, interface estável mas não documentada pela Microsoft.
+- **Gravação**: conteúdo protegido (DRM) sai preto; no Windows 10 aparece a borda amarela de captura; o
+  cursor sempre aparece antes do Windows 10 2004.
+- **FPS**: exige executar como administrador ou estar no grupo "Usuários de log de desempenho".
+- **Temperaturas**: só as que o hardware expõe ao Windows sem driver (zona térmica ACPI, NVML da NVIDIA);
+  consumo de energia não é medido.
+- **Detecção de jogos**: heurística por pasta das lojas e tela cheia, não universal.
+- O indicador de volume do Windows também aparece ao usar as teclas de volume.
