@@ -20,8 +20,13 @@ public sealed class MediaModule(
     TimeProvider time,
     IModuleOptions options,
     IIslandSettingsService settings,
-    ISpotifyService? spotify = null) : IIslandModule
+    ISpotifyService? spotify = null,
+    IAudioVolumeService? volume = null) : IIslandModule
 {
+    public const string QueueActivityId = "media.queue";
+    private const int FullQueueSize = 20;
+    private static readonly TimeSpan SkipStepDelay = TimeSpan.FromMilliseconds(350);
+
     private const int QueueImageWidth = 56;
 
     public const string ModuleId = "media";
@@ -183,7 +188,15 @@ public sealed class MediaModule(
                 if (!_sessions.TryGetValue(snapshot.Id, out var state))
                 {
                     var sessionId = snapshot.Id;
-                    state = new SessionState(new MediaContent(snapshot.Id, media, ui, time, CanAnimateIndicator, () => _ = RefreshQueueAsync(sessionId)), now);
+                    var actions = new MediaPanelActions(
+                        () =>
+                        {
+                            _ = RefreshQueueAsync(sessionId);
+                            RefreshVolume(sessionId);
+                        },
+                        () => _ = ShowFullQueueAsync(sessionId),
+                        level => volume?.SetLevel((float)level));
+                    state = new SessionState(new MediaContent(snapshot.Id, media, ui, time, CanAnimateIndicator, actions), now);
                     _sessions[snapshot.Id] = state;
                 }
 
@@ -295,21 +308,105 @@ public sealed class MediaModule(
         }
 
         var queue = await spotify.GetQueueAsync();
-        var items = new List<QueueItemViewModel>();
-        foreach (var track in queue?.Upcoming.Take(MediaContent.QueueSize) ?? [])
-        {
-            var image = track.ImageUrl is { } url ? ImageDecoder.Decode(await spotify.GetImageAsync(url), QueueImageWidth) : null;
-            items.Add(new QueueItemViewModel(track.Name, track.Artists, image));
-        }
+        var items = await BuildQueueItemsAsync(sessionId, queue, MediaContent.QueueSize);
+        var total = queue?.Upcoming.Count ?? 0;
 
         ui.Post(() =>
         {
             var resized = content.Queue.Count != items.Count;
             content.SetQueue(items);
+            content.QueueTotal = total;
             if (resized)
             {
                 Repost(sessionId);
             }
+        });
+    }
+
+    private async Task<List<QueueItemViewModel>> BuildQueueItemsAsync(string sessionId, SpotifyQueue? queue, int count)
+    {
+        var items = new List<QueueItemViewModel>();
+        var position = 0;
+        foreach (var track in queue?.Upcoming.Take(count) ?? [])
+        {
+            var steps = ++position;
+            var image = track.ImageUrl is { } url && spotify is not null ? ImageDecoder.Decode(await spotify.GetImageAsync(url), QueueImageWidth) : null;
+            items.Add(new QueueItemViewModel(steps, track.Name, track.Artists, image, new CommunityToolkit.Mvvm.Input.RelayCommand(() => _ = SkipAheadAsync(sessionId, steps))));
+        }
+
+        return items;
+    }
+
+    /// <summary>
+    /// Pula até a faixa escolhida da fila avançando "próxima" pelos controles de mídia do Windows (funciona
+    /// em contas gratuitas; a API do Spotify exigiria Premium para isso).
+    /// </summary>
+    private async Task SkipAheadAsync(string sessionId, int steps)
+    {
+        bus.RemoveActivity(QueueActivityId);
+        for (var i = 0; i < steps; i++)
+        {
+            if (!await media.SkipNextAsync(sessionId))
+            {
+                break;
+            }
+
+            if (i < steps - 1)
+            {
+                await Task.Delay(SkipStepDelay, time);
+            }
+        }
+    }
+
+    /// <summary>Volume geral do sistema no painel (o mesmo das teclas de volume).</summary>
+    private void RefreshVolume(string sessionId)
+    {
+        if (volume?.Current is not { } current)
+        {
+            return;
+        }
+
+        MediaContent content;
+        lock (_lock)
+        {
+            if (!_sessions.TryGetValue(sessionId, out var state))
+            {
+                return;
+            }
+
+            content = state.Content;
+        }
+
+        ui.Post(() =>
+        {
+            var resized = !content.HasAppVolume;
+            content.ApplyAppVolume(current.IsMuted ? 0 : current.Level);
+            if (resized)
+            {
+                Repost(sessionId);
+            }
+        });
+    }
+
+    /// <summary>Abre a fila completa (até 20 faixas) como um painel próprio na ilha.</summary>
+    private async Task ShowFullQueueAsync(string sessionId)
+    {
+        if (spotify is not { State: SpotifyConnectionState.Connected })
+        {
+            return;
+        }
+
+        var queue = await spotify.GetQueueAsync();
+        var items = await BuildQueueItemsAsync(sessionId, queue, FullQueueSize);
+        var content = new QueueContent(items.Count == 0 ? "A fila está vazia" : "Fila do Spotify · clique para pular até a faixa");
+        ui.Post(() =>
+        {
+            foreach (var item in items)
+            {
+                content.Items.Add(item);
+            }
+
+            bus.PostActivity(new IslandActivity(QueueActivityId, ModuleId, ActivityKind.Transient, content) { OpenInteractive = true });
         });
     }
 

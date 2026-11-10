@@ -107,12 +107,45 @@
         </Grid>
     </DataTemplate>
 
+    <!-- Linha da fila do Spotify: clicar pula até a faixa. -->
+    <DataTemplate x:Key="QueueRow">
+        <Button Command="{Binding Select}" Focusable="False" Cursor="Hand" ToolTip="Pular até esta faixa" Margin="0,1">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Row" Background="Transparent" CornerRadius="6" Padding="4,3">
+                        <Grid Height="30">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="30" Height="30" CornerRadius="4" Background="{DynamicResource IslandSurfaceBrush}" ClipToBounds="True">
+                                <Image Source="{Binding Image}" Stretch="UniformToFill" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Artists}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
+                                           Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Row" Property="Background" Value="{DynamicResource IslandHoverBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </DataTemplate>
+
     <DataTemplate x:Key="Dynasland.Modules.Media.MediaContent:Interactive">
         <Grid Margin="18,16,18,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
@@ -144,7 +177,7 @@
                            HorizontalAlignment="Right" VerticalAlignment="Center" />
             </Grid>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,8,0,0">
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PreviousGlyph}" Command="{Binding PreviousCommand}"
                         IsEnabled="{Binding CanSkipPrevious}" ToolTip="Anterior" />
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PlayPauseGlyph}" Command="{Binding PlayPauseCommand}"
@@ -153,39 +186,41 @@
                         IsEnabled="{Binding CanSkipNext}" ToolTip="Próxima" />
             </StackPanel>
 
+            <!-- Volume do sistema, sem sair do painel de mídia. -->
+            <Grid Grid.Row="3" Margin="0,6,0,0" Visibility="{Binding HasAppVolume, Converter={StaticResource BoolToVisibility}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding VolumeGlyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13" VerticalAlignment="Center"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="4,0,0,0" />
+                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="10,0,4,0" VerticalAlignment="Center"
+                        Maximum="100" Value="{Binding AppVolume, Mode=TwoWay, Delay=60}"
+                        AutomationProperties.Name="Volume" ToolTip="Volume do sistema" />
+            </Grid>
+
             <!-- A seguir (fila do Spotify, com a conta conectada nas configurações). -->
-            <StackPanel Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="A seguir" FontFamily="{DynamicResource IslandTextFont}" FontSize="11" Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="2,0,0,4" />
-                <ItemsControl ItemsSource="{Binding Queue}" Focusable="False">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,2" Height="30">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="28" Height="28" CornerRadius="4" Background="{DynamicResource IslandSurfaceBrush}">
-                                    <Border.OpacityMask>
-                                        <VisualBrush>
-                                            <VisualBrush.Visual>
-                                                <Border Width="28" Height="28" CornerRadius="4" Background="Black" />
-                                            </VisualBrush.Visual>
-                                        </VisualBrush>
-                                    </Border.OpacityMask>
-                                    <Image Source="{Binding Image}" Stretch="UniformToFill" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                                               Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{Binding Artists}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
-                                               Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+            <StackPanel Grid.Row="4" Margin="0,8,0,0" Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}}">
+                <DockPanel Margin="2,0,0,2">
+                    <Button DockPanel.Dock="Right" Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding FullQueueText}"
+                            Command="{Binding ShowFullQueueCommand}" Padding="8,1" FontSize="10.5" />
+                    <TextBlock Text="A seguir" FontFamily="{DynamicResource IslandTextFont}" FontSize="11" Foreground="{DynamicResource IslandTertiaryTextBrush}"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+                <ItemsControl ItemsSource="{Binding Queue}" Focusable="False" ItemTemplate="{StaticResource QueueRow}" />
             </StackPanel>
         </Grid>
+    </DataTemplate>
+
+    <!-- Fila completa: rolagem com a roda do mouse; clicar pula até a faixa. -->
+    <DataTemplate x:Key="Dynasland.Modules.Media.QueueContent:Interactive">
+        <DockPanel Margin="14,12,8,10">
+            <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5"
+                       Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="6,0,0,6" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False" PanningMode="VerticalOnly">
+                <ItemsControl ItemsSource="{Binding Items}" Focusable="False" ItemTemplate="{StaticResource QueueRow}" Margin="0,0,6,0" />
+            </ScrollViewer>
+        </DockPanel>
     </DataTemplate>
 
 </ResourceDictionary>

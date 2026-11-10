@@ -16,7 +16,8 @@ public class SpotifyQueueTests : IDisposable
     {
         var media = new FakeMediaService();
         var spotify = new FakeSpotify();
-        var module = new MediaModule(media, _recorder.Bus, new InlineDispatcher(), new FakeTimeProvider(), TestOptions.Create(), new FakeIslandSettings(), spotify);
+        var time = new FakeTimeProvider();
+        var module = new MediaModule(media, _recorder.Bus, new InlineDispatcher(), time, TestOptions.Create(), new FakeIslandSettings(), spotify);
         await module.StartAsync(CancellationToken.None);
 
         media.Raise(FakeMediaService.Track("Atual"));
@@ -25,6 +26,15 @@ public class SpotifyQueueTests : IDisposable
 
         Assert.Equal(["Um", "Dois", "Três"], content.Queue.Select(q => q.Name));
         Assert.True(content.HasQueue);
+        Assert.Equal(4, content.QueueTotal);
+
+        // Clicar na terceira faixa avança três vezes pelos controles de mídia (funciona sem Premium).
+        content.Queue[2].Select.Execute(null);
+        await WaitUntil(() =>
+        {
+            time.Advance(TimeSpan.FromMilliseconds(400));
+            return media.SkipNextCount == 3;
+        });
 
         media.Raise(FakeMediaService.Track("Vídeo", app: "opera.exe"));
         Assert.Equal(1, spotify.Requests);

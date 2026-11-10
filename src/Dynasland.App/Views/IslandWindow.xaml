@@ -11,7 +11,7 @@
         x:Name="Root"
         Title="Dynasland"
         Width="480"
-        Height="250"
+        Height="460"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"

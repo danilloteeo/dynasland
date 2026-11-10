@@ -14,7 +14,7 @@ public static class IslandLayout
     /// <summary>Limites aceitos para tamanhos pedidos pelos módulos (a janela comporta o máximo + sombra).</summary>
     public static IslandDimensions Minimum { get; } = new(120, 30, 0);
 
-    public static IslandDimensions Maximum { get; } = new(420, 170, 0);
+    public static IslandDimensions Maximum { get; } = new(420, 380, 0);
 
     public static IslandDimensions For(IslandState state) => state switch
     {

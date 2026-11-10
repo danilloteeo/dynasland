@@ -119,7 +119,13 @@ internal sealed class FakeMediaService : IMediaSessionService
         return Task.FromResult(true);
     }
 
-    public Task<bool> SkipNextAsync(string sessionId) => Task.FromResult(true);
+    public int SkipNextCount { get; private set; }
+
+    public Task<bool> SkipNextAsync(string sessionId)
+    {
+        SkipNextCount++;
+        return Task.FromResult(true);
+    }
 
     public Task<bool> SkipPreviousAsync(string sessionId) => Task.FromResult(true);
 
