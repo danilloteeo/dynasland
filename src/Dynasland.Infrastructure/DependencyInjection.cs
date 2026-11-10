@@ -6,6 +6,7 @@ using Dynasland.Core.Shortcuts;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Database.Migrations;
 using Dynasland.Infrastructure.Repositories;
+using Dynasland.Infrastructure.Spotify;
 using Dynasland.Infrastructure.Updates;
 using Dynasland.Infrastructure.Weather;
 using Dynasland.Infrastructure.Windows;
@@ -53,6 +54,12 @@ public static class DependencyInjection
         services.AddSingleton<IScreenshotService, ScreenshotService>();
         services.AddSingleton<IScreenRecorder, ScreenRecorder>();
         services.AddSingleton<IGameDetector, GameDetector>();
+        services.AddSingleton<ISpotifyService>(sp => new SpotifyService(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(15) },
+            sp.GetRequiredService<IIslandSettingsService>(),
+            sp.GetRequiredService<IShellService>(),
+            sp.GetRequiredService<DatabaseOptions>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SpotifyService>>()));
         services.AddSingleton<IFpsProvider, EtwFpsProvider>();
         services.AddSingleton<IAudioDeviceService, CoreAudioDeviceService>();
         services.AddSingleton<IPowerService, WindowsPowerService>();

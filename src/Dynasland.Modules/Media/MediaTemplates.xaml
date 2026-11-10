@@ -113,6 +113,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Grid>
@@ -150,6 +151,39 @@
                         IsEnabled="{Binding CanPlayPause}" Width="44" Height="44" FontSize="20" Margin="14,0" ToolTip="Reproduzir/pausar" />
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding NextGlyph}" Command="{Binding NextCommand}"
                         IsEnabled="{Binding CanSkipNext}" ToolTip="Próxima" />
+            </StackPanel>
+
+            <!-- A seguir (fila do Spotify, com a conta conectada nas configurações). -->
+            <StackPanel Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="A seguir" FontFamily="{DynamicResource IslandTextFont}" FontSize="11" Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="2,0,0,4" />
+                <ItemsControl ItemsSource="{Binding Queue}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2" Height="30">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="28" Height="28" CornerRadius="4" Background="{DynamicResource IslandSurfaceBrush}">
+                                    <Border.OpacityMask>
+                                        <VisualBrush>
+                                            <VisualBrush.Visual>
+                                                <Border Width="28" Height="28" CornerRadius="4" Background="Black" />
+                                            </VisualBrush.Visual>
+                                        </VisualBrush>
+                                    </Border.OpacityMask>
+                                    <Image Source="{Binding Image}" Stretch="UniformToFill" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="9,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                               Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Artists}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
+                                               Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
         </Grid>
     </DataTemplate>

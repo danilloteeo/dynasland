@@ -81,5 +81,43 @@
                 </ItemsControl>
             </StackPanel>
         </Border>
+
+        <TextBlock Text="Spotify" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <StackPanel>
+                <Grid>
+                    <StackPanel Margin="0,0,180,0">
+                        <TextBlock Text="{Binding Spotify.StatusText}" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="Mostra o que vem a seguir na fila do Spotify, no painel de mídia da ilha. Usa um app do Spotify criado por você (gratuito) e só pede permissão de leitura."
+                                   Style="{StaticResource CardDescription}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Style="{StaticResource SettingsButton}" Content="Desconectar" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Command="{Binding Spotify.DisconnectCommand}" Visibility="{Binding Spotify.IsConnected, Converter={StaticResource BoolToVisibility}}" />
+                </Grid>
+
+                <StackPanel Margin="0,14,0,0" Visibility="{Binding Spotify.IsConnected, Converter={StaticResource InvertedBoolToVisibility}}">
+                    <TextBlock Style="{StaticResource CardDescription}" TextWrapping="Wrap">
+                        <Run Text="1. Abra o painel de desenvolvedor do Spotify, entre com a sua conta e clique em Create app." />
+                        <LineBreak />
+                        <Run Text="2. Em Redirect URIs, adicione exatamente o endereço abaixo; em APIs, marque Web API; salve." />
+                        <LineBreak />
+                        <Run Text="3. Copie o Client ID do app, cole aqui e clique em Conectar." />
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Style="{StaticResource SettingsButton}" Content="Abrir painel do Spotify" Command="{Binding Spotify.OpenDashboardCommand}" Margin="0,0,8,0" />
+                        <Button Style="{StaticResource SettingsButton}" Content="Copiar Redirect URI" Command="{Binding Spotify.CopyRedirectUriCommand}" />
+                    </StackPanel>
+                    <TextBox Text="{Binding Spotify.RedirectUri, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource SettingsTextBox}" FontFamily="Consolas"
+                             Margin="0,8,0,0" AutomationProperties.Name="Redirect URI" />
+                    <DockPanel Margin="0,10,0,0">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="Conectar" Margin="8,0,0,0"
+                                Command="{Binding Spotify.ConnectCommand}" IsEnabled="{Binding Spotify.CanConnect}" />
+                        <TextBox Style="{StaticResource SettingsTextBox}" Tag="Client ID do seu app do Spotify"
+                                 Text="{Binding Spotify.ClientId, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" AutomationProperties.Name="Client ID do Spotify" />
+                    </DockPanel>
+                </StackPanel>
+                <TextBlock Text="{Binding Spotify.Message}" Style="{StaticResource CardDescription}" TextWrapping="Wrap" Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
     </StackPanel>
 </UserControl>

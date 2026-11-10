@@ -240,6 +240,7 @@ public partial class App : Application
         builder.Services.AddTransient<ViewModels.Settings.ShortcutsSettingsViewModel>();
         builder.Services.AddTransient<ViewModels.Settings.StorageSettingsViewModel>();
         builder.Services.AddTransient<ViewModels.Settings.WeatherSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.SpotifySettingsViewModel>();
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<FullscreenDetector>();
         builder.Services.AddSingleton<UpdateNotifier>();

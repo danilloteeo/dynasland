@@ -9,9 +9,34 @@ using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Media;
 
-/// <summary>View model de uma sessão de mídia. Atualizado sempre na thread de UI.</summary>
-public sealed partial class MediaContent(string sessionId, IMediaSessionService media, IUiDispatcher ui, TimeProvider time, Func<bool> canAnimateIndicator) : ObservableObject, IActivityContent, IDisposable
+/// <summary>Próxima faixa da fila do Spotify.</summary>
+public sealed record QueueItemViewModel(string Name, string Artists, ImageSource? Image)
 {
+    public bool HasImage => Image is not null;
+}
+
+/// <summary>View model de uma sessão de mídia. Atualizado sempre na thread de UI.</summary>
+public sealed partial class MediaContent(string sessionId, IMediaSessionService media, IUiDispatcher ui, TimeProvider time, Func<bool> canAnimateIndicator, Action? refreshQueue = null) : ObservableObject, IActivityContent, IDisposable
+{
+    /// <summary>Máximo de faixas "a seguir" exibidas no painel.</summary>
+    public const int QueueSize = 3;
+
+    public System.Collections.ObjectModel.ObservableCollection<QueueItemViewModel> Queue { get; } = [];
+
+    public bool HasQueue => Queue.Count > 0;
+
+    /// <summary>Atualiza "A seguir". Chamar na thread de UI.</summary>
+    public void SetQueue(IReadOnlyList<QueueItemViewModel> items)
+    {
+        Queue.Clear();
+        foreach (var item in items.Take(QueueSize))
+        {
+            Queue.Add(item);
+        }
+
+        OnPropertyChanged(nameof(HasQueue));
+    }
+
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromSeconds(1);
 
     private MediaSnapshot? _snapshot;
@@ -107,12 +132,17 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     {
         IslandState.Compact => new IslandDimensions(HasOtherSessions ? 252 : 232, 34, 17),
         IslandState.Expanded => new IslandDimensions(360, 72, 30),
-        IslandState.Interactive => new IslandDimensions(400, 168, 36),
+        IslandState.Interactive => new IslandDimensions(400, HasQueue ? 196 + Queue.Count * 34 : 168, 36),
         _ => null,
     };
 
     public void OnPresentationChanged(IslandState? state)
     {
+        if (state == IslandState.Interactive && _presentedIn != IslandState.Interactive)
+        {
+            refreshQueue?.Invoke();
+        }
+
         _presentedIn = state;
         RefreshProgress();
         UpdateTimers();

@@ -36,6 +36,7 @@ public static partial class IslandSettingsMapper
         public const string NotificationHistoryEnabled = "privacy.notificationHistory";
         public const string NotificationHistoryDays = "storage.notificationHistoryDays";
         public const string WeatherLocation = "weather.location";
+        public const string SpotifyClientId = "spotify.clientId";
     }
 
     public static IslandSettings FromValues(IReadOnlyDictionary<string, string> values)
@@ -45,6 +46,7 @@ public static partial class IslandSettingsMapper
         values.TryGetValue(Keys.AccentColor, out var accent);
         values.TryGetValue(Keys.PinnedModuleId, out var pinned);
         values.TryGetValue(Keys.WeatherLocation, out var weather);
+        values.TryGetValue(Keys.SpotifyClientId, out var spotify);
 
         return new IslandSettings
         {
@@ -79,6 +81,7 @@ public static partial class IslandSettingsMapper
             NotificationHistoryEnabled = ReadBool(values, Keys.NotificationHistoryEnabled, d.NotificationHistoryEnabled),
             NotificationHistoryDays = (int)ReadDouble(values, Keys.NotificationHistoryDays, d.NotificationHistoryDays, 1, 90),
             WeatherLocation = string.IsNullOrWhiteSpace(weather) ? null : weather,
+            SpotifyClientId = string.IsNullOrWhiteSpace(spotify) ? null : spotify.Trim(),
         };
     }
 
@@ -111,6 +114,7 @@ public static partial class IslandSettingsMapper
         [Keys.NotificationHistoryEnabled] = Format(s.NotificationHistoryEnabled),
         [Keys.NotificationHistoryDays] = Format(s.NotificationHistoryDays),
         [Keys.WeatherLocation] = s.WeatherLocation ?? string.Empty,
+        [Keys.SpotifyClientId] = s.SpotifyClientId ?? string.Empty,
     };
 
     public static bool IsHexColor(string value) => HexColor().IsMatch(value);

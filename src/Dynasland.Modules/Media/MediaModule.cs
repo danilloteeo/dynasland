@@ -19,8 +19,11 @@ public sealed class MediaModule(
     IUiDispatcher ui,
     TimeProvider time,
     IModuleOptions options,
-    IIslandSettingsService settings) : IIslandModule
+    IIslandSettingsService settings,
+    ISpotifyService? spotify = null) : IIslandModule
 {
+    private const int QueueImageWidth = 56;
+
     public const string ModuleId = "media";
     public const string SessionActivityPrefix = "media.session.";
     public const string TrackActivityId = "media.track";
@@ -179,7 +182,8 @@ public sealed class MediaModule(
             {
                 if (!_sessions.TryGetValue(snapshot.Id, out var state))
                 {
-                    state = new SessionState(new MediaContent(snapshot.Id, media, ui, time, CanAnimateIndicator), now);
+                    var sessionId = snapshot.Id;
+                    state = new SessionState(new MediaContent(snapshot.Id, media, ui, time, CanAnimateIndicator, () => _ = RefreshQueueAsync(sessionId)), now);
                     _sessions[snapshot.Id] = state;
                 }
 
@@ -187,6 +191,8 @@ public sealed class MediaModule(
                 {
                     state.LastPlayingAt = now;
                 }
+
+                state.IsSpotify = IsSpotify(snapshot);
 
                 if (!ReferenceEquals(snapshot.Thumbnail, state.ArtworkBytes))
                 {
@@ -201,6 +207,13 @@ public sealed class MediaModule(
 
                 UpdateActivity(snapshot, state, currentId, now - state.LastPlayingAt >= pausedTimeout);
                 UpdateAnnouncement(snapshot, state, announce);
+
+                // Faixa nova no Spotify: a fila mudou (lê já, para o painel abrir com ela pronta).
+                if (snapshot.TrackKey != state.QueueTrackKey && IsSpotify(snapshot))
+                {
+                    state.QueueTrackKey = snapshot.TrackKey;
+                    _ = RefreshQueueAsync(snapshot.Id);
+                }
             }
         }
     }
@@ -255,6 +268,63 @@ public sealed class MediaModule(
         }
     }
 
+    public static bool IsSpotify(MediaSnapshot snapshot) =>
+        snapshot.SourceAppId.Contains("Spotify", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// "A seguir" pela API Web do Spotify (só com a conta conectada nas configurações). Sem conexão ou sem
+    /// resposta, a lista fica vazia e o painel continua igual.
+    /// </summary>
+    private async Task RefreshQueueAsync(string sessionId)
+    {
+        MediaContent content;
+        lock (_lock)
+        {
+            if (!_sessions.TryGetValue(sessionId, out var state) || !state.IsSpotify)
+            {
+                return;
+            }
+
+            content = state.Content;
+        }
+
+        if (spotify is not { State: SpotifyConnectionState.Connected })
+        {
+            ui.Post(() => content.SetQueue([]));
+            return;
+        }
+
+        var queue = await spotify.GetQueueAsync();
+        var items = new List<QueueItemViewModel>();
+        foreach (var track in queue?.Upcoming.Take(MediaContent.QueueSize) ?? [])
+        {
+            var image = track.ImageUrl is { } url ? ImageDecoder.Decode(await spotify.GetImageAsync(url), QueueImageWidth) : null;
+            items.Add(new QueueItemViewModel(track.Name, track.Artists, image));
+        }
+
+        ui.Post(() =>
+        {
+            var resized = content.Queue.Count != items.Count;
+            content.SetQueue(items);
+            if (resized)
+            {
+                Repost(sessionId);
+            }
+        });
+    }
+
+    /// <summary>Republica a aba para a ilha recalcular o tamanho (a fila mudou de tamanho).</summary>
+    private void Repost(string sessionId)
+    {
+        lock (_lock)
+        {
+            if (_sessions.TryGetValue(sessionId, out var state) && state.IsPosted)
+            {
+                bus.PostActivity(new IslandActivity(SessionActivityId(sessionId), ModuleId, ActivityKind.Live, state.Content) { Priority = state.Priority });
+            }
+        }
+    }
+
     private bool ShouldAnnounce(MediaSnapshot snapshot) =>
         options.IsOn(ModuleId, AnnounceTracks) && (!IsLikelyVideo(snapshot) || options.IsOn(ModuleId, AnnounceVideos));
 
@@ -273,5 +343,10 @@ public sealed class MediaModule(
         public byte[]? ArtworkBytes { get; set; }
 
         public ImageSource? Artwork { get; set; }
+
+        public bool IsSpotify { get; set; }
+
+        /// <summary>Faixa para a qual a fila do Spotify foi lida por último.</summary>
+        public string? QueueTrackKey { get; set; }
     }
 }
