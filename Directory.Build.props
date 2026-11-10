@@ -5,7 +5,7 @@
     <LangVersion>latest</LangVersion>
     <Company>Dynasland</Company>
     <Product>Dynasland</Product>
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <!-- TFM com SDK do Windows: necessário para Win32 + APIs WinRT (GSMTC, notificações etc.). -->
     <DynaslandWindowsTfm>net10.0-windows10.0.19041.0</DynaslandWindowsTfm>
     <DynaslandMinWindows>10.0.17763.0</DynaslandMinWindows>

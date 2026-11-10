@@ -248,7 +248,10 @@ public sealed class ScreenRecorder(IMonitorService monitors, ILogger<ScreenRecor
             _pool = Direct3D11CaptureFramePool.CreateFreeThreaded(device, DirectXPixelFormat.B8G8R8A8UIntNormalized, 3, size);
             _pool.FrameArrived += OnFrameArrived;
             _capture = _pool.CreateCaptureSession(item);
-            _capture.IsCursorCaptureEnabled = options.ShowCursor;
+            if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+            {
+                _capture.IsCursorCaptureEnabled = options.ShowCursor; // antes do Windows 10 2004 o cursor sempre aparece
+            }
             item.Closed += (_, _) => RequestStop(); // janela fechada durante a gravação
 
             var video = VideoEncodingProperties.CreateUncompressed(MediaEncodingSubtypes.Bgra8, (uint)size.Width, (uint)size.Height);
