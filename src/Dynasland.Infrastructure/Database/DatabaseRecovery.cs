@@ -1,4 +1,5 @@
 using System.Globalization;
+using Dynasland.Core.Interfaces;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +13,7 @@ namespace Dynasland.Infrastructure.Database;
 public sealed class DatabaseRecovery(
     DatabaseOptions options,
     MigrationRunner migrations,
+    ISettingsStore settingsStore,
     ILogger<DatabaseRecovery> logger)
 {
     private const int SqliteCorrupt = 11;
@@ -37,7 +39,33 @@ public sealed class DatabaseRecovery(
             await migrations.MigrateAsync(cancellationToken);
         }
 
+        if (backup is not null)
+        {
+            await RestoreAutomaticBackupAsync(cancellationToken);
+        }
+
         return backup;
+    }
+
+    /// <summary>Banco recriado: recupera as configurações da última cópia automática, se houver.</summary>
+    private async Task RestoreAutomaticBackupAsync(CancellationToken cancellationToken)
+    {
+        var path = SettingsBackupFile.AutomaticPath(options);
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            var values = await SettingsBackupFile.ReadAsync(path, cancellationToken);
+            await settingsStore.SetManyAsync(values, cancellationToken);
+            logger.LogInformation("{Count} configurações restauradas da cópia automática.", values.Count);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            logger.LogWarning(ex, "Cópia automática das configurações inválida; usando os padrões.");
+        }
     }
 
     internal static bool IsCorruption(SqliteException ex) =>

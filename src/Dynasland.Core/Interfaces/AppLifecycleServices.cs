@@ -1,3 +1,5 @@
+// Contratos do ciclo de vida do aplicativo: iniciar com o Windows e verificação de atualizações.
+
 namespace Dynasland.Core.Interfaces;
 
 /// <summary>Registro para iniciar com o Windows (entrada "Run" do usuário, sem privilégios de administrador).</summary>

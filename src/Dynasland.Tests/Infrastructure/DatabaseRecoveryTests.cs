@@ -8,7 +8,7 @@ namespace Dynasland.Tests.Infrastructure;
 public class DatabaseRecoveryTests
 {
     private static DatabaseRecovery CreateRecovery(TemporaryDatabase db) =>
-        new(db.Options, db.CreateRunner(), NullLogger<DatabaseRecovery>.Instance);
+        new(db.Options, db.CreateRunner(), new SqliteSettingsStore(db.Factory), NullLogger<DatabaseRecovery>.Instance);
 
     [Fact]
     public async Task Healthy_database_is_kept()
@@ -36,6 +36,31 @@ public class DatabaseRecoveryTests
         Assert.True(File.Exists(backup));
         await new SqliteSettingsStore(db.Factory).SetManyAsync(new Dictionary<string, string> { ["chave"] = "valor" });
         Assert.Equal("valor", (await new SqliteSettingsStore(db.Factory).GetAllAsync())["chave"]);
+    }
+
+    [Fact]
+    public async Task Recreated_database_restores_settings_from_automatic_backup()
+    {
+        using var db = new TemporaryDatabase();
+        Directory.CreateDirectory(Path.GetDirectoryName(db.Options.DatabasePath)!);
+        await SettingsBackupFile.WriteAsync(SettingsBackupFile.AutomaticPath(db.Options), new Dictionary<string, string> { ["appearance.accent"] = "#FF0000" }, default);
+        await File.WriteAllBytesAsync(db.Options.DatabasePath, Enumerable.Repeat((byte)0x5A, 8192).ToArray());
+
+        var backup = await CreateRecovery(db).MigrateOrRecoverAsync();
+
+        Assert.NotNull(backup);
+        Assert.Equal("#FF0000", (await new SqliteSettingsStore(db.Factory).GetAllAsync())["appearance.accent"]);
+    }
+
+    [Fact]
+    public async Task Backup_file_rejects_foreign_json()
+    {
+        using var db = new TemporaryDatabase();
+        var path = Path.Combine(Path.GetDirectoryName(db.Options.DatabasePath)!, "x.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllTextAsync(path, "{\"foo\": 1}");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => SettingsBackupFile.ReadAsync(path, default));
     }
 
     [Fact]

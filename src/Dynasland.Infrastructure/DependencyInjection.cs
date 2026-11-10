@@ -27,11 +27,19 @@ public static class DependencyInjection
         services.AddSingleton(databaseOptions);
         services.AddSingleton<SqliteConnectionFactory>();
         services.AddSingleton<IMigration, M001_InitialSchema>();
+        services.AddSingleton<IMigration, M002_Histories>();
         services.AddSingleton<MigrationRunner>();
         services.AddSingleton<DatabaseRecovery>();
 
         services.AddSingleton<ISettingsStore, SqliteSettingsStore>();
         services.AddSingleton<IModuleStateStore, SqliteModuleStateStore>();
+        services.AddSingleton<IClipboardHistoryStore, SqliteClipboardHistoryStore>();
+        services.AddSingleton<INotificationHistoryStore, SqliteNotificationHistoryStore>();
+        services.AddSingleton<IFocusSessionStore, SqliteFocusSessionStore>();
+        services.AddSingleton<ICalendarStore, SqliteCalendarStore>();
+        services.AddSingleton<ICaptureHistoryStore, SqliteCaptureHistoryStore>();
+        services.AddSingleton<IWeatherCache, SqliteWeatherCache>();
+        services.AddSingleton<IStorageMaintenance, StorageMaintenance>();
         services.AddSingleton<IIslandSettingsService, IslandSettingsService>();
         services.AddSingleton<IMonitorService, MonitorService>();
 

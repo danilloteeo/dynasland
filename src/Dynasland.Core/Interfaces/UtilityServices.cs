@@ -1,5 +1,7 @@
 using Dynasland.Core.Models;
 
+// Contratos de utilidades: métricas do sistema, downloads, área de transferência, shell e som de alerta.
+
 namespace Dynasland.Core.Interfaces;
 
 public interface ISystemMetricsService

@@ -30,6 +30,11 @@ public static partial class IslandSettingsMapper
         public const string CollapseOnClickOutside = "behavior.collapseOnClickOutside";
         public const string DoubleClickAction = "behavior.doubleClickAction";
         public const string PinnedModuleId = "behavior.pinnedModule";
+        public const string ClipboardHistoryEnabled = "privacy.clipboardHistory";
+        public const string ClipboardStoreImages = "privacy.clipboardImages";
+        public const string ClipboardMaxItems = "storage.clipboardMaxItems";
+        public const string NotificationHistoryEnabled = "privacy.notificationHistory";
+        public const string NotificationHistoryDays = "storage.notificationHistoryDays";
     }
 
     public static IslandSettings FromValues(IReadOnlyDictionary<string, string> values)
@@ -66,6 +71,11 @@ public static partial class IslandSettingsMapper
                 ? action
                 : d.DoubleClickAction,
             PinnedModuleId = string.IsNullOrWhiteSpace(pinned) ? null : pinned,
+            ClipboardHistoryEnabled = ReadBool(values, Keys.ClipboardHistoryEnabled, d.ClipboardHistoryEnabled),
+            ClipboardStoreImages = ReadBool(values, Keys.ClipboardStoreImages, d.ClipboardStoreImages),
+            ClipboardMaxItems = (int)ReadDouble(values, Keys.ClipboardMaxItems, d.ClipboardMaxItems, 20, 2000),
+            NotificationHistoryEnabled = ReadBool(values, Keys.NotificationHistoryEnabled, d.NotificationHistoryEnabled),
+            NotificationHistoryDays = (int)ReadDouble(values, Keys.NotificationHistoryDays, d.NotificationHistoryDays, 1, 90),
         };
     }
 
@@ -92,6 +102,11 @@ public static partial class IslandSettingsMapper
         [Keys.CollapseOnClickOutside] = Format(s.CollapseOnClickOutside),
         [Keys.DoubleClickAction] = s.DoubleClickAction.ToString(),
         [Keys.PinnedModuleId] = s.PinnedModuleId ?? string.Empty,
+        [Keys.ClipboardHistoryEnabled] = Format(s.ClipboardHistoryEnabled),
+        [Keys.ClipboardStoreImages] = Format(s.ClipboardStoreImages),
+        [Keys.ClipboardMaxItems] = Format(s.ClipboardMaxItems),
+        [Keys.NotificationHistoryEnabled] = Format(s.NotificationHistoryEnabled),
+        [Keys.NotificationHistoryDays] = Format(s.NotificationHistoryDays),
     };
 
     public static bool IsHexColor(string value) => HexColor().IsMatch(value);

@@ -13,7 +13,7 @@ public class MigrationRunnerTests
 
         var applied = await db.CreateRunner().MigrateAsync();
 
-        Assert.Equal(1, applied);
+        Assert.Equal(2, applied);
         await using var connection = await db.Factory.OpenAsync();
         Assert.True(await TableExistsAsync(connection, "settings"));
         Assert.True(await TableExistsAsync(connection, "modules"));
@@ -79,7 +79,7 @@ public class MigrationRunnerTests
 
     private sealed class AddNotesTable : SqlMigration
     {
-        public override int Version => 2;
+        public override int Version => 99;
 
         public override string Name => "Teste: notas";
 

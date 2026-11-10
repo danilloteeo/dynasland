@@ -90,6 +90,22 @@ public sealed record IslandSettings
     /// <summary>Módulo fixado: sua atividade contínua é sempre o indicador do compacto. <c>null</c> = por prioridade.</summary>
     public string? PinnedModuleId { get; init; }
 
+    // Privacidade e armazenamento
+
+    /// <summary>Guarda o que é copiado no histórico próprio do Dynasland.</summary>
+    public bool ClipboardHistoryEnabled { get; init; } = true;
+
+    /// <summary>Inclui imagens copiadas no histórico.</summary>
+    public bool ClipboardStoreImages { get; init; } = true;
+
+    /// <summary>Itens mantidos no histórico da área de transferência (favoritos não contam).</summary>
+    public int ClipboardMaxItems { get; init; } = 200;
+
+    public bool NotificationHistoryEnabled { get; init; } = true;
+
+    /// <summary>Dias que as notificações ficam no histórico.</summary>
+    public int NotificationHistoryDays { get; init; } = 7;
+
     // Sistema
 
     /// <summary>Procura novas versões ao iniciar (uma consulta ao GitHub, sem dados pessoais).</summary>

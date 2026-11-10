@@ -55,6 +55,10 @@ public partial class App : Application
                 await _host.Services.GetRequiredService<IModuleOptions>().LoadAsync();
                 await _host.Services.GetRequiredService<IGlobalShortcutRegistry>().LoadAsync();
 
+                var storage = _host.Services.GetRequiredService<IStorageMaintenance>();
+                await storage.ApplyRetentionAsync();
+                await storage.WriteAutomaticBackupAsync();
+
                 // "Iniciar minimizado": abre com a ilha oculta (o usuário mostra pela bandeja).
                 if (settings.Current.StartHidden && settings.Current.IsVisible)
                 {

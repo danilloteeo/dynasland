@@ -21,7 +21,7 @@ internal sealed class TemporaryDatabase : IDisposable
     public SqliteConnectionFactory Factory { get; }
 
     public MigrationRunner CreateRunner() =>
-        new(Factory, [new M001_InitialSchema()], NullLogger<MigrationRunner>.Instance);
+        new(Factory, [new M001_InitialSchema(), new M002_Histories()], NullLogger<MigrationRunner>.Instance);
 
     public void Dispose()
     {
