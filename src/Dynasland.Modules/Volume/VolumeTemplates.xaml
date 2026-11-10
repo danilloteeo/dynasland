@@ -17,11 +17,15 @@
         </Grid>
     </DataTemplate>
 
+    <BooleanToVisibilityConverter x:Key="VolumeBoolToVisibility" />
+
     <DataTemplate x:Key="Dynasland.Modules.Volume.VolumeContent:Interactive">
         <Grid Margin="16,14,22,14">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid Margin="6,0,0,0">
                 <TextBlock Text="{Binding DeviceName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
@@ -29,7 +33,7 @@
                 <TextBlock Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" />
             </Grid>
-            <Grid Grid.Row="1" VerticalAlignment="Center">
+            <Grid Grid.Row="1" VerticalAlignment="Center" Margin="0,6,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -38,6 +42,47 @@
                 <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
                         Value="{Binding Level, Mode=TwoWay}" />
             </Grid>
+
+            <!-- Microfone padrão -->
+            <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasMicrophone, Converter={StaticResource VolumeBoolToVisibility}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="44" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding MicrophoneGlyph}" Command="{Binding ToggleMicrophoneMuteCommand}"
+                        ToolTip="Ligar/desligar o microfone" />
+                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                        AutomationProperties.Name="Volume do microfone" Value="{Binding MicrophoneLevel, Mode=TwoWay}" ToolTip="{Binding MicrophoneName}" />
+                <TextBlock Grid.Column="2" Text="{Binding MicrophonePercent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- Saídas: clicar torna padrão -->
+            <ScrollViewer Grid.Row="3" Margin="4,10,0,0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                          Visibility="{Binding HasDeviceChoice, Converter={StaticResource VolumeBoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Outputs}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button x:Name="Chip" Style="{DynamicResource IslandTextButtonStyle}" Command="{Binding Select}" Margin="0,0,6,0"
+                                    Padding="10,3" FontSize="11.5" MaxWidth="170" ToolTip="{Binding Name}">
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                                    <Setter TargetName="Chip" Property="Foreground" Value="{DynamicResource IslandAccentBrush}" />
+                                    <Setter TargetName="Chip" Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Grid>
     </DataTemplate>
 

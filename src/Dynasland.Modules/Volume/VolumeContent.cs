@@ -8,10 +8,97 @@ using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Volume;
 
-/// <summary>View model do volume. <see cref="Level"/> é ligado ao slider nos dois sentidos.</summary>
-public sealed partial class VolumeContent(IAudioVolumeService audio) : ObservableObject, IActivityContent
+/// <summary>Dispositivo de saída na lista do painel; clicar o torna padrão.</summary>
+public sealed record AudioDeviceItem(string Name, bool IsDefault, IRelayCommand Select);
+
+/// <summary>
+/// View model do volume. <see cref="Level"/> é ligado ao slider nos dois sentidos. No painel também
+/// mostra as saídas disponíveis (para trocar a padrão) e o microfone padrão.
+/// </summary>
+public sealed partial class VolumeContent(IAudioVolumeService audio, IAudioDeviceService? devices = null) : ObservableObject, IActivityContent
 {
     private bool _applyingSystemState;
+
+    public System.Collections.ObjectModel.ObservableCollection<AudioDeviceItem> Outputs { get; } = [];
+
+    public bool HasDeviceChoice => Outputs.Count > 1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MicrophonePercent), nameof(MicrophoneGlyph))]
+    private double _microphoneLevel;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MicrophoneGlyph))]
+    private bool _microphoneMuted;
+
+    [ObservableProperty]
+    private bool _hasMicrophone;
+
+    [ObservableProperty]
+    private string _microphoneName = string.Empty;
+
+    public int MicrophonePercent => (int)Math.Round(MicrophoneLevel);
+
+    public string MicrophoneGlyph => MicrophoneMuted ? "\uEC54" : Glyphs.Microphone;
+
+    public string SpeakersGlyph => Glyphs.Speakers;
+
+    /// <summary>Reflete o microfone do sistema. Chamar na thread de UI.</summary>
+    public void ApplyMicrophone(MicrophoneState? state)
+    {
+        _applyingSystemState = true;
+        try
+        {
+            HasMicrophone = state is not null;
+            if (state is not null)
+            {
+                MicrophoneLevel = Math.Round(state.Level * 100);
+                MicrophoneMuted = state.IsMuted;
+                MicrophoneName = string.IsNullOrWhiteSpace(state.DeviceName) ? "Microfone" : state.DeviceName;
+            }
+        }
+        finally
+        {
+            _applyingSystemState = false;
+        }
+    }
+
+    /// <summary>Atualiza a lista de saídas. Chamar na thread de UI.</summary>
+    public void SetOutputs(IReadOnlyList<AudioDevice> outputs)
+    {
+        Outputs.Clear();
+        foreach (var output in outputs)
+        {
+            Outputs.Add(new AudioDeviceItem(output.Name, output.IsDefault, new RelayCommand(() => _ = devices?.SetDefaultDeviceAsync(output.Id))));
+        }
+
+        OnPropertyChanged(nameof(HasDeviceChoice));
+    }
+
+    public void OnPresentationChanged(IslandState? state)
+    {
+        if (state == IslandState.Interactive && devices is not null)
+        {
+            _ = RefreshOutputsAsync();
+        }
+    }
+
+    private async Task RefreshOutputsAsync()
+    {
+        var outputs = await devices!.GetOutputDevicesAsync();
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => SetOutputs(outputs));
+    }
+
+    [RelayCommand]
+    private void ToggleMicrophoneMute() => devices?.SetMicrophoneMuted(!MicrophoneMuted);
+
+    partial void OnMicrophoneLevelChanged(double value)
+    {
+        if (!_applyingSystemState)
+        {
+            devices?.SetMicrophoneLevel((float)(value / 100));
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Percent), nameof(Glyph))]
@@ -56,7 +143,7 @@ public sealed partial class VolumeContent(IAudioVolumeService audio) : Observabl
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
         IslandState.Expanded => new IslandDimensions(300, 50, 25),
-        IslandState.Interactive => new IslandDimensions(360, 104, 32),
+        IslandState.Interactive => new IslandDimensions(380, 104 + (HasMicrophone ? 48 : 0) + (HasDeviceChoice ? 40 : 0), 32),
         _ => null,
     };
 

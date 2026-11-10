@@ -99,3 +99,47 @@ public interface ISessionStateService
     /// <summary>Disparado na thread de UI.</summary>
     event EventHandler<SessionChangedEvent>? Changed;
 }
+
+/// <summary>Dispositivo de áudio (saída ou entrada) ativo.</summary>
+public sealed record AudioDevice(string Id, string Name, bool IsDefault);
+
+/// <summary>Microfone padrão: nível (0 a 1), mudo e nome.</summary>
+public sealed record MicrophoneState(float Level, bool IsMuted, string? DeviceName);
+
+/// <summary>Dispositivos de áudio: escolha da saída/entrada padrão e controle do microfone (Core Audio).</summary>
+public interface IAudioDeviceService
+{
+    MicrophoneState? Microphone { get; }
+
+    /// <summary>Nível, mudo ou dispositivo do microfone mudou (qualquer thread). <c>null</c> = sem microfone.</summary>
+    event EventHandler<MicrophoneState?>? MicrophoneChanged;
+
+    /// <summary>A lista de dispositivos ou o padrão mudou (qualquer thread).</summary>
+    event EventHandler? DevicesChanged;
+
+    Task StartAsync(CancellationToken cancellationToken = default);
+
+    Task StopAsync();
+
+    Task<IReadOnlyList<AudioDevice>> GetOutputDevicesAsync();
+
+    Task<IReadOnlyList<AudioDevice>> GetInputDevicesAsync();
+
+    /// <summary>Torna o dispositivo padrão para todas as funções (multimídia, console e comunicações).</summary>
+    Task<bool> SetDefaultDeviceAsync(string deviceId);
+
+    void SetMicrophoneLevel(float level);
+
+    void SetMicrophoneMuted(bool muted);
+}
+
+/// <summary>Brilho de um monitor externo (DDC/CI), em porcentagem.</summary>
+public sealed record ExternalDisplayBrightness(string Id, string Name, int Percent);
+
+/// <summary>Monitores externos com brilho controlável por DDC/CI. Sem notificação de mudança: consultar ao exibir.</summary>
+public interface IExternalBrightnessService
+{
+    Task<IReadOnlyList<ExternalDisplayBrightness>> GetDisplaysAsync();
+
+    Task<bool> SetAsync(string displayId, int percent);
+}

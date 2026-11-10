@@ -41,4 +41,37 @@
         </Grid>
     </DataTemplate>
 
+
+    <!-- Painel: um slider por tela. -->
+    <DataTemplate x:Key="Dynasland.Modules.Brightness.BrightnessPanelContent:Interactive">
+        <StackPanel Margin="20,14">
+            <TextBlock Text="Brilho" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="0,0,0,6" />
+            <ItemsControl ItemsSource="{Binding Displays}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.ColumnSpan="3" Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5"
+                                       Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="30,0,0,0" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Row="1" Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="15"
+                                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" Width="22" />
+                            <Slider Grid.Row="1" Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    Value="{Binding Level, Mode=TwoWay}" AutomationProperties.Name="{Binding Name, StringFormat=Brilho de {0}}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5"
+                                       FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </DataTemplate>
+
 </ResourceDictionary>

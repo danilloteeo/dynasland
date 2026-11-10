@@ -1,6 +1,7 @@
 using Dynasland.Core.Activities;
 using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
+using Dynasland.Core.Shortcuts;
 using Dynasland.Modules.Battery;
 using Dynasland.Modules.Media;
 using Dynasland.Modules.Notifications;
@@ -58,7 +59,7 @@ public class ModuleOptionEffectsTests : IDisposable
     public async Task Volume_change_is_not_shown_when_disabled()
     {
         var audio = new FakeAudioService();
-        var module = new VolumeModule(audio, _recorder.Bus, new InlineDispatcher(), _options);
+        var module = new VolumeModule(audio, new FakeAudioDevices(), _recorder.Bus, new InlineDispatcher(), _options, new GlobalShortcutRegistry(new InMemorySettingsStore()));
         await _options.SetAsync(VolumeModule.ModuleId, VolumeModule.ShowOnChange, 0);
         await module.StartAsync(CancellationToken.None);
 

@@ -54,6 +54,51 @@ internal interface IMMDevice
 
     [PreserveSig]
     int OpenPropertyStore(int access, out IPropertyStore properties);
+
+    [PreserveSig]
+    int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
+}
+
+[ComImport]
+[Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IMMDeviceCollection
+{
+    [PreserveSig]
+    int GetCount(out uint count);
+
+    [PreserveSig]
+    int Item(uint index, out IMMDevice device);
+}
+
+/// <summary>
+/// Cliente de política de áudio do Windows. Não documentado oficialmente, mas estável desde o
+/// Windows 7 até o 11: é o mesmo mecanismo usado pelo painel de Som e por ferramentas conhecidas
+/// (SoundSwitch, EarTrumpet, AudioDeviceCmdlets) para trocar o dispositivo padrão.
+/// Só <see cref="IPolicyConfig.SetDefaultEndpoint"/> é usado; os métodos anteriores ocupam a vtable.
+/// </summary>
+[ComImport]
+[Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
+internal class PolicyConfigClientComObject;
+
+[ComImport]
+[Guid("F8679F50-850A-41CF-9C72-430F290290C8")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IPolicyConfig
+{
+    [PreserveSig] int GetMixFormat();
+    [PreserveSig] int GetDeviceFormat();
+    [PreserveSig] int ResetDeviceFormat();
+    [PreserveSig] int SetDeviceFormat();
+    [PreserveSig] int GetProcessingPeriod();
+    [PreserveSig] int SetProcessingPeriod();
+    [PreserveSig] int GetShareMode();
+    [PreserveSig] int SetShareMode();
+    [PreserveSig] int GetPropertyValue();
+    [PreserveSig] int SetPropertyValue();
+
+    [PreserveSig]
+    int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string deviceId, ERole role);
 }
 
 [ComImport]
@@ -182,6 +227,7 @@ internal static class CoreAudioNative
 {
     public const int ClsCtxAll = 0x17;
     public const int StgmRead = 0;
+    public const int DeviceStateActive = 0x1;
 
     /// <summary>PKEY_Device_FriendlyName</summary>
     public static readonly PropertyKey DeviceFriendlyName = new(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);

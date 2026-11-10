@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.AddSingleton<IMediaSessionService, GsmtcMediaSessionService>();
         services.AddSingleton<IAudioVolumeService, CoreAudioVolumeService>();
         services.AddSingleton<IBrightnessService, WmiBrightnessService>();
+        services.AddSingleton<IExternalBrightnessService, DdcBrightnessService>();
+        services.AddSingleton<IAudioDeviceService, CoreAudioDeviceService>();
         services.AddSingleton<IPowerService, WindowsPowerService>();
         services.AddSingleton<INotificationService, WindowsNotificationService>();
         services.AddSingleton<ISystemMetricsService, WindowsSystemMetricsService>();
