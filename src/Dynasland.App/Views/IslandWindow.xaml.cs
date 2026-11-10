@@ -12,6 +12,7 @@ using Dynasland.App.ViewModels;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
+using Dynasland.Core.Session;
 using Dynasland.Infrastructure.Windows;
 
 namespace Dynasland.App.Views;
@@ -45,16 +46,18 @@ public partial class IslandWindow : Window
     private readonly IslandPlacementService _placement;
     private readonly IIslandSettingsService _settings;
     private readonly FullscreenDetector _fullscreen;
+    private readonly ISessionStateService _session;
     private bool _repositionPending;
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
 
-    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen)
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session)
     {
         _viewModel = viewModel;
         _placement = placement;
         _settings = settings;
         _fullscreen = fullscreen;
+        _session = session;
 
         InitializeComponent();
         DataContext = viewModel;
@@ -63,6 +66,7 @@ public partial class IslandWindow : Window
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
         fullscreen.Changed += OnFullscreenChanged;
+        session.Changed += OnSessionChanged;
     }
 
     public double CornerSize
@@ -104,6 +108,7 @@ public partial class IslandWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _settings.Changed -= OnSettingsChanged;
         _fullscreen.Changed -= OnFullscreenChanged;
+        _session.Changed -= OnSessionChanged;
         base.OnClosed(e);
     }
 
@@ -160,8 +165,22 @@ public partial class IslandWindow : Window
     private void OnFullscreenChanged(object? sender, string? monitor) => UpdateVisibility();
 
     /// <summary>
-    /// Visível se o usuário quer a ilha e nenhum aplicativo em tela cheia ocupa o monitor dela
-    /// (quando "Ocultar em tela cheia" está ligado). A ocultação por tela cheia não é gravada.
+    /// Bloqueio/suspensão ocultam a ilha; ao voltar, os monitores podem ter mudado (dock, resolução),
+    /// então a posição é recalculada.
+    /// </summary>
+    private void OnSessionChanged(object? sender, SessionChangedEvent e)
+    {
+        UpdateVisibility();
+        if (!e.IsInterrupted)
+        {
+            RequestReposition();
+        }
+    }
+
+    /// <summary>
+    /// Visível se o usuário quer a ilha, a sessão está ativa (não bloqueada nem suspensa) e nenhum
+    /// aplicativo em tela cheia ocupa o monitor dela (quando "Ocultar em tela cheia" está ligado).
+    /// Essas ocultações temporárias não são gravadas.
     /// </summary>
     private void UpdateVisibility()
     {
@@ -169,7 +188,7 @@ public partial class IslandWindow : Window
         var coveredByFullscreen = settings.HideInFullscreen
             && _fullscreen.FullscreenMonitor is { } fullscreenMonitor
             && string.Equals(fullscreenMonitor, _placement.CurrentMonitor, StringComparison.OrdinalIgnoreCase);
-        ApplyVisibility(settings.IsVisible && !coveredByFullscreen);
+        ApplyVisibility(settings.IsVisible && !coveredByFullscreen && !_session.IsInterrupted);
     }
 
     private void ApplyVisibility(bool visible)
@@ -184,6 +203,8 @@ public partial class IslandWindow : Window
             _viewModel.Collapse();
             Hide();
         }
+
+        _viewModel.SetWindowVisible(visible);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

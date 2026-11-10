@@ -34,6 +34,8 @@
 
     <!-- Botão circular com ícone (controles de mídia, mudo...). Nunca recebe foco. -->
     <Style x:Key="IslandIconButtonStyle" TargetType="Button">
+        <!-- O conteúdo é um glifo de fonte; leitores de tela anunciam a dica (ToolTip) como nome. -->
+        <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Width" Value="36" />

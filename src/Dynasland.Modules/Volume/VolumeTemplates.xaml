@@ -35,7 +35,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph}" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo" />
-                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
                         Value="{Binding Level, Mode=TwoWay}" />
             </Grid>
         </Grid>

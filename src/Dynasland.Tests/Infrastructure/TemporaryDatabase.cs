@@ -12,8 +12,11 @@ internal sealed class TemporaryDatabase : IDisposable
 
     public TemporaryDatabase()
     {
-        Factory = new SqliteConnectionFactory(new DatabaseOptions(Path.Combine(_directory, "sub", "test.db")));
+        Options = new DatabaseOptions(Path.Combine(_directory, "sub", "test.db"));
+        Factory = new SqliteConnectionFactory(Options);
     }
+
+    public DatabaseOptions Options { get; }
 
     public SqliteConnectionFactory Factory { get; }
 

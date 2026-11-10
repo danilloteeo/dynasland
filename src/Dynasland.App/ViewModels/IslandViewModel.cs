@@ -17,6 +17,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     private readonly SettingsWindowService _settingsWindow;
     private IActivityContent? _presented;
     private IslandState _presentedState;
+    private bool _presentedVisible;
+    private bool _windowVisible = true;
 
     [ObservableProperty]
     private IslandState _state;
@@ -70,6 +72,16 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     public void OnPointerExited() => _controller.PointerExited();
 
+    /// <summary>
+    /// A janela foi exibida ou ocultada (pelo usuário, tela cheia, bloqueio). Oculta, nenhum conteúdo
+    /// é considerado visível: o equalizador e os timers de progresso param.
+    /// </summary>
+    public void SetWindowVisible(bool visible)
+    {
+        _windowVisible = visible;
+        NotifyPresentation(_presented, _presentedState);
+    }
+
     /// <summary>Volta ao compacto e descarta o que estava pendente (ex.: ilha ocultada).</summary>
     public void Collapse() => _controller.Reset();
 
@@ -117,7 +129,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     /// <summary>Avisa o conteúdo que ficou visível (e o que deixou de estar), para pausar trabalho invisível.</summary>
     private void NotifyPresentation(IActivityContent? content, IslandState state)
     {
-        if (ReferenceEquals(content, _presented) && state == _presentedState)
+        if (ReferenceEquals(content, _presented) && state == _presentedState && _windowVisible == _presentedVisible)
         {
             return;
         }
@@ -129,7 +141,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
         _presented = content;
         _presentedState = state;
-        content?.OnPresentationChanged(state);
+        _presentedVisible = _windowVisible;
+        content?.OnPresentationChanged(_windowVisible ? state : null);
     }
 
     public void Dispose() => _controller.Changed -= OnSnapshotChanged;

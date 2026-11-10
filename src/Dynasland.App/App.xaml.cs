@@ -46,9 +46,10 @@ public partial class App : Application
             _logger = _host.Services.GetRequiredService<ILogger<App>>();
 
             var settings = _host.Services.GetRequiredService<IIslandSettingsService>();
+            string? corruptedDatabaseBackup = null;
             await Task.Run(async () =>
             {
-                await _host.Services.GetRequiredService<MigrationRunner>().MigrateAsync();
+                corruptedDatabaseBackup = await _host.Services.GetRequiredService<DatabaseRecovery>().MigrateOrRecoverAsync();
                 await settings.LoadAsync();
                 await _host.Services.GetRequiredService<IModuleOptions>().LoadAsync();
 
@@ -63,6 +64,7 @@ public partial class App : Application
 
             // A ilha (e o controlador que escuta o barramento) existe antes dos módulos iniciarem,
             // para que nenhuma atividade publicada na partida seja perdida.
+            _host.Services.GetRequiredService<SessionStateService>().Start();
             var island = _host.Services.GetRequiredService<IslandWindow>();
             island.Start();
 
@@ -86,6 +88,16 @@ public partial class App : Application
                 Dispatcher.BeginInvoke(async () => await settings.UpdateAsync(s => s with { IsVisible = true }));
 
             _ = _host.Services.GetRequiredService<UpdateNotifier>().CheckAfterStartupAsync();
+
+            if (corruptedDatabaseBackup is not null)
+            {
+                _ = Dispatcher.BeginInvoke(() => MessageBox.Show(
+                    "O banco de dados de configurações estava danificado e foi recriado com os valores padrão.\n\n"
+                        + $"Uma cópia do arquivo antigo foi guardada em:\n{corruptedDatabaseBackup}",
+                    "Dynasland",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning));
+            }
 
             _logger.LogInformation("Dynasland iniciado.");
         }
@@ -150,6 +162,8 @@ public partial class App : Application
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<FullscreenDetector>();
         builder.Services.AddSingleton<UpdateNotifier>();
+        builder.Services.AddSingleton<SessionStateService>();
+        builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
 
         return builder.Build();
     }

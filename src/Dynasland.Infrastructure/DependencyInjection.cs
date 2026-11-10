@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddSingleton<SqliteConnectionFactory>();
         services.AddSingleton<IMigration, M001_InitialSchema>();
         services.AddSingleton<MigrationRunner>();
+        services.AddSingleton<DatabaseRecovery>();
 
         services.AddSingleton<ISettingsStore, SqliteSettingsStore>();
         services.AddSingleton<IModuleStateStore, SqliteModuleStateStore>();

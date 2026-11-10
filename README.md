@@ -2,7 +2,23 @@
 
 Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NET 10 / WPF.
 
-> Estado atual: **Fase 5 — Configurações** concluída. Veja `docs/master.md` para o escopo completo.
+> Versão **0.1.0** — todas as fases do escopo (`docs/master.md`) concluídas.
+> [Guia de uso](docs/GUIA_DE_USO.md) · [Notas da versão](CHANGELOG.md) · [Relatório final](docs/RELATORIO_FINAL.md)
+
+## Instalar
+
+Baixe em [Releases](https://github.com/danilloteeo/dynasland/releases):
+
+- **`DynaslandSetup-<versão>.exe`** (recomendado): instala só para o seu usuário, sem pedir administrador,
+  em `%LocalAppData%\Programs\Dynasland`. Cria atalho no Menu Iniciar (e, se marcado, na Área de Trabalho)
+  e oferece "Iniciar com o Windows". Instalar uma versão nova por cima mantém as configurações; o
+  Dynasland aberto é fechado automaticamente. Desinstale por Configurações › Aplicativos — a
+  desinstalação pergunta se deve apagar também as configurações e os logs (`%LocalAppData%\Dynasland`).
+- **`Dynasland-<versão>-portable.zip`**: um único `Dynasland.exe`, sem instalação (as configurações
+  ficam no mesmo `%LocalAppData%\Dynasland`).
+
+O Windows SmartScreen pode avisar na primeira execução (os arquivos não são assinados digitalmente):
+clique em **Mais informações › Executar assim mesmo**.
 
 ## Requisitos
 
@@ -18,6 +34,24 @@ dotnet run --project src/Dynasland.App
 ```
 
 O executável fica em `src/Dynasland.App/bin/Debug/net10.0-windows10.0.19041.0/Dynasland.exe`.
+Feche o Dynasland antes de compilar (os DLLs ficam travados enquanto ele roda).
+
+## Gerar uma versão (instalador e portátil)
+
+Requer o [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\Build-Release.ps1
+```
+
+O script lê a versão de `<Version>` em `Directory.Build.props`, roda os testes e gera em `publish\`:
+
+- `DynaslandSetup-<versão>.exe` — publicação self-contained (ReadyToRun) empacotada por `installer\Dynasland.iss`;
+- `Dynasland-<versão>-portable.zip` — executável único self-contained.
+
+Para publicar: crie um Release `v<versão>` no GitHub com os dois arquivos. A verificação de atualizações
+do aplicativo compara a versão instalada com o Release mais recente do repositório configurado em
+`DynaslandUpdateRepository` (`Directory.Build.props`).
 
 ## Uso
 
@@ -27,7 +61,7 @@ O executável fica em `src/Dynasland.App/bin/Debug/net10.0-windows10.0.19041.0/D
   Sem interação, recolhe sozinha após 6 s. **Roda do mouse** no estado interativo alterna entre atividades.
 - Eventos dos módulos (volume, nova música, notificação, bateria) expandem a ilha automaticamente.
 - A ilha nunca rouba o foco do aplicativo em uso e deixa passar os cliques fora da cápsula.
-- **Ícone na bandeja**: clique esquerdo mostra/oculta a ilha; o menu permite escolher o monitor, ativar/desativar módulos e sair.
+- **Ícone na bandeja**: clique esquerdo abre as configurações; o menu permite abrir as configurações, mostrar/ocultar a ilha, escolher o monitor e sair.
 - Executar o app novamente com ele aberto apenas reexibe a ilha (instância única).
 
 Configurações e dados: `%LocalAppData%\Dynasland\dynasland.db` (SQLite, criado automaticamente).
@@ -51,12 +85,16 @@ src/
     Services/                Instância única (Mutex + EventWaitHandle)
   Dynasland.Modules/         Módulos (lógica + view model + DataTemplates de cada um)
     Media/ Volume/ Brightness/ Notifications/ Battery/ Clock/
+    Downloads/ Clipboard/ SystemMonitor/ Timer/
   Dynasland.App/             WPF + MVVM (CommunityToolkit.Mvvm) + Generic Host/DI
     Views/                   IslandWindow (janela transparente, camadas por estado, animações)
     ViewModels/              IslandViewModel (projeção do estado do coordenador)
     Services/                IslandController, posicionamento, bandeja, hospedagem dos módulos
   Dynasland.Tests/           xUnit: regras do Core e integração com SQLite/Win32
 tools/New-AppIcon.ps1        Gera Assets/dynasland.ico
+tools/Build-Release.ps1      Testes + instalador + portátil (publish/)
+installer/Dynasland.iss      Script do instalador (Inno Setup 6)
+docs/                        Escopo (master.md), guia de uso, relatório final
 ```
 
 ## Como funciona a ilha
@@ -116,7 +154,11 @@ a janela as exibe automaticamente.
 | Brilho | WMI (`WmiMonitorBrightness*`) | Mudança externa expande. Interativo: slider |
 | Notificações | `UserNotificationListener` | Nova notificação expande. Interativo: texto completo, Abrir, Dispensar, Silenciar app |
 | Bateria | `Windows.System.Power.PowerManager` | Conectar/desconectar, bateria fraca (20%) e muito fraca (10%). Interativo: carga, estado e autonomia |
-| Relógio | Hora local | Conteúdo padrão ao abrir a ilha sem outras atividades |
+| Relógio | Hora local | Tela inicial ao abrir a ilha sem outras atividades, com atalhos (cronômetro, temporizador, sistema, configurações) |
+| Downloads | Pastas de download dos navegadores (Chrome, Edge, Opera, Firefox) | Progresso, velocidade e tempo restante; ao terminar: Abrir e Mostrar na pasta |
+| Área de transferência | `AddClipboardFormatListener` + histórico do Windows (Win+V) | Mostra o que foi copiado; interativo: histórico recente para copiar de novo (ignora conteúdo marcado como privado) |
+| Monitor do sistema | PDH (CPU, GPU), memória, discos, NVML/WMI para temperaturas | Painel com uso atual; avisos de memória alta e disco quase cheio |
+| Cronômetro e temporizador | Relógio do sistema (por instante, sem acumular erro) | Contagem no compacto; alarme ao terminar, com Repetir |
 
 Módulos sem suporte no computador (sem bateria, brilho não controlável, acesso às notificações negado)
 aparecem como **indisponível** no menu e não exibem controles.
@@ -133,6 +175,13 @@ aparecem como **indisponível** no menu e não exibem controles.
   remoção de notificações não têm efeito se chamados da thread STA).
 
 ## Integrações com o Windows (notas técnicas)
+
+- **Bloqueio e suspensão**: `SystemEvents.SessionSwitch`/`PowerModeChanged` (`SessionStateService`). Com a
+  sessão bloqueada ou o computador suspenso a ilha fica oculta (o conteúdo para de animar); ao voltar, ela
+  reaparece e recalcula a posição (monitores podem ter mudado). O temporizador reagenda o término ao
+  retomar, porque os timers do .NET não contam o tempo em suspensão.
+- **Banco corrompido**: na inicialização, `DatabaseRecovery` roda `PRAGMA quick_check`; se o arquivo estiver
+  danificado, ele é guardado como `dynasland.db.corrompido-<data>` e recriado com os padrões (o usuário é avisado).
 
 - **Janela sem foco**: `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` + resposta `MA_NOACTIVATE` a `WM_MOUSEACTIVATE`.
   A janela fica fora da barra de tarefas e do Alt+Tab.

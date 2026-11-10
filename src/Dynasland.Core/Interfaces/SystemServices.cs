@@ -1,4 +1,5 @@
 using Dynasland.Core.Models;
+using Dynasland.Core.Session;
 
 namespace Dynasland.Core.Interfaces;
 
@@ -87,4 +88,14 @@ public interface INotificationService
 
     /// <summary>Abre o aplicativo de origem, quando o Windows permitir.</summary>
     bool TryOpenApp(string appId);
+}
+
+/// <summary>Bloqueio de sessão e suspensão/retomada do computador.</summary>
+public interface ISessionStateService
+{
+    /// <summary>Sessão bloqueada ou computador suspenso: a ilha deve ficar oculta.</summary>
+    bool IsInterrupted { get; }
+
+    /// <summary>Disparado na thread de UI.</summary>
+    event EventHandler<SessionChangedEvent>? Changed;
 }

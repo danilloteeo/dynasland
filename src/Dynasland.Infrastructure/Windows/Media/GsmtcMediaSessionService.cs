@@ -19,12 +19,18 @@ namespace Dynasland.Infrastructure.Windows.Media;
 /// </remarks>
 public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMediaSessionService> logger) : IMediaSessionService
 {
+    // Navegadores disparam várias mudanças de linha do tempo por segundo enquanto tocam; as
+    // notificações próximas são agrupadas numa única releitura.
+    private static readonly TimeSpan CoalesceDelay = TimeSpan.FromMilliseconds(250);
+
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private readonly Lock _lock = new();
     private readonly List<Tracked> _tracked = [];
 
     private SessionManager? _manager;
     private IReadOnlyList<MediaSnapshot> _sessions = [];
+    private int _refreshScheduled;
+    private int _resyncRequested;
 
     public IReadOnlyList<MediaSnapshot> Sessions
     {
@@ -111,11 +117,32 @@ public sealed class GsmtcMediaSessionService(TimeProvider time, ILogger<GsmtcMed
         }
     }
 
-    private void OnSessionsChanged(SessionManager sender, SessionsChangedEventArgs args) => _ = RefreshAsync(resync: true);
+    private void OnSessionsChanged(SessionManager sender, SessionsChangedEventArgs args) => ScheduleRefresh(resync: true);
 
-    private void OnCurrentSessionChanged(SessionManager sender, CurrentSessionChangedEventArgs args) => _ = RefreshAsync(resync: false);
+    private void OnCurrentSessionChanged(SessionManager sender, CurrentSessionChangedEventArgs args) => ScheduleRefresh(resync: false);
 
-    private void OnSessionChanged(Session sender, object args) => _ = RefreshAsync(resync: false);
+    private void OnSessionChanged(Session sender, object args) => ScheduleRefresh(resync: false);
+
+    /// <summary>Agenda uma releitura; pedidos que chegam antes dela acontecer são atendidos por ela.</summary>
+    private void ScheduleRefresh(bool resync)
+    {
+        if (resync)
+        {
+            Volatile.Write(ref _resyncRequested, 1);
+        }
+
+        if (Interlocked.Exchange(ref _refreshScheduled, 1) == 0)
+        {
+            _ = RunScheduledRefreshAsync();
+        }
+    }
+
+    private async Task RunScheduledRefreshAsync()
+    {
+        await Task.Delay(CoalesceDelay, time);
+        Volatile.Write(ref _refreshScheduled, 0);
+        await RefreshAsync(resync: Interlocked.Exchange(ref _resyncRequested, 0) == 1);
+    }
 
     /// <summary>Relê todas as sessões. Com <paramref name="resync"/>, também detecta sessões novas e encerradas.</summary>
     private async Task RefreshAsync(bool resync)

@@ -2,6 +2,7 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
+using Dynasland.Core.Session;
 using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Timer;
@@ -62,6 +63,7 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
 
         _registrations.Add(shortcuts.Register(new IslandShortcut("timer.stopwatch", ModuleId, Glyphs.Stopwatch, "Cronômetro", StartStopwatch)));
         _registrations.Add(shortcuts.Register(new IslandShortcut("timer.countdown", ModuleId, Glyphs.Timer, "Temporizador", OpenSetup)));
+        _registrations.Add(bus.Subscribe<SessionChangedEvent>(OnSessionChanged));
         return Task.CompletedTask;
     }
 
@@ -245,6 +247,25 @@ public sealed class TimerModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         {
             sound.Play();
         }
+    }
+
+    /// <summary>
+    /// Os timers do .NET não contam o tempo em suspensão; o término é por instante, então ao retomar
+    /// reagenda: se o fim passou durante a suspensão, o alerta dispara agora.
+    /// </summary>
+    private void OnSessionChanged(SessionChangedEvent e)
+    {
+        if (e.Change != SessionChange.Resumed)
+        {
+            return;
+        }
+
+        lock (_lock)
+        {
+            ScheduleFinish();
+        }
+
+        Refresh();
     }
 
     /// <summary>Agenda o fim exato do temporizador. Chamar com <see cref="_lock"/> adquirido.</summary>

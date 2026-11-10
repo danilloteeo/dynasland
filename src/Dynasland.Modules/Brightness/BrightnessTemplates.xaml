@@ -35,7 +35,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
                            Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
-                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="14,0,0,0" VerticalAlignment="Center"
+                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="14,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Brilho"
                         Value="{Binding Level, Mode=TwoWay}" />
             </Grid>
         </Grid>

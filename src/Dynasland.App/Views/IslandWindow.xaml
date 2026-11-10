@@ -147,7 +147,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Style="{StaticResource PageDotButton}"
+                                        <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="Ir para a aba"
                                                 Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
                                                 CommandParameter="{Binding Index}" />
                                     </DataTemplate>
