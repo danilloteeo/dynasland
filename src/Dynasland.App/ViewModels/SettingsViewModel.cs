@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Dynasland.App.Services;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
@@ -73,6 +74,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         NotificationPreferences notifications,
         IStartupRegistration startup,
         IUpdateChecker updates,
+        UpdateFlow updateFlow,
         IShellService shell,
         DatabaseOptions database,
         IUiDispatcher ui,
@@ -85,6 +87,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Settings.SpotifySettingsViewModel spotify)
     {
         Weather = weather;
+        Updates = updateFlow;
         Spotify = spotify;
         Behavior = behavior;
         Privacy = privacy;
@@ -143,6 +146,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public string UpdateSource { get; }
 
     public bool UpdatesConfigured => _updates.IsConfigured;
+
+    /// <summary>Atualização pelo aplicativo (mesmo fluxo mostrado na ilha).</summary>
+    public UpdateFlow Updates { get; }
 
     public string Language => "Português (Brasil)";
 
@@ -224,11 +230,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _updateStatusText;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasReleaseUrl))]
-    private string? _releaseUrl;
 
-    public bool HasReleaseUrl => !string.IsNullOrEmpty(ReleaseUrl);
 
     public bool HasNotificationApps => NotificationApps.Count > 0;
 
@@ -438,7 +440,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         try
         {
             var result = await _updates.CheckAsync();
-            ReleaseUrl = result.Status == UpdateStatus.UpdateAvailable ? result.ReleaseUrl : null;
+            Updates.Offer(result);
             UpdateStatusText = Describe(result);
         }
         finally
@@ -457,15 +459,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         UpdateStatus.NotConfigured => "Nenhuma fonte de atualizações configurada nesta versão.",
         _ => result.Message ?? "Não foi possível verificar agora.",
     };
-
-    [RelayCommand]
-    private void OpenRelease()
-    {
-        if (ReleaseUrl is { } url)
-        {
-            _shell.OpenUrl(url);
-        }
-    }
 
     [RelayCommand]
     private void OpenLogsFolder()

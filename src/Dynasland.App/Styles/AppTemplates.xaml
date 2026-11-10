@@ -4,19 +4,50 @@
     <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
 
     <!-- Conteúdos da própria aplicação exibidos na ilha (mesma convenção de chave dos módulos). -->
-    <DataTemplate x:Key="Dynasland.App.ViewModels.UpdateAvailableContent:Expanded">
-        <Grid Margin="20,0">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
-                           Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
-                <StackPanel Margin="12,0,0,0">
-                    <TextBlock Text="Atualização disponível" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
-                               Foreground="{DynamicResource IslandPrimaryTextBrush}" />
-                    <TextBlock Text="{Binding Version, StringFormat=Dynasland {0}}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
-                </StackPanel>
+    <!-- Título e detalhe da atualização (aviso, download, instalação ou falha), com a barra de download. -->
+    <DataTemplate x:Key="UpdateSummary">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="Glyph" Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+                       Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Flow.Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Flow.Detail}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                <Border Height="3" CornerRadius="1.5" Margin="0,6,0,0" Background="{DynamicResource IslandSurfaceBrush}"
+                        Visibility="{Binding Flow.IsDownloading, Converter={StaticResource BooleanToVisibility}}">
+                    <Border CornerRadius="1.5" Background="{DynamicResource IslandAccentBrush}" RenderTransformOrigin="0,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding Flow.Progress}" />
+                        </Border.RenderTransform>
+                    </Border>
+                </Border>
             </StackPanel>
         </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Flow.HasFailed}" Value="True">
+                <Setter TargetName="Glyph" Property="Text" Value="&#xEA39;" />
+                <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource IslandCriticalBrush}" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- Conteúdos da própria aplicação exibidos na ilha (mesma convenção de chave dos módulos). -->
+    <DataTemplate x:Key="Dynasland.App.ViewModels.UpdateAvailableContent:Compact">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
+                       Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Flow.Percent, StringFormat={}{0}%}" Margin="8,0,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.App.ViewModels.UpdateAvailableContent:Expanded">
+        <ContentPresenter Margin="20,0" Content="{Binding}" ContentTemplate="{StaticResource UpdateSummary}" VerticalAlignment="Center" />
     </DataTemplate>
 
     <DataTemplate x:Key="Dynasland.App.ViewModels.UpdateAvailableContent:Interactive">
@@ -25,19 +56,11 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
-                           Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
-                <StackPanel Margin="12,0,0,0">
-                    <TextBlock Text="Atualização disponível" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
-                               Foreground="{DynamicResource IslandPrimaryTextBrush}" />
-                    <TextBlock Text="{Binding Version, StringFormat=Dynasland {0}}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
-                </StackPanel>
-            </StackPanel>
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource UpdateSummary}" VerticalAlignment="Center" />
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                        Visibility="{Binding Flow.IsAvailable, Converter={StaticResource BooleanToVisibility}}">
                 <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Agora não" Command="{Binding DismissCommand}" />
-                <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Baixar" Command="{Binding DownloadCommand}" Margin="8,0,0,0" />
+                <Button Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding Flow.ActionLabel}" Command="{Binding Flow.InstallCommand}" Margin="8,0,0,0" />
             </StackPanel>
         </Grid>
     </DataTemplate>

@@ -74,6 +74,10 @@ public static class DependencyInjection
         services.AddSingleton<IModuleOptions, ModuleOptionsService>();
         services.AddSingleton<IStartupRegistration, StartupRegistration>();
         services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
+        services.AddSingleton<IUpdateInstaller>(sp => new UpdateInstaller(
+            new HttpClient { Timeout = TimeSpan.FromMinutes(30), DefaultRequestHeaders = { { "User-Agent", "Dynasland" } } },
+            UpdateInstallerOptions.Default(databaseOptions.DatabasePath),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UpdateInstaller>>()));
         services.AddSingleton<IWeatherProvider>(sp => new OpenMeteoWeatherProvider(
             new HttpClient { Timeout = TimeSpan.FromSeconds(15), DefaultRequestHeaders = { { "User-Agent", "Dynasland" } } },
             sp.GetRequiredService<TimeProvider>()));

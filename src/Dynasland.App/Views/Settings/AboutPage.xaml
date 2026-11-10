@@ -37,11 +37,13 @@
                         <Grid>
                             <StackPanel Margin="0,0,260,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding UpdateStatusText}" FontSize="13" Foreground="{DynamicResource SettingsTextBrush}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Updates.StatusLine}" FontSize="13" Foreground="{DynamicResource SettingsTextBrush}" TextWrapping="Wrap"
+                                           Margin="0,2,0,0" Visibility="{Binding Updates.HasStatusLine, Converter={StaticResource BoolToVisibility}}" />
                                 <TextBlock Text="{Binding UpdateSource}" Style="{StaticResource CardDescription}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Button Style="{StaticResource AccentButton}" Content="Baixar nova versão" Command="{Binding OpenReleaseCommand}"
-                                        Visibility="{Binding HasReleaseUrl, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0" />
+                                <Button Style="{StaticResource AccentButton}" Content="{Binding Updates.ActionLabel}" Command="{Binding Updates.InstallCommand}"
+                                        Visibility="{Binding Updates.IsAvailable, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0" />
                                 <Button Style="{StaticResource SettingsButton}" Content="Verificar agora" Command="{Binding CheckUpdatesNowCommand}" />
                             </StackPanel>
                         </Grid>

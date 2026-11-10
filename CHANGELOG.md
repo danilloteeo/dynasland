@@ -1,5 +1,19 @@
 # Notas da versão
 
+## 1.1.0 — 2026-11-10
+
+### Novidades
+- **Atualização dentro do aplicativo**: o aviso de nova versão na ilha ganhou o botão "Atualizar agora".
+  O Dynasland baixa o instalador mostrando o progresso na ilha, confere o arquivo (tamanho e SHA-256),
+  instala sem janelas e reabre sozinho, confirmando a versão instalada. O mesmo botão fica em
+  Configurações › Sobre. A versão portátil continua abrindo a página de download.
+- **Instalador com a cara do Dynasland**: tema escuro, imagens próprias e textos em português.
+- **Modo de atualização no instalador**: ao rodar o instalador com uma versão já instalada, ele mostra
+  a versão atual e a nova e pede só um clique em "Atualizar", sem repetir as perguntas da instalação.
+
+### Mudanças
+- Atualizar não mexe mais em "Iniciar com o Windows": vale o que estiver ligado ou desligado no aplicativo.
+
 ## 1.0.6 — 2026-11-10
 
 ### Correções

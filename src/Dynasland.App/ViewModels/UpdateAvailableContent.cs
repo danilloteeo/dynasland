@@ -1,14 +1,15 @@
 using CommunityToolkit.Mvvm.Input;
+using Dynasland.App.Services;
 using Dynasland.Core.Activities;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
 
 namespace Dynasland.App.ViewModels;
 
-/// <summary>Aviso de nova versão exibido na ilha.</summary>
-public sealed partial class UpdateAvailableContent(string version, Action download, Action dismiss) : IActivityContent
+/// <summary>Atualização na ilha: aviso de nova versão, progresso do download e instalação.</summary>
+public sealed partial class UpdateAvailableContent(UpdateFlow flow, Action dismiss) : IActivityContent
 {
-    public string Version { get; } = version;
+    public UpdateFlow Flow { get; } = flow;
 
     public string Glyph => "";
 
@@ -18,9 +19,6 @@ public sealed partial class UpdateAvailableContent(string version, Action downlo
         IslandState.Interactive => new IslandDimensions(360, 110, 32),
         _ => null,
     };
-
-    [RelayCommand]
-    private void Download() => download();
 
     [RelayCommand]
     private void Dismiss() => dismiss();

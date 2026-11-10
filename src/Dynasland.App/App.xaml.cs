@@ -92,6 +92,8 @@ public partial class App : Application
             HandleArguments(e.Args, isActivation: false);
             _singleInstance.ActivationRequested += (_, args) => Dispatcher.BeginInvoke(() => HandleArguments(args, isActivation: true));
 
+            // Atualização pelo aplicativo: com o instalador iniciado, sai para ele trocar os arquivos.
+            _host.Services.GetRequiredService<UpdateFlow>().ExitRequested += (_, _) => Dispatcher.BeginInvoke(() => Shutdown());
             _ = _host.Services.GetRequiredService<UpdateNotifier>().CheckAfterStartupAsync();
 
             if (corruptedDatabaseBackup is not null)
@@ -243,6 +245,7 @@ public partial class App : Application
         builder.Services.AddTransient<ViewModels.Settings.SpotifySettingsViewModel>();
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<FullscreenDetector>();
+        builder.Services.AddSingleton<UpdateFlow>();
         builder.Services.AddSingleton<UpdateNotifier>();
         builder.Services.AddSingleton<SessionStateService>();
         builder.Services.AddSingleton<HotkeyService>();
