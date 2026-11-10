@@ -19,4 +19,14 @@ public sealed record IslandActivity(string Id, string ModuleId, ActivityKind Kin
     /// abre direto no estado interativo e fica até o usuário fechar ou a ilha recolher por inatividade.
     /// </summary>
     public bool OpenInteractive { get; init; }
+
+    /// <summary>
+    /// Atividades transitórias com a mesma chave são agrupadas: a mais recente substitui a anterior
+    /// ainda pendente ou visível, e a contagem fica em <see cref="IslandSnapshot.FocusedGroupCount"/>
+    /// (ex.: várias mensagens do mesmo aplicativo).
+    /// </summary>
+    public string? GroupKey { get; init; }
+
+    /// <summary>Pode ser fechada pelo usuário (botão no rodapé). Contínuas fechadas ficam ocultas até o módulo republicá-las com outro Id.</summary>
+    public bool CanDismiss { get; init; } = true;
 }

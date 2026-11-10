@@ -11,6 +11,8 @@ namespace Dynasland.Core.Activities;
 /// <param name="LiveCount">Quantidade de atividades contínuas.</param>
 /// <param name="PageCount">No estado interativo: quantas atividades podem ser alternadas (abas).</param>
 /// <param name="PageIndex">No estado interativo: posição da atividade em foco; -1 fora dele.</param>
+/// <param name="FocusedGroupCount">Quantas atividades do mesmo grupo a atividade em foco representa (1 = só ela).</param>
+/// <param name="IndicatorPinned">O indicador do compacto é o módulo fixado pelo usuário.</param>
 public sealed record IslandSnapshot(
     IslandState State,
     IslandActivity? Focused,
@@ -18,7 +20,9 @@ public sealed record IslandSnapshot(
     IslandDimensions Dimensions,
     int LiveCount,
     int PageCount = 0,
-    int PageIndex = -1)
+    int PageIndex = -1,
+    int FocusedGroupCount = 1,
+    bool IndicatorPinned = false)
 {
     public static IslandSnapshot Empty { get; } = new(IslandState.Compact, null, null, IslandLayout.Compact, 0);
 }

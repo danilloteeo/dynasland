@@ -147,6 +147,16 @@ public sealed class ModuleManager : IDisposable
             slot.Error = ex.Message;
             _logger.LogError(ex, "Falha ao iniciar o módulo {Module}.", slot.Module.Id);
             await TryStopAsync(slot, cancellationToken).ConfigureAwait(false);
+
+            // Erro visível na ilha (agrupado se vários módulos falharem juntos); detalhes em Configurações › Módulos.
+            _bus.PostActivity(new IslandActivity(
+                $"module.error.{slot.Module.Id}",
+                slot.Module.Id,
+                ActivityKind.Transient,
+                new StatusContent(StatusKind.Error, $"{slot.Module.DisplayName} não iniciou", ex.Message))
+            {
+                GroupKey = "module.error",
+            });
         }
     }
 

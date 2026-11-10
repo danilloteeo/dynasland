@@ -134,8 +134,24 @@
                         </ContentPresenter.RenderTransform>
                     </ContentPresenter>
 
-                    <!-- Navegação entre abas e acesso às configurações, sempre visíveis no interativo. -->
-                    <Grid x:Name="Footer" Grid.Row="1" Margin="16,0,12,6" Opacity="0" IsHitTestVisible="False">
+                    <!-- Eventos agrupados (ex.: várias mensagens do mesmo app): "+N" no canto. -->
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,12,0" Padding="6,1"
+                            CornerRadius="8" Background="{DynamicResource IslandSurfaceBrush}" IsHitTestVisible="False"
+                            Visibility="{Binding HasGroupBadge, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{Binding GroupBadge}" FontSize="10" FontFamily="{DynamicResource IslandTextFont}"
+                                   Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                    </Border>
+
+                    <!-- Fixar/fechar, navegação entre abas e configurações, sempre visíveis no interativo. -->
+                    <Grid x:Name="Footer" Grid.Row="1" Margin="12,0,12,6" Opacity="0" IsHitTestVisible="False">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Button Style="{StaticResource FooterButton}" Content="{Binding PinGlyph}" Command="{Binding TogglePinCommand}"
+                                    ToolTip="{Binding PinToolTip}"
+                                    Visibility="{Binding CanPinFocused, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Style="{StaticResource FooterButton}" Content="&#xE711;" Command="{Binding DismissCommand}"
+                                    ToolTip="Fechar esta atividade"
+                                    Visibility="{Binding CanDismissFocused, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
                             <Button Style="{StaticResource FooterButton}" Content="&#xE76B;" Command="{Binding PreviousPageCommand}" ToolTip="Aba anterior" />

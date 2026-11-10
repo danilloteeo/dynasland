@@ -2,6 +2,7 @@ using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
 using Dynasland.Core.Services;
+using Dynasland.Core.Shortcuts;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Database.Migrations;
 using Dynasland.Infrastructure.Repositories;
@@ -44,6 +45,7 @@ public static class DependencyInjection
         services.AddSingleton<IClipboardService, WindowsClipboardService>();
         services.AddSingleton<IShellService, ShellService>();
         services.AddSingleton<IShortcutRegistry, ShortcutRegistry>();
+        services.AddSingleton<IGlobalShortcutRegistry, GlobalShortcutRegistry>();
         services.AddSingleton<IModuleOptions, ModuleOptionsService>();
         services.AddSingleton<IStartupRegistration, StartupRegistration>();
         services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();

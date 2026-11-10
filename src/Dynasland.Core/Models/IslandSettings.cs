@@ -9,6 +9,15 @@ public enum AppTheme
 }
 
 /// <summary>Preferências da aplicação. Imutável: alterações geram uma nova instância.</summary>
+/// <summary>Ação do duplo clique na ilha.</summary>
+public enum DoubleClickAction
+{
+    /// <summary>Sem ação: o clique simples abre a ilha imediatamente.</summary>
+    None,
+    PlayPauseMedia,
+    OpenSettings,
+}
+
 public sealed record IslandSettings
 {
     public static IslandSettings Default { get; } = new();
@@ -70,6 +79,16 @@ public sealed record IslandSettings
 
     /// <summary>Largura máxima da ilha expandida.</summary>
     public double MaxWidth { get; init; } = 420;
+
+    // Comportamento
+
+    /// <summary>Clicar fora da ilha aberta a recolhe.</summary>
+    public bool CollapseOnClickOutside { get; init; } = true;
+
+    public DoubleClickAction DoubleClickAction { get; init; } = DoubleClickAction.None;
+
+    /// <summary>Módulo fixado: sua atividade contínua é sempre o indicador do compacto. <c>null</c> = por prioridade.</summary>
+    public string? PinnedModuleId { get; init; }
 
     // Sistema
 

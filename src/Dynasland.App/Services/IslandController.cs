@@ -21,12 +21,21 @@ public sealed class IslandController : IDisposable
     private readonly DispatcherTimer _deadlineTimer;
     private readonly IDisposable[] _subscriptions;
 
+    private readonly IEventBus _bus;
+
     public IslandController(IEventBus bus, IIslandSettingsService settings, TimeProvider time)
     {
+        _bus = bus;
         _time = time;
         _dispatcher = Application.Current.Dispatcher;
         _coordinator = new IslandCoordinator(() => settings.Current);
         _coordinator.Changed += (_, snapshot) => Changed?.Invoke(this, snapshot);
+        // Ex.: módulo fixado mudou. Reenvia o snapshot mesmo sem mudança, para a view reavaliar o rodapé.
+        settings.Changed += (_, _) => Run(c =>
+        {
+            c.Refresh();
+            Changed?.Invoke(this, c.Snapshot);
+        });
 
         _deadlineTimer = new DispatcherTimer(DispatcherPriority.Normal, _dispatcher);
         _deadlineTimer.Tick += (_, _) => Run(c => c.Advance(Now));
@@ -56,7 +65,20 @@ public sealed class IslandController : IDisposable
 
     public void PointerExited() => Run(c => c.PointerExited(Now));
 
-    public void Reset() => Run(c => c.Reset());
+    public void CollapseInteractive() => Run(c => c.CollapseInteractive(Now));
+
+    public void SetHidden(bool hidden) => Run(c => c.SetHidden(hidden, Now));
+
+    /// <summary>Fecha a atividade em foco e avisa o módulo dono pelo barramento.</summary>
+    public void DismissFocused() => Run(c =>
+    {
+        if (c.DismissFocused(Now) is { } dismissed)
+        {
+            _bus.Publish(new ActivityDismissedEvent(dismissed));
+        }
+    });
+
+    public IReadOnlyList<ActivityRecord> History => _coordinator.History;
 
     private void Run(Action<IslandCoordinator> action)
     {

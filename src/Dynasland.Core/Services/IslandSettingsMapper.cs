@@ -27,6 +27,9 @@ public static partial class IslandSettingsMapper
         public const string CompactHeight = "appearance.compactHeight";
         public const string MaxWidth = "appearance.maxWidth";
         public const string CheckForUpdates = "system.checkForUpdates";
+        public const string CollapseOnClickOutside = "behavior.collapseOnClickOutside";
+        public const string DoubleClickAction = "behavior.doubleClickAction";
+        public const string PinnedModuleId = "behavior.pinnedModule";
     }
 
     public static IslandSettings FromValues(IReadOnlyDictionary<string, string> values)
@@ -34,6 +37,7 @@ public static partial class IslandSettingsMapper
         var d = IslandSettings.Default;
         values.TryGetValue(Keys.MonitorDeviceName, out var monitor);
         values.TryGetValue(Keys.AccentColor, out var accent);
+        values.TryGetValue(Keys.PinnedModuleId, out var pinned);
 
         return new IslandSettings
         {
@@ -57,6 +61,11 @@ public static partial class IslandSettingsMapper
             CompactHeight = ReadDouble(values, Keys.CompactHeight, d.CompactHeight, 28, 44),
             MaxWidth = ReadDouble(values, Keys.MaxWidth, d.MaxWidth, 340, 420),
             CheckForUpdates = ReadBool(values, Keys.CheckForUpdates, d.CheckForUpdates),
+            CollapseOnClickOutside = ReadBool(values, Keys.CollapseOnClickOutside, d.CollapseOnClickOutside),
+            DoubleClickAction = values.TryGetValue(Keys.DoubleClickAction, out var dbl) && Enum.TryParse<DoubleClickAction>(dbl, ignoreCase: true, out var action) && Enum.IsDefined(action)
+                ? action
+                : d.DoubleClickAction,
+            PinnedModuleId = string.IsNullOrWhiteSpace(pinned) ? null : pinned,
         };
     }
 
@@ -80,6 +89,9 @@ public static partial class IslandSettingsMapper
         [Keys.CompactHeight] = Format(s.CompactHeight),
         [Keys.MaxWidth] = Format(s.MaxWidth),
         [Keys.CheckForUpdates] = Format(s.CheckForUpdates),
+        [Keys.CollapseOnClickOutside] = Format(s.CollapseOnClickOutside),
+        [Keys.DoubleClickAction] = s.DoubleClickAction.ToString(),
+        [Keys.PinnedModuleId] = s.PinnedModuleId ?? string.Empty,
     };
 
     public static bool IsHexColor(string value) => HexColor().IsMatch(value);

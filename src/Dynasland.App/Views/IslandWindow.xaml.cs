@@ -47,17 +47,21 @@ public partial class IslandWindow : Window
     private readonly IIslandSettingsService _settings;
     private readonly FullscreenDetector _fullscreen;
     private readonly ISessionStateService _session;
+    private readonly IslandActions _actions;
+    private readonly OutsideClickWatcher _outsideClicks = new();
+    private DispatcherTimer? _pendingClick;
     private bool _repositionPending;
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
 
-    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session)
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions)
     {
         _viewModel = viewModel;
         _placement = placement;
         _settings = settings;
         _fullscreen = fullscreen;
         _session = session;
+        _actions = actions;
 
         InitializeComponent();
         DataContext = viewModel;
@@ -109,6 +113,7 @@ public partial class IslandWindow : Window
         _settings.Changed -= OnSettingsChanged;
         _fullscreen.Changed -= OnFullscreenChanged;
         _session.Changed -= OnSessionChanged;
+        _outsideClicks.Dispose();
         base.OnClosed(e);
     }
 
@@ -200,7 +205,6 @@ public partial class IslandWindow : Window
         }
         else if (!visible && IsVisible)
         {
-            _viewModel.Collapse();
             Hide();
         }
 
@@ -213,6 +217,7 @@ public partial class IslandWindow : Window
         {
             case nameof(IslandViewModel.State):
                 ApplyLayers(_viewModel.State, ShouldAnimate);
+                UpdateOutsideClickWatcher();
                 break;
 
             case nameof(IslandViewModel.Dimensions):
@@ -253,9 +258,65 @@ public partial class IslandWindow : Window
             return;
         }
 
-        AnimateHover(false);
-        _viewModel.ToggleInteractiveCommand.Execute(null);
         e.Handled = true;
+        var doubleClick = _settings.Current.DoubleClickAction;
+        if (doubleClick == DoubleClickAction.None)
+        {
+            AnimateHover(false);
+            _viewModel.ToggleInteractiveCommand.Execute(null);
+            return;
+        }
+
+        // Com ação de duplo clique, o clique simples espera o tempo de duplo clique do Windows.
+        if (_pendingClick is { IsEnabled: true })
+        {
+            _pendingClick.Stop();
+            _actions.Run(doubleClick);
+            return;
+        }
+
+        _pendingClick ??= CreatePendingClickTimer();
+        _pendingClick.Start();
+    }
+
+    private DispatcherTimer CreatePendingClickTimer()
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.Input, Dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(System.Windows.Forms.SystemInformation.DoubleClickTime),
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            AnimateHover(false);
+            _viewModel.ToggleInteractiveCommand.Execute(null);
+        };
+        return timer;
+    }
+
+    /// <summary>O gancho de "clique fora" só existe com a ilha aberta e a opção ligada.</summary>
+    private void UpdateOutsideClickWatcher()
+    {
+        if (_viewModel.State == IslandState.Interactive && _settings.Current.CollapseOnClickOutside && IsVisible)
+        {
+            _outsideClicks.Start(IsOverIsland, _viewModel.CollapseInteractive);
+        }
+        else
+        {
+            _outsideClicks.Stop();
+        }
+    }
+
+    private bool IsOverIsland(int screenX, int screenY)
+    {
+        if (!IslandHost.IsVisible)
+        {
+            return false;
+        }
+
+        var topLeft = IslandHost.PointToScreen(new Point(0, 0));
+        var bottomRight = IslandHost.PointToScreen(new Point(IslandHost.ActualWidth, IslandHost.ActualHeight));
+        return screenX >= topLeft.X && screenX <= bottomRight.X && screenY >= topLeft.Y && screenY <= bottomRight.Y;
     }
 
     private void OnIslandMouseWheel(object sender, MouseWheelEventArgs e)

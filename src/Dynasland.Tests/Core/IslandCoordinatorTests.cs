@@ -342,17 +342,142 @@ public class IslandCoordinatorTests
     }
 
     [Fact]
-    public void Reset_collapses_and_drops_pending_transients()
+    public void Hiding_drops_low_priority_transients_with_record_and_keeps_important_ones()
     {
         _coordinator.Post(Transient("a"), At(0));
         _coordinator.Post(Transient("b"), At(0));
+        _coordinator.Post(Transient("alarm", ActivityPriority.High), At(0));
         _coordinator.Post(Live("clock"), At(0));
 
-        _coordinator.Reset();
-        _coordinator.Advance(At(10));
+        _coordinator.SetHidden(true, At(1));
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+        Assert.Null(_coordinator.NextDeadline);
+        Assert.Contains(_coordinator.History, r => r.Id == "b" && r.State == ActivityRecordState.Dropped);
 
+        // Enquanto oculta, nada expande; ao voltar, o importante aparece.
+        _coordinator.Post(Transient("c"), At(2));
+        _coordinator.Advance(At(30));
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+
+        _coordinator.SetHidden(false, At(40));
+        Assert.Equal("alarm", _coordinator.Snapshot.Focused?.Id);
+        _coordinator.Advance(At(46));
         Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
         Assert.Equal("clock", _coordinator.Snapshot.Indicator?.Id);
+        Assert.Contains(_coordinator.History, r => r.Id == "c" && r.State == ActivityRecordState.Dropped);
+    }
+
+    [Fact]
+    public void Transients_with_same_group_are_merged_and_counted()
+    {
+        _coordinator.Post(Transient("n1") with { GroupKey = "app" }, At(0));
+        _coordinator.Post(Transient("n2") with { GroupKey = "app" }, At(1));
+        _coordinator.Post(Transient("other"), At(1));
+        _coordinator.Post(Transient("n3") with { GroupKey = "app" }, At(2));
+
+        Assert.Equal("n3", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(3, _coordinator.Snapshot.FocusedGroupCount);
+        Assert.Equal(At(7), _coordinator.NextDeadline);
+
+        _coordinator.Advance(At(7));
+        Assert.Equal("other", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(1, _coordinator.Snapshot.FocusedGroupCount);
+        Assert.Contains(_coordinator.History, r => r.Id == "n1" && r.State == ActivityRecordState.Grouped);
+    }
+
+    [Fact]
+    public void Queued_transients_of_a_group_collapse_into_one()
+    {
+        _coordinator.Post(Transient("volume"), At(0));
+        _coordinator.Post(Transient("m1") with { GroupKey = "chat" }, At(1));
+        _coordinator.Post(Transient("m2") with { GroupKey = "chat" }, At(2));
+
+        _coordinator.Advance(At(5));
+
+        Assert.Equal("m2", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(2, _coordinator.Snapshot.FocusedGroupCount);
+        _coordinator.Advance(At(10));
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+    }
+
+    [Fact]
+    public void Dismissing_live_activity_hides_it_until_module_removes_it()
+    {
+        _coordinator.Post(Live("media", ActivityPriority.Normal), At(0));
+        _coordinator.Post(Live("clock", ActivityPriority.Low), At(0));
+        _coordinator.ToggleInteractive(At(0));
+
+        var dismissed = _coordinator.DismissFocused(At(1));
+
+        Assert.Equal("media", dismissed?.Id);
+        Assert.Equal("clock", _coordinator.Snapshot.Focused?.Id);
+        _coordinator.Post(Live("media", ActivityPriority.Normal), At(2));
+        Assert.Equal(1, _coordinator.Snapshot.LiveCount);
+
+        _coordinator.Remove("media", At(3));
+        _coordinator.Post(Live("media", ActivityPriority.Normal), At(4));
+        Assert.Equal(2, _coordinator.Snapshot.LiveCount);
+        Assert.Contains(_coordinator.History, r => r.Id == "media" && r.State == ActivityRecordState.Shown);
+    }
+
+    [Fact]
+    public void Dismissing_transient_shows_next()
+    {
+        _coordinator.Post(Transient("a"), At(0));
+        _coordinator.Post(Transient("b"), At(0));
+        _coordinator.ToggleInteractive(At(1));
+
+        Assert.Equal("a", _coordinator.DismissFocused(At(1))?.Id);
+        Assert.Equal("b", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(IslandState.Expanded, _coordinator.Snapshot.State);
+    }
+
+    [Fact]
+    public void Activity_that_cannot_be_dismissed_stays()
+    {
+        _coordinator.Post(Live("rec") with { CanDismiss = false }, At(0));
+        _coordinator.ToggleInteractive(At(0));
+
+        Assert.Null(_coordinator.DismissFocused(At(1)));
+        Assert.Equal("rec", _coordinator.Snapshot.Focused?.Id);
+    }
+
+    [Fact]
+    public void Pinned_module_is_always_the_compact_indicator()
+    {
+        var settings = Settings with { PinnedModuleId = "timer" };
+        var coordinator = new IslandCoordinator(() => settings);
+
+        coordinator.Post(Live("timer.countdown", ActivityPriority.Low, module: "timer"), At(0));
+        coordinator.Post(Live("media", ActivityPriority.High, module: "media"), At(1));
+
+        Assert.Equal("timer.countdown", coordinator.Snapshot.Indicator?.Id);
+        Assert.True(coordinator.Snapshot.IndicatorPinned);
+    }
+
+    [Fact]
+    public void Collapse_interactive_returns_to_compact()
+    {
+        _coordinator.Post(Live("clock"), At(0));
+        _coordinator.ToggleInteractive(At(0));
+
+        _coordinator.CollapseInteractive(At(1));
+
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+    }
+
+    [Fact]
+    public void History_is_bounded_and_newest_first()
+    {
+        for (var i = 0; i < IslandCoordinator.HistoryCapacity + 20; i++)
+        {
+            _coordinator.Post(Transient($"t{i}"), At(i * 10));
+            _coordinator.Advance(At(i * 10 + 6));
+        }
+
+        Assert.Equal(IslandCoordinator.HistoryCapacity, _coordinator.History.Count);
+        Assert.Equal($"t{IslandCoordinator.HistoryCapacity + 19}", _coordinator.History[0].Id);
+        Assert.Equal(ActivityRecordState.Completed, _coordinator.History[0].State);
     }
 
     [Fact]

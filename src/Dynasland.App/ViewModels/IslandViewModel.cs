@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dynasland.App.Services;
 using Dynasland.Core.Activities;
+using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
 
@@ -15,6 +16,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 {
     private readonly IslandController _controller;
     private readonly SettingsWindowService _settingsWindow;
+    private readonly IIslandSettingsService _settings;
     private IActivityContent? _presented;
     private IslandState _presentedState;
     private bool _presentedVisible;
@@ -38,10 +40,25 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _pageIndex = -1;
 
-    public IslandViewModel(IslandController controller, SettingsWindowService settingsWindow)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasGroupBadge))]
+    private string _groupBadge = string.Empty;
+
+    [ObservableProperty]
+    private bool _canDismissFocused;
+
+    [ObservableProperty]
+    private bool _canPinFocused;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PinGlyph), nameof(PinToolTip))]
+    private bool _isFocusedPinned;
+
+    public IslandViewModel(IslandController controller, SettingsWindowService settingsWindow, IIslandSettingsService settings)
     {
         _controller = controller;
         _settingsWindow = settingsWindow;
+        _settings = settings;
         controller.Changed += OnSnapshotChanged;
         Apply(controller.Snapshot);
     }
@@ -50,6 +67,28 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     public ObservableCollection<PageDot> Pages { get; } = [];
 
     public bool HasPages => Pages.Count > 1;
+
+    public bool HasGroupBadge => GroupBadge.Length > 0;
+
+    public string PinGlyph => IsFocusedPinned ? "" : "";
+
+    public string PinToolTip => IsFocusedPinned ? "Desafixar do compacto" : "Fixar no compacto";
+
+    [RelayCommand]
+    private void Dismiss() => _controller.DismissFocused();
+
+    /// <summary>Fixa o módulo da atividade em foco como indicador do compacto (ou desfaz).</summary>
+    [RelayCommand]
+    private async Task TogglePinAsync()
+    {
+        if (_controller.Snapshot.Focused is not { Kind: ActivityKind.Live } focused)
+        {
+            return;
+        }
+
+        var pinned = IsFocusedPinned ? null : focused.ModuleId;
+        await _settings.UpdateAsync(s => s with { PinnedModuleId = pinned });
+    }
 
     [RelayCommand]
     private void ToggleInteractive() => _controller.ToggleInteractive();
@@ -78,12 +117,17 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     /// </summary>
     public void SetWindowVisible(bool visible)
     {
+        if (_windowVisible != visible)
+        {
+            _controller.SetHidden(!visible);
+        }
+
         _windowVisible = visible;
         NotifyPresentation(_presented, _presentedState);
     }
 
-    /// <summary>Volta ao compacto e descarta o que estava pendente (ex.: ilha ocultada).</summary>
-    public void Collapse() => _controller.Reset();
+    /// <summary>Recolhe o estado interativo (clique fora da ilha).</summary>
+    public void CollapseInteractive() => _controller.CollapseInteractive();
 
     private void OnSnapshotChanged(object? sender, IslandSnapshot snapshot) => Apply(snapshot);
 
@@ -102,6 +146,11 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         }
 
         UpdatePages(snapshot);
+        var focused = snapshot.Focused;
+        GroupBadge = snapshot.State != IslandState.Compact && snapshot.FocusedGroupCount > 1 ? $"+{snapshot.FocusedGroupCount - 1}" : string.Empty;
+        CanDismissFocused = snapshot.State == IslandState.Interactive && focused is { CanDismiss: true };
+        CanPinFocused = snapshot.State == IslandState.Interactive && focused is { Kind: ActivityKind.Live };
+        IsFocusedPinned = focused is not null && focused.ModuleId == _settings.Current.PinnedModuleId;
         State = snapshot.State;
         Dimensions = snapshot.Dimensions;
 

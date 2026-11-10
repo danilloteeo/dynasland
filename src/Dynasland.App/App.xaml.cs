@@ -5,6 +5,7 @@ using Dynasland.App.ViewModels;
 using Dynasland.App.Views;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
+using Dynasland.Core.Shortcuts;
 using Dynasland.Infrastructure;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Logging;
@@ -52,6 +53,7 @@ public partial class App : Application
                 corruptedDatabaseBackup = await _host.Services.GetRequiredService<DatabaseRecovery>().MigrateOrRecoverAsync();
                 await settings.LoadAsync();
                 await _host.Services.GetRequiredService<IModuleOptions>().LoadAsync();
+                await _host.Services.GetRequiredService<IGlobalShortcutRegistry>().LoadAsync();
 
                 // "Iniciar minimizado": abre com a ilha oculta (o usuário mostra pela bandeja).
                 if (settings.Current.StartHidden && settings.Current.IsVisible)
@@ -74,6 +76,9 @@ public partial class App : Application
             var settingsWindow = _host.Services.GetRequiredService<SettingsWindowService>();
             _host.Services.GetRequiredService<IShortcutRegistry>().Register(
                 new IslandShortcut("app.settings", "app", "", "Configurações", settingsWindow.Show));
+
+            _host.Services.GetRequiredService<IslandActions>().RegisterShortcuts();
+            _host.Services.GetRequiredService<HotkeyService>().Start();
 
             var tray = _host.Services.GetRequiredService<TrayIconService>();
             tray.ExitRequested += (_, _) => Shutdown();
@@ -163,6 +168,8 @@ public partial class App : Application
         builder.Services.AddSingleton<FullscreenDetector>();
         builder.Services.AddSingleton<UpdateNotifier>();
         builder.Services.AddSingleton<SessionStateService>();
+        builder.Services.AddSingleton<HotkeyService>();
+        builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
 
         return builder.Build();
