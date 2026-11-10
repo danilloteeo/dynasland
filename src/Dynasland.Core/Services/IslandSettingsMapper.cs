@@ -35,6 +35,7 @@ public static partial class IslandSettingsMapper
         public const string ClipboardMaxItems = "storage.clipboardMaxItems";
         public const string NotificationHistoryEnabled = "privacy.notificationHistory";
         public const string NotificationHistoryDays = "storage.notificationHistoryDays";
+        public const string WeatherLocation = "weather.location";
     }
 
     public static IslandSettings FromValues(IReadOnlyDictionary<string, string> values)
@@ -43,6 +44,7 @@ public static partial class IslandSettingsMapper
         values.TryGetValue(Keys.MonitorDeviceName, out var monitor);
         values.TryGetValue(Keys.AccentColor, out var accent);
         values.TryGetValue(Keys.PinnedModuleId, out var pinned);
+        values.TryGetValue(Keys.WeatherLocation, out var weather);
 
         return new IslandSettings
         {
@@ -76,6 +78,7 @@ public static partial class IslandSettingsMapper
             ClipboardMaxItems = (int)ReadDouble(values, Keys.ClipboardMaxItems, d.ClipboardMaxItems, 20, 2000),
             NotificationHistoryEnabled = ReadBool(values, Keys.NotificationHistoryEnabled, d.NotificationHistoryEnabled),
             NotificationHistoryDays = (int)ReadDouble(values, Keys.NotificationHistoryDays, d.NotificationHistoryDays, 1, 90),
+            WeatherLocation = string.IsNullOrWhiteSpace(weather) ? null : weather,
         };
     }
 
@@ -107,6 +110,7 @@ public static partial class IslandSettingsMapper
         [Keys.ClipboardMaxItems] = Format(s.ClipboardMaxItems),
         [Keys.NotificationHistoryEnabled] = Format(s.NotificationHistoryEnabled),
         [Keys.NotificationHistoryDays] = Format(s.NotificationHistoryDays),
+        [Keys.WeatherLocation] = s.WeatherLocation ?? string.Empty,
     };
 
     public static bool IsHexColor(string value) => HexColor().IsMatch(value);

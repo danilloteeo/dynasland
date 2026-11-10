@@ -33,7 +33,7 @@ public class ClockModuleTests
     {
         IslandActivity? posted = null;
         using var subscription = _bus.Subscribe<ActivityPostedEvent>(e => posted = e.Activity);
-        using var module = new ClockModule(_bus, _ui, _time, _shortcuts);
+        using var module = new ClockModule(_bus, _ui, _time, _shortcuts, new GlanceRegistry());
 
         await module.StartAsync(CancellationToken.None);
 
@@ -49,7 +49,7 @@ public class ClockModuleTests
     {
         IslandActivity? posted = null;
         using var subscription = _bus.Subscribe<ActivityPostedEvent>(e => posted = e.Activity);
-        using var module = new ClockModule(_bus, _ui, _time, _shortcuts);
+        using var module = new ClockModule(_bus, _ui, _time, _shortcuts, new GlanceRegistry());
         await module.StartAsync(CancellationToken.None);
         var content = Assert.IsType<ClockContent>(posted!.Content);
 
@@ -69,7 +69,7 @@ public class ClockModuleTests
     [Fact]
     public async Task Stop_cancels_updates()
     {
-        using var module = new ClockModule(_bus, _ui, _time, _shortcuts);
+        using var module = new ClockModule(_bus, _ui, _time, _shortcuts, new GlanceRegistry());
         await module.StartAsync(CancellationToken.None);
 
         await module.StopAsync(CancellationToken.None);

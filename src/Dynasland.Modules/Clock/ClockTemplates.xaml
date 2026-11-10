@@ -22,6 +22,27 @@
                            FontSize="14"
                            Foreground="{DynamicResource IslandSecondaryTextBrush}"
                            HorizontalAlignment="Center" />
+
+                <!-- Informações rápidas dos módulos (clima, próximo compromisso). -->
+                <ItemsControl ItemsSource="{Binding Glances}" Focusable="False" HorizontalAlignment="Center" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding Command}" Focusable="False" Cursor="Hand" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0"
+                                    ToolTip="{Binding Text}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <StackPanel Orientation="Horizontal" Background="Transparent" Margin="0,1">
+                                            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="12"
+                                                       Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Text}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" Margin="7,0,0,0" MaxWidth="330"
+                                                       TextTrimming="CharacterEllipsis" Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
 
             <!-- Atalhos registrados pelos módulos ativos (e Configurações). -->
@@ -29,13 +50,14 @@
                           Visibility="{Binding HasShortcuts, Converter={StaticResource BoolToVisibility}}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" />
+                        <!-- 7 atalhos por linha (ClockContent.ShortcutsPerRow): 7 × 44 px. -->
+                        <WrapPanel Orientation="Horizontal" MaxWidth="308" HorizontalAlignment="Center" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph}" Command="{Binding Command}"
-                                ToolTip="{Binding Label}" Background="{DynamicResource IslandSurfaceBrush}" Margin="5,0" FontSize="15" />
+                                ToolTip="{Binding Label}" Background="{DynamicResource IslandSurfaceBrush}" Margin="4,3" FontSize="15" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

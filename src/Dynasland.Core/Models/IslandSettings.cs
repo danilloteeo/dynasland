@@ -106,6 +106,11 @@ public sealed record IslandSettings
     /// <summary>Dias que as notificações ficam no histórico.</summary>
     public int NotificationHistoryDays { get; init; } = 7;
 
+    // Life Center
+
+    /// <summary>Local da previsão do tempo (formato de <c>WeatherLocation.Serialize</c>); <c>null</c> = clima desligado.</summary>
+    public string? WeatherLocation { get; init; }
+
     // Sistema
 
     /// <summary>Procura novas versões ao iniciar (uma consulta ao GitHub, sem dados pessoais).</summary>

@@ -11,6 +11,12 @@ namespace Dynasland.Modules.Clock;
 
 public sealed record ShortcutViewModel(string Glyph, string Label, IRelayCommand Command);
 
+/// <summary>Linha de informação rápida (clima, próximo compromisso) abaixo da data.</summary>
+public sealed record GlanceViewModel(string Glyph, string Text, IRelayCommand? Command)
+{
+    public bool IsClickable => Command is not null;
+}
+
 /// <summary>Tela inicial da ilha: hora, data e atalhos dos módulos ativos.</summary>
 public sealed partial class ClockContent : ObservableObject, IActivityContent
 {
@@ -22,9 +28,27 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
     [ObservableProperty]
     private string _dateText = string.Empty;
 
+    /// <summary>Atalhos por linha no painel (o restante quebra para a linha seguinte).</summary>
+    public const int ShortcutsPerRow = 7;
+
     public ObservableCollection<ShortcutViewModel> Shortcuts { get; } = [];
 
+    public ObservableCollection<GlanceViewModel> Glances { get; } = [];
+
     public bool HasShortcuts => Shortcuts.Count > 0;
+
+    public bool HasGlances => Glances.Count > 0;
+
+    public void SetGlances(IEnumerable<IslandGlance> glances)
+    {
+        Glances.Clear();
+        foreach (var glance in glances)
+        {
+            Glances.Add(new GlanceViewModel(glance.Glyph, glance.Text, glance.Invoke is { } invoke ? new RelayCommand(invoke) : null));
+        }
+
+        OnPropertyChanged(nameof(HasGlances));
+    }
 
     public void Update(DateTimeOffset localNow)
     {
@@ -44,6 +68,14 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
         OnPropertyChanged(nameof(HasShortcuts));
     }
 
-    public IslandDimensions? GetPreferredDimensions(IslandState state) =>
-        state == IslandState.Interactive && HasShortcuts ? new IslandDimensions(400, 168, 36) : null;
+    public IslandDimensions? GetPreferredDimensions(IslandState state)
+    {
+        if (state != IslandState.Interactive || (!HasShortcuts && !HasGlances))
+        {
+            return null;
+        }
+
+        var rows = (Shortcuts.Count + ShortcutsPerRow - 1) / ShortcutsPerRow;
+        return new IslandDimensions(400, 120 + rows * 46 + Glances.Count * 22, 36);
+    }
 }

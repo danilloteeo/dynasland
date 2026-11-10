@@ -52,5 +52,34 @@
                     <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding IsIslandVisible}" />
                 </Grid>
             </Border>
+
+        <TextBlock Text="Clima" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <StackPanel>
+                <Grid>
+                    <StackPanel Margin="0,0,160,0">
+                        <TextBlock Text="{Binding Weather.CurrentLocation, TargetNullValue=Nenhuma cidade escolhida}" Style="{StaticResource CardTitle}" />
+                        <TextBlock Style="{StaticResource CardDescription}" TextWrapping="Wrap"
+                                   Text="{Binding Weather.ProviderName, StringFormat=Previsão gratuita do {0}. Só as coordenadas da cidade são enviadas.}" />
+                    </StackPanel>
+                    <Button Style="{StaticResource SettingsButton}" Content="Desligar clima" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Command="{Binding Weather.ClearCommand}" Visibility="{Binding Weather.HasLocation, Converter={StaticResource BoolToVisibility}}" />
+                </Grid>
+                <DockPanel Margin="0,12,0,0">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource SettingsButton}" Content="Buscar" Margin="8,0,0,0" Command="{Binding Weather.SearchCommand}" IsDefault="True" />
+                    <TextBox Style="{StaticResource SettingsTextBox}" Tag="Digite o nome da cidade…" Text="{Binding Weather.Query, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="Cidade da previsão do tempo" />
+                </DockPanel>
+                <TextBlock Text="{Binding Weather.SearchMessage}" Style="{StaticResource CardDescription}" Margin="0,6,0,0" />
+                <ItemsControl ItemsSource="{Binding Weather.Results}" Focusable="False" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource SettingsButton}" Content="{Binding Name}" Command="{Binding Select}" HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Left" Margin="0,3,0,0" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
     </StackPanel>
 </UserControl>

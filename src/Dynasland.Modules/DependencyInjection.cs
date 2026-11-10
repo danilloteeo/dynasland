@@ -4,6 +4,7 @@ using Dynasland.Modules.Brightness;
 using Dynasland.Modules.Clipboard;
 using Dynasland.Modules.Clock;
 using Dynasland.Modules.Downloads;
+using Dynasland.Modules.Life;
 using Dynasland.Modules.Media;
 using Dynasland.Modules.Notifications;
 using Dynasland.Modules.SystemMonitor;
@@ -27,6 +28,8 @@ public static class DependencyInjection
         services.AddSingleton<IIslandModule, TimerModule>();
         services.AddSingleton<IIslandModule, ClipboardModule>();
         services.AddSingleton<IIslandModule, SystemMonitorModule>();
+        services.AddSingleton<IIslandModule, WeatherModule>();
+        services.AddSingleton<IIslandModule, CalendarModule>();
         services.AddSingleton<IIslandModule, ClockModule>();
 
         services.AddSingleton<NotificationPreferences>();
@@ -44,6 +47,7 @@ public static class DependencyInjection
                      "Timer/TimerTemplates.xaml",
                      "Clipboard/ClipboardTemplates.xaml",
                      "SystemMonitor/SystemMonitorTemplates.xaml",
+                     "Life/LifeTemplates.xaml",
                      "Clock/ClockTemplates.xaml",
                  })
         {

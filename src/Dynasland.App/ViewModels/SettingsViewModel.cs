@@ -80,8 +80,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Settings.BehaviorSettingsViewModel behavior,
         Settings.PrivacySettingsViewModel privacy,
         Settings.ShortcutsSettingsViewModel shortcuts,
-        Settings.StorageSettingsViewModel storage)
+        Settings.StorageSettingsViewModel storage,
+        Settings.WeatherSettingsViewModel weather)
     {
+        Weather = weather;
         Behavior = behavior;
         Privacy = privacy;
         Shortcuts = shortcuts;
@@ -117,6 +119,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public Settings.ShortcutsSettingsViewModel Shortcuts { get; }
 
     public Settings.StorageSettingsViewModel Storage { get; }
+
+    public Settings.WeatherSettingsViewModel Weather { get; }
 
     public ObservableCollection<ModuleSettingViewModel> Modules { get; } = [];
 
@@ -544,6 +548,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Privacy.Dispose();
         Shortcuts.Dispose();
         Storage.Dispose();
+        Weather.Dispose();
     }
 }
 

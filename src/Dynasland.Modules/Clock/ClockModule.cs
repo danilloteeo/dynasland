@@ -9,7 +9,7 @@ namespace Dynasland.Modules.Clock;
 /// Atividade contínua de baixa prioridade com hora e data: é o que a ilha mostra ao ser
 /// aberta quando nenhum outro módulo tem algo a exibir. Atualiza uma vez por minuto.
 /// </summary>
-public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider time, IShortcutRegistry shortcuts) : IIslandModule, IDisposable
+public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider time, IShortcutRegistry shortcuts, IGlanceRegistry glances) : IIslandModule, IDisposable
 {
     public const string ModuleId = "clock";
     public const string ActivityId = "clock.now";
@@ -30,7 +30,9 @@ public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         var content = new ClockContent();
         content.Update(time.GetLocalNow());
         content.SetShortcuts(shortcuts.Shortcuts);
+        content.SetGlances(glances.Glances);
         shortcuts.Changed += OnShortcutsChanged;
+        glances.Changed += OnGlancesChanged;
 
         lock (_lock)
         {
@@ -66,9 +68,25 @@ public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         }
     }
 
+    private void OnGlancesChanged(object? sender, EventArgs e)
+    {
+        ClockContent? content;
+        lock (_lock)
+        {
+            content = _content;
+        }
+
+        if (content is not null)
+        {
+            var current = glances.Glances;
+            ui.Post(() => content.SetGlances(current));
+        }
+    }
+
     public void Dispose()
     {
         shortcuts.Changed -= OnShortcutsChanged;
+        glances.Changed -= OnGlancesChanged;
         lock (_lock)
         {
             _timer?.Dispose();

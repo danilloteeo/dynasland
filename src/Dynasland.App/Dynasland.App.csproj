@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -23,6 +23,10 @@
 
   <ItemGroup>
     <Resource Include="Assets\dynasland.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dynasland.Tests" />
   </ItemGroup>
 
   <ItemGroup>

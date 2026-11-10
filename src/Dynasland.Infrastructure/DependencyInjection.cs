@@ -7,6 +7,7 @@ using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Database.Migrations;
 using Dynasland.Infrastructure.Repositories;
 using Dynasland.Infrastructure.Updates;
+using Dynasland.Infrastructure.Weather;
 using Dynasland.Infrastructure.Windows;
 using Dynasland.Infrastructure.Windows.Audio;
 using Dynasland.Infrastructure.Windows.Brightness;
@@ -55,10 +56,14 @@ public static class DependencyInjection
         services.AddSingleton<IClipboardService, WindowsClipboardService>();
         services.AddSingleton<IShellService, ShellService>();
         services.AddSingleton<IShortcutRegistry, ShortcutRegistry>();
+        services.AddSingleton<IGlanceRegistry, GlanceRegistry>();
         services.AddSingleton<IGlobalShortcutRegistry, GlobalShortcutRegistry>();
         services.AddSingleton<IModuleOptions, ModuleOptionsService>();
         services.AddSingleton<IStartupRegistration, StartupRegistration>();
         services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
+        services.AddSingleton<IWeatherProvider>(sp => new OpenMeteoWeatherProvider(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(15), DefaultRequestHeaders = { { "User-Agent", "Dynasland" } } },
+            sp.GetRequiredService<TimeProvider>()));
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IEventBus, EventBus>();

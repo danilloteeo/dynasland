@@ -138,9 +138,19 @@ public partial class App : Application
             handled = true;
         }
 
-        if (args.Contains("--central", StringComparer.OrdinalIgnoreCase))
+        // --central abre a Central; --central=agenda (ou notificacoes, foco, capturas) abre a página.
+        if (args.FirstOrDefault(a => a.StartsWith("--central", StringComparison.OrdinalIgnoreCase)) is { } hubArg)
         {
-            _host.Services.GetRequiredService<IHubService>().Open(HubPage.Clipboard);
+            var name = hubArg.Contains('=') ? hubArg[(hubArg.IndexOf('=') + 1)..].ToLowerInvariant() : null;
+            var page = name switch
+            {
+                "notificacoes" or "notificações" or "notifications" => HubPage.Notifications,
+                "agenda" or "calendar" => HubPage.Calendar,
+                "foco" or "focus" => HubPage.Focus,
+                "capturas" or "captures" => HubPage.Captures,
+                _ => HubPage.Clipboard,
+            };
+            _host.Services.GetRequiredService<IHubService>().Open(page);
             handled = true;
         }
 
@@ -229,6 +239,7 @@ public partial class App : Application
         builder.Services.AddTransient<ViewModels.Settings.PrivacySettingsViewModel>();
         builder.Services.AddTransient<ViewModels.Settings.ShortcutsSettingsViewModel>();
         builder.Services.AddTransient<ViewModels.Settings.StorageSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.WeatherSettingsViewModel>();
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<FullscreenDetector>();
         builder.Services.AddSingleton<UpdateNotifier>();
@@ -237,6 +248,7 @@ public partial class App : Application
         builder.Services.AddSingleton<IHubService>(sp => new HubWindowService(sp, Dispatcher));
         builder.Services.AddTransient<IHubPage, ClipboardPageViewModel>();
         builder.Services.AddTransient<IHubPage, NotificationsPageViewModel>();
+        builder.Services.AddTransient<IHubPage, CalendarPageViewModel>();
         builder.Services.AddTransient<IHubPage, FocusPageViewModel>();
         builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());

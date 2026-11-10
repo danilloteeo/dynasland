@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <BooleanToVisibilityConverter x:Key="LifeBoolToVisibility" />
+
+    <!-- Ícones de clima: as fontes de ícones do Windows 10 não têm, então usa os símbolos do Segoe UI Emoji. -->
+    <FontFamily x:Key="WeatherGlyphFont">Segoe UI Emoji, Segoe UI Symbol</FontFamily>
+
+    <DataTemplate x:Key="Dynasland.Modules.Life.WeatherContent:Interactive">
+        <Grid Margin="22,14,22,12">
+            <!-- Estado (carregando, sem cidade, sem conexão) quando ainda não há previsão. -->
+            <ContentPresenter Content="{Binding Status}" ContentTemplate="{DynamicResource Dynasland.Core.Activities.StatusContent:Expanded}"
+                              Visibility="{Binding HasStatus, Converter={StaticResource LifeBoolToVisibility}}" />
+
+            <Grid Visibility="{Binding HasReport, Converter={StaticResource LifeBoolToVisibility}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource WeatherGlyphFont}" FontSize="34"
+                               Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock FontFamily="{DynamicResource IslandTextFont}" Foreground="{DynamicResource IslandPrimaryTextBrush}">
+                            <Run Text="{Binding TemperatureText, Mode=OneWay}" FontFamily="{DynamicResource IslandFont}" FontSize="30" FontWeight="SemiBold" />
+                            <Run Text="{Binding ConditionText, Mode=OneWay}" FontSize="14" />
+                        </TextBlock>
+                        <TextBlock Text="{Binding LocationText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                   Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Style="{DynamicResource IslandIconButtonStyle}" Content="&#xE72C;" Command="{Binding RefreshCommand}"
+                            ToolTip="Atualizar agora" VerticalAlignment="Top" Width="30" Height="30" FontSize="12" />
+                </Grid>
+                <TextBlock Grid.Row="1" Text="{Binding DetailsText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" Margin="0,6,0,8"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ItemsControl ItemsSource="{Binding Days}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="1" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding DayName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
+                                               Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource WeatherGlyphFont}" FontSize="16"
+                                               Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Center" Margin="0,2" />
+                                    <TextBlock FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" HorizontalAlignment="Center">
+                                        <Run Text="{Binding MaxText, Mode=OneWay}" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                                        <Run Text="{Binding MinText, Mode=OneWay}" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Grid.Row="1" Text="{Binding UpdatedText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" HorizontalAlignment="Right"
+                               Margin="0,4,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource IslandTertiaryTextBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStale}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource IslandWarningBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>
