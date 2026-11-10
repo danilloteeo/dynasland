@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddSingleton<IIslandModule, ClockModule>();
 
         services.AddSingleton<NotificationPreferences>();
+        services.AddSingleton<ClipboardHistory>();
+        services.AddSingleton<Dynasland.Core.Interfaces.IClipboardHistory>(sp => sp.GetRequiredService<ClipboardHistory>());
 
         foreach (var templates in new[]
                  {

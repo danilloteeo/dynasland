@@ -14,9 +14,11 @@ namespace Dynasland.Infrastructure.Windows.Clipboard;
 /// <remarks>Chamadas WinRT são feitas no pool (MTA), como nos demais serviços.</remarks>
 public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> logger) : IClipboardService, IDisposable
 {
-    private const int MaxTextLength = 2000;
+    // Textos maiores são cortados (o histórico guarda até este tamanho).
+    private const int MaxTextLength = 100_000;
 
     private readonly ConcurrentDictionary<string, ClipboardHistoryItem> _historyItems = new();
+    private readonly StaWorker _sta = new("Dynasland.ClipboardSta");
     private ClipboardListenerWindow? _listener;
 
     public event EventHandler? ContentChanged;
@@ -27,7 +29,7 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
         {
             try
             {
-                return WinClipboard.IsHistoryEnabled();
+                return _sta.Run(WinClipboard.IsHistoryEnabled).GetAwaiter().GetResult();
             }
             catch (Exception)
             {
@@ -55,21 +57,21 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
         _historyItems.Clear();
     }
 
-    public Task<ClipboardEntry?> GetCurrentAsync() => Task.Run(async () =>
+    public Task<ClipboardEntry?> GetCurrentAsync() => RunOnOwnThread(() =>
     {
         try
         {
-            return await ReadAsync(WinClipboard.GetContent(), string.Empty, DateTimeOffset.Now);
+            return Read(WinClipboard.GetContent(), string.Empty, DateTimeOffset.Now);
         }
         catch (Exception ex)
         {
             // Outro processo pode estar com a área de transferência aberta.
-            logger.LogDebug(ex, "Conteúdo da área de transferência indisponível.");
+            logger.LogWarning(ex, "Conteúdo da área de transferência indisponível.");
             return null;
         }
     });
 
-    public Task<IReadOnlyList<ClipboardEntry>> GetHistoryAsync(int maxItems) => Task.Run<IReadOnlyList<ClipboardEntry>>(async () =>
+    public Task<IReadOnlyList<ClipboardEntry>> GetHistoryAsync(int maxItems) => RunOnOwnThread<IReadOnlyList<ClipboardEntry>>(() =>
     {
         if (!IsHistoryEnabled)
         {
@@ -78,7 +80,7 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
 
         try
         {
-            var result = await WinClipboard.GetHistoryItemsAsync();
+            var result = Wait(WinClipboard.GetHistoryItemsAsync());
             if (result.Status != ClipboardHistoryItemsResultStatus.Success)
             {
                 return [];
@@ -89,7 +91,7 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
             foreach (var item in result.Items.Take(maxItems))
             {
                 _historyItems[item.Id] = item;
-                if (await ReadAsync(item.Content, item.Id, item.Timestamp) is { } entry)
+                if (Read(item.Content, item.Id, item.Timestamp) is { } entry)
                 {
                     entries.Add(entry);
                 }
@@ -104,7 +106,7 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
         }
     });
 
-    public Task<bool> CopyAgainAsync(string entryId) => Task.Run(() =>
+    public Task<bool> CopyAgainAsync(string entryId) => RunOnOwnThread(() =>
     {
         if (!_historyItems.TryGetValue(entryId, out var item))
         {
@@ -122,6 +124,34 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
         }
     });
 
+    public Task<bool> SetTextAsync(string text) => RunOnOwnThread(() => SetContent(package => package.SetText(text)));
+
+    public Task<bool> SetImageAsync(byte[] image) => RunOnOwnThread(() =>
+    {
+        var stream = new global::Windows.Storage.Streams.InMemoryRandomAccessStream();
+        Wait(stream.WriteAsync(System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.AsBuffer(image)));
+        stream.Seek(0);
+        return SetContent(package => package.SetBitmap(global::Windows.Storage.Streams.RandomAccessStreamReference.CreateFromStream(stream)));
+    });
+
+    /// <summary>Coloca um conteúdo na área de transferência e o mantém disponível após o Dynasland fechar.</summary>
+    private bool SetContent(Action<DataPackage> fill)
+    {
+        try
+        {
+            var package = new DataPackage();
+            fill(package);
+            WinClipboard.SetContent(package);
+            WinClipboard.Flush();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Não foi possível copiar para a área de transferência.");
+            return false;
+        }
+    }
+
     private void OnClipboardUpdate(IntPtr hwnd)
     {
         if (ClipboardPrivacy.IsPrivate(hwnd))
@@ -133,11 +163,22 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
         ContentChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private static async Task<ClipboardEntry?> ReadAsync(DataPackageView content, string id, DateTimeOffset timestamp)
+    /// <summary>
+    /// A área de transferência WinRT exige thread STA em apps desktop (em MTA falha com RPC_E_WRONG_THREAD):
+    /// toda leitura/escrita roda inteira na thread STA dedicada, aguardando as operações de forma síncrona.
+    /// </summary>
+    private Task<T> RunOnOwnThread<T>(Func<T> work) => _sta.Run(work);
+
+    private static T Wait<T>(global::Windows.Foundation.IAsyncOperation<T> operation) => operation.AsTask().GetAwaiter().GetResult();
+
+    private static T Wait<T, TProgress>(global::Windows.Foundation.IAsyncOperationWithProgress<T, TProgress> operation) =>
+        operation.AsTask().GetAwaiter().GetResult();
+
+    private static ClipboardEntry? Read(DataPackageView content, string id, DateTimeOffset timestamp)
     {
         if (content.Contains(StandardDataFormats.Text))
         {
-            var text = await content.GetTextAsync();
+            var text = Wait(content.GetTextAsync());
             if (text.Length > MaxTextLength)
             {
                 text = text[..MaxTextLength];
@@ -148,18 +189,41 @@ public sealed class WindowsClipboardService(ILogger<WindowsClipboardService> log
 
         if (content.Contains(StandardDataFormats.Bitmap))
         {
-            var bitmap = await content.GetBitmapAsync();
-            return new ClipboardEntry(id, ClipboardEntryKind.Image, null, await WinRtStreams.ReadAllBytesAsync(bitmap), timestamp);
+            var bitmap = Wait(content.GetBitmapAsync());
+            return new ClipboardEntry(id, ClipboardEntryKind.Image, null, ReadAllBytes(bitmap), timestamp);
         }
 
         if (content.Contains(StandardDataFormats.StorageItems))
         {
-            var items = await content.GetStorageItemsAsync();
+            var items = Wait(content.GetStorageItemsAsync());
             var names = string.Join(", ", items.Take(3).Select(i => i.Name));
             var label = items.Count > 3 ? $"{names} e mais {items.Count - 3}" : names;
             return new ClipboardEntry(id, ClipboardEntryKind.Other, label, null, timestamp);
         }
 
         return content.AvailableFormats.Count == 0 ? null : new ClipboardEntry(id, ClipboardEntryKind.Other, null, null, timestamp);
+    }
+
+    private const ulong MaxImageBytes = 16 * 1024 * 1024;
+
+    private static byte[]? ReadAllBytes(global::Windows.Storage.Streams.IRandomAccessStreamReference? reference)
+    {
+        if (reference is null)
+        {
+            return null;
+        }
+
+        using var stream = Wait(reference.OpenReadAsync());
+        if (stream.Size == 0 || stream.Size > MaxImageBytes)
+        {
+            return null;
+        }
+
+        using var reader = new global::Windows.Storage.Streams.DataReader(stream);
+        var length = (uint)stream.Size;
+        Wait(reader.LoadAsync(length));
+        var bytes = new byte[length];
+        reader.ReadBytes(bytes);
+        return bytes;
     }
 }

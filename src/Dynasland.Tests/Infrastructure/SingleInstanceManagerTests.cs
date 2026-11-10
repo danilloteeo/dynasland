@@ -36,13 +36,40 @@ public class SingleInstanceManagerTests
         var id = UniqueId();
         using var first = new SingleInstanceManager(id);
         using var activated = new ManualResetEventSlim();
-        first.ActivationRequested += (_, _) => activated.Set();
+        first.ActivationRequested += (_, args) =>
+        {
+            if (args.Count == 0)
+            {
+                activated.Set();
+            }
+        };
         Assert.True(first.TryAcquire());
 
         using var second = new SingleInstanceManager(id);
         Assert.True(second.SignalFirstInstance());
 
         Assert.True(activated.Wait(TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public void Arguments_from_second_instance_reach_first()
+    {
+        var id = UniqueId();
+        using var first = new SingleInstanceManager(id);
+        IReadOnlyList<string>? received = null;
+        using var activated = new ManualResetEventSlim();
+        first.ActivationRequested += (_, args) =>
+        {
+            received = args;
+            activated.Set();
+        };
+        Assert.True(first.TryAcquire());
+
+        using var second = new SingleInstanceManager(id);
+        Assert.True(second.SignalFirstInstance(["--central", "--configuracoes"]));
+
+        Assert.True(activated.Wait(TimeSpan.FromSeconds(5)));
+        Assert.Equal(["--central", "--configuracoes"], received);
     }
 
     // Mutex é reentrante na mesma thread; a segunda instância precisa de outra thread para simular outro processo.

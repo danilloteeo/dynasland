@@ -34,4 +34,19 @@ public static class ImageDecoder
             return null;
         }
     }
+
+    /// <summary>Miniatura em PNG (para guardar no histórico); <c>null</c> se a imagem for inválida.</summary>
+    public static byte[]? EncodeThumbnailPng(byte[]? bytes, int width)
+    {
+        if (Decode(bytes, width) is not BitmapSource bitmap)
+        {
+            return null;
+        }
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        return stream.ToArray();
+    }
 }

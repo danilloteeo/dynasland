@@ -53,6 +53,11 @@ public interface IClipboardService
 
     /// <summary>Coloca novamente na área de transferência um item do histórico.</summary>
     Task<bool> CopyAgainAsync(string entryId);
+
+    Task<bool> SetTextAsync(string text);
+
+    /// <param name="image">Imagem codificada (PNG, BMP...).</param>
+    Task<bool> SetImageAsync(byte[] image);
 }
 
 /// <summary>Ações de shell: abrir arquivos e mostrá-los no Explorador.</summary>

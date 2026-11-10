@@ -1,22 +1,28 @@
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
+using Dynasland.Core.Shortcuts;
 using Dynasland.Modules.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Dynasland.Modules.Clipboard;
 
 /// <summary>
-/// Mostra rapidamente o que foi copiado e, no estado interativo, o histórico recente do Windows,
-/// permitindo copiar um item de novo. O conteúdo vem do próprio Windows e não é armazenado.
+/// Clipboard Manager: mostra o que foi copiado, guarda o histórico próprio (texto e imagem, conforme a
+/// privacidade) e, no estado interativo, os itens recentes para copiar de novo. Histórico completo,
+/// busca e favoritos ficam na Central. Com o histórico próprio desligado, usa o do Windows (Win+V).
 /// </summary>
 public sealed class ClipboardModule(
     IClipboardService clipboard,
+    ClipboardHistory history,
+    IIslandSettingsService settings,
+    IHubService hub,
     IEventBus bus,
     IUiDispatcher ui,
-    TimeProvider time,
     IShortcutRegistry shortcuts,
+    IGlobalShortcutRegistry globalShortcuts,
     IModuleOptions options,
     ILogger<ClipboardModule> logger) : IIslandModule
 {
@@ -28,19 +34,14 @@ public sealed class ClipboardModule(
     private const int ThumbnailWidth = 96;
     private static readonly TimeSpan CopiedDisplayDuration = TimeSpan.FromSeconds(2);
 
-    // A cópia feita pela própria ilha ("copiar de novo") também dispara o aviso do Windows.
-    private static readonly TimeSpan OwnCopyWindow = TimeSpan.FromSeconds(1.5);
-
-    private readonly Lock _lock = new();
+    private readonly List<IDisposable> _registrations = [];
     private ClipboardContent? _content;
-    private IDisposable? _shortcut;
-    private DateTimeOffset _lastOwnCopy = DateTimeOffset.MinValue;
 
     public string Id => ModuleId;
 
     public string DisplayName => "Área de transferência";
 
-    public string Description => "Mostra o que foi copiado e o histórico recente do Windows (Win+V). Ignora conteúdo marcado como privado.";
+    public string Description => "Mostra o que foi copiado e guarda um histórico com busca e favoritos. Ignora conteúdo marcado como privado e textos com aparência de senha, cartão ou chave.";
 
     public static readonly ModuleOption ShowCopied = ModuleOption.Toggle(
         "showCopied", "Mostrar o que foi copiado", "Expande a ilha por um instante a cada cópia. O histórico continua disponível pelo atalho.");
@@ -50,15 +51,22 @@ public sealed class ClipboardModule(
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await clipboard.StartAsync(cancellationToken);
-        _content = new ClipboardContent(ReloadHistoryAsync);
+        _content = new ClipboardContent(ReloadHistoryAsync, () => hub.Open(HubPage.Clipboard));
         clipboard.ContentChanged += OnContentChanged;
-        _shortcut = shortcuts.Register(new IslandShortcut("clipboard.panel", ModuleId, Glyphs.Clipboard, "Área de transferência", OpenPanel));
+        _registrations.Add(shortcuts.Register(new IslandShortcut("clipboard.panel", ModuleId, Glyphs.Clipboard, "Área de transferência", OpenPanel)));
+        _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
+            "clipboard.history", "Histórico da área de transferência", "Área de transferência",
+            new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'V'), () => hub.Open(HubPage.Clipboard))));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _shortcut?.Dispose();
-        _shortcut = null;
+        foreach (var registration in _registrations)
+        {
+            registration.Dispose();
+        }
+
+        _registrations.Clear();
         clipboard.ContentChanged -= OnContentChanged;
         await clipboard.StopAsync();
         _content = null;
@@ -76,15 +84,13 @@ public sealed class ClipboardModule(
     {
         try
         {
-            lock (_lock)
+            if (history.IsOwnCopy || _content is not { } content || await clipboard.GetCurrentAsync() is not { } entry)
             {
-                if (time.GetUtcNow() - _lastOwnCopy < OwnCopyWindow)
-                {
-                    return;
-                }
+                return;
             }
 
-            if (!options.IsOn(ModuleId, ShowCopied) || _content is not { } content || await clipboard.GetCurrentAsync() is not { } entry)
+            await history.CaptureAsync(entry);
+            if (!options.IsOn(ModuleId, ShowCopied))
             {
                 return;
             }
@@ -95,7 +101,7 @@ public sealed class ClipboardModule(
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Falha ao ler a cópia.");
+            logger.LogWarning(ex, "Falha ao processar a cópia.");
         }
     }
 
@@ -106,21 +112,34 @@ public sealed class ClipboardModule(
             return;
         }
 
-        var entries = await clipboard.GetHistoryAsync(HistorySize);
-        var items = entries
-            .Select(entry => new ClipboardHistoryItemViewModel(entry, ImageDecoder.Decode(entry.Image, ThumbnailWidth), CopyAgainAsync))
-            .ToList();
-        var enabled = clipboard.IsHistoryEnabled;
-        ui.Post(() => content.SetHistory(items, enabled));
-    }
-
-    private Task CopyAgainAsync(string entryId)
-    {
-        lock (_lock)
+        List<ClipboardHistoryItemViewModel> items;
+        string emptyMessage;
+        if (settings.Current.ClipboardHistoryEnabled)
         {
-            _lastOwnCopy = time.GetUtcNow();
+            var records = await history.ListAsync(limit: HistorySize);
+            items = [.. records.Select(record => new ClipboardHistoryItemViewModel(
+                new ClipboardEntry(record.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), record.Kind, record.Text, null, record.LastUsedAt),
+                ImageDecoder.Decode(record.Thumbnail, ThumbnailWidth),
+                () => history.CopyAsync(record.Id),
+                record.IsFavorite))];
+            emptyMessage = "Nada copiado ainda.";
+        }
+        else
+        {
+            // Histórico próprio desligado (privacidade): mostra o do Windows, se estiver ativo.
+            var entries = await clipboard.GetHistoryAsync(HistorySize);
+            items = [.. entries.Select(entry => new ClipboardHistoryItemViewModel(entry, ImageDecoder.Decode(entry.Image, ThumbnailWidth), () => CopyFromWindowsAsync(entry.Id)))];
+            emptyMessage = clipboard.IsHistoryEnabled
+                ? "Nada copiado ainda."
+                : "O histórico está desligado nas configurações de privacidade.";
         }
 
+        ui.Post(() => content.SetHistory(items, emptyMessage));
+    }
+
+    private Task CopyFromWindowsAsync(string entryId)
+    {
+        history.MarkOwnCopy();
         return clipboard.CopyAgainAsync(entryId);
     }
 }

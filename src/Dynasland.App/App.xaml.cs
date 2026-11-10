@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Dynasland.App.Services;
 using Dynasland.App.ViewModels;
+using Dynasland.App.ViewModels.Hub;
 using Dynasland.App.Views;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
@@ -34,7 +35,7 @@ public partial class App : Application
         if (!_singleInstance.TryAcquire())
         {
             // Já existe uma instância: pede que ela mostre a ilha e encerra esta.
-            _singleInstance.SignalFirstInstance();
+            _singleInstance.SignalFirstInstance(e.Args);
             Shutdown();
             return;
         }
@@ -88,13 +89,8 @@ public partial class App : Application
             tray.ExitRequested += (_, _) => Shutdown();
             tray.Initialize();
 
-            if (e.Args.Contains("--configuracoes", StringComparer.OrdinalIgnoreCase))
-            {
-                settingsWindow.Show();
-            }
-
-            _singleInstance.ActivationRequested += (_, _) =>
-                Dispatcher.BeginInvoke(async () => await settings.UpdateAsync(s => s with { IsVisible = true }));
+            HandleArguments(e.Args, isActivation: false);
+            _singleInstance.ActivationRequested += (_, args) => Dispatcher.BeginInvoke(() => HandleArguments(args, isActivation: true));
 
             _ = _host.Services.GetRequiredService<UpdateNotifier>().CheckAfterStartupAsync();
 
@@ -119,6 +115,36 @@ public partial class App : Application
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);
+        }
+    }
+
+    /// <summary>
+    /// Argumentos de linha de comando, na partida ou repassados por uma segunda execução:
+    /// <c>--configuracoes</c>, <c>--central</c>; sem argumentos, uma segunda execução apenas mostra a ilha.
+    /// </summary>
+    private void HandleArguments(IReadOnlyList<string> args, bool isActivation)
+    {
+        if (_host is null)
+        {
+            return;
+        }
+
+        var handled = false;
+        if (args.Contains("--configuracoes", StringComparer.OrdinalIgnoreCase))
+        {
+            _host.Services.GetRequiredService<SettingsWindowService>().Show();
+            handled = true;
+        }
+
+        if (args.Contains("--central", StringComparer.OrdinalIgnoreCase))
+        {
+            _host.Services.GetRequiredService<IHubService>().Open(HubPage.Clipboard);
+            handled = true;
+        }
+
+        if (isActivation && !handled)
+        {
+            _ = _host.Services.GetRequiredService<IIslandSettingsService>().UpdateAsync(s => s with { IsVisible = true });
         }
     }
 
@@ -173,6 +199,9 @@ public partial class App : Application
         builder.Services.AddSingleton<UpdateNotifier>();
         builder.Services.AddSingleton<SessionStateService>();
         builder.Services.AddSingleton<HotkeyService>();
+        builder.Services.AddSingleton<IHubService>(sp => new HubWindowService(sp, Dispatcher));
+        builder.Services.AddTransient<IHubPage, ClipboardPageViewModel>();
+        builder.Services.AddTransient<IHubPage, FocusPageViewModel>();
         builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
 

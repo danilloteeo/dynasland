@@ -1,0 +1,61 @@
+<Window x:Class="Dynasland.App.Views.HubWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:hub="clr-namespace:Dynasland.App.ViewModels.Hub"
+        xmlns:views="clr-namespace:Dynasland.App.Views.Hub"
+        xmlns:converters="clr-namespace:Dynasland.App.Converters"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=hub:HubViewModel}"
+        Title="Central do Dynasland"
+        Width="980" Height="680" MinWidth="760" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource SettingsBackgroundBrush}"
+        Foreground="{DynamicResource SettingsTextBrush}"
+        FontFamily="{StaticResource IslandTextFont}"
+        UseLayoutRounding="True">
+
+    <Window.Resources>
+        <converters:EnumMatchConverter x:Key="EnumMatch" />
+
+        <!-- Cada página é escolhida pelo tipo do view model. -->
+        <DataTemplate DataType="{x:Type hub:ClipboardPageViewModel}">
+            <views:ClipboardPage />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type hub:FocusPageViewModel}">
+            <views:FocusPage />
+        </DataTemplate>
+        <!-- PAGINAS_PENDENTES -->
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Background="{DynamicResource SettingsSidebarBrush}">
+            <DockPanel Margin="14,18">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
+                    <Border Width="34" Height="16" CornerRadius="8" Background="Black" BorderBrush="#33FFFFFF" BorderThickness="1" VerticalAlignment="Center" />
+                    <TextBlock Text="Central" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel>
+                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE77F;" Content="Área de transferência"
+                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Clipboard}" />
+                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7E7;" Content="Notificações"
+                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Notifications}" />
+                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE787;" Content="Agenda"
+                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Calendar}" />
+                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7C1;" Content="Foco"
+                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Focus}" />
+                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE722;" Content="Capturas"
+                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Captures}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <ContentControl Grid.Column="1" Content="{Binding Current}" Focusable="False" Margin="32,24,28,24" />
+    </Grid>
+</Window>

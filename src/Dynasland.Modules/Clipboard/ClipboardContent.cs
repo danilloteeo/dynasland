@@ -10,11 +10,9 @@ using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Clipboard;
 
-public sealed partial class ClipboardHistoryItemViewModel(ClipboardEntry entry, ImageSource? thumbnail, Func<string, Task> copyAgain) : ObservableObject
+public sealed partial class ClipboardHistoryItemViewModel(ClipboardEntry entry, ImageSource? thumbnail, Func<Task> copyAgain, bool isFavorite = false) : ObservableObject
 {
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
-
-    public string Id => entry.Id;
 
     public string Preview => ClipboardContent.PreviewOf(entry);
 
@@ -22,9 +20,9 @@ public sealed partial class ClipboardHistoryItemViewModel(ClipboardEntry entry, 
 
     public bool HasThumbnail => Thumbnail is not null;
 
-    public string Glyph => ClipboardContent.GlyphOf(entry.Kind);
+    public string Glyph => isFavorite ? Glyphs.FavoriteStarFill : ClipboardContent.GlyphOf(entry.Kind);
 
-    public string TimeText => entry.Timestamp.ToLocalTime().ToString("HH:mm", PtBr);
+    public string TimeText => entry.Timestamp.ToLocalTime().ToString(entry.Timestamp.ToLocalTime().Date == DateTime.Today ? "HH:mm" : "dd/MM", PtBr);
 
     [ObservableProperty]
     private bool _justCopied;
@@ -32,14 +30,17 @@ public sealed partial class ClipboardHistoryItemViewModel(ClipboardEntry entry, 
     [RelayCommand]
     private async Task CopyAsync()
     {
-        await copyAgain(entry.Id);
+        await copyAgain();
         JustCopied = true;
     }
 }
 
 /// <summary>Último conteúdo copiado (expandido) e histórico recente do Windows (interativo).</summary>
-public sealed partial class ClipboardContent(Func<Task> reloadHistory) : ObservableObject, IActivityContent
+public sealed partial class ClipboardContent(Func<Task> reloadHistory, Action openAll) : ObservableObject, IActivityContent
 {
+    [RelayCommand]
+    private void OpenAll() => openAll();
+
     private const int PreviewLength = 90;
 
     public ObservableCollection<ClipboardHistoryItemViewModel> History { get; } = [];
@@ -89,7 +90,8 @@ public sealed partial class ClipboardContent(Func<Task> reloadHistory) : Observa
         LatestGlyph = GlyphOf(entry.Kind);
     }
 
-    public void SetHistory(IReadOnlyList<ClipboardHistoryItemViewModel> items, bool historyEnabled)
+    /// <param name="emptyMessage">Texto quando a lista está vazia (ou o histórico está desligado).</param>
+    public void SetHistory(IReadOnlyList<ClipboardHistoryItemViewModel> items, string emptyMessage)
     {
         History.Clear();
         foreach (var item in items)
@@ -97,9 +99,7 @@ public sealed partial class ClipboardContent(Func<Task> reloadHistory) : Observa
             History.Add(item);
         }
 
-        HistoryMessage = !historyEnabled
-            ? "Ative o histórico da área de transferência (Win+V) para ver itens anteriores."
-            : items.Count == 0 ? "Nada copiado ainda." : string.Empty;
+        HistoryMessage = items.Count == 0 ? emptyMessage : string.Empty;
     }
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch

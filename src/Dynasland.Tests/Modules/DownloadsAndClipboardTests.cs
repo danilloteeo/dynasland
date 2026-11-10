@@ -2,7 +2,10 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
+using Dynasland.Core.Shortcuts;
+using Dynasland.Infrastructure.Repositories;
 using Dynasland.Modules.Clipboard;
+using Dynasland.Tests.Infrastructure;
 using Dynasland.Modules.Downloads;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
@@ -68,13 +71,23 @@ public class DownloadsAndClipboardTests : IDisposable
         await Assert.ThrowsAsync<ModuleUnavailableException>(() => module.StartAsync(CancellationToken.None));
     }
 
-    [Fact]
-    public async Task Copy_shows_preview_and_own_copy_again_is_not_announced()
+    private (ClipboardModule Module, ClipboardHistory History) CreateClipboard(FakeClipboard clipboard, FakeTimeProvider time, TemporaryDatabase db, FakeIslandSettings settings)
     {
+        var history = new ClipboardHistory(clipboard, new SqliteClipboardHistoryStore(db.Factory), settings, time, NullLogger<ClipboardHistory>.Instance);
+        var module = new ClipboardModule(
+            clipboard, history, settings, new FakeHub(), _recorder.Bus, new InlineDispatcher(), new ShortcutRegistry(),
+            new GlobalShortcutRegistry(new InMemorySettingsStore()), TestOptions.Create(), NullLogger<ClipboardModule>.Instance);
+        return (module, history);
+    }
+
+    [Fact]
+    public async Task Copy_is_announced_saved_in_history_and_copy_again_is_not_announced()
+    {
+        using var db = new TemporaryDatabase();
+        await db.CreateRunner().MigrateAsync();
         var time = new FakeTimeProvider();
         var clipboard = new FakeClipboard();
-        var shortcuts = new ShortcutRegistry();
-        var module = new ClipboardModule(clipboard, _recorder.Bus, new InlineDispatcher(), time, shortcuts, TestOptions.Create(), NullLogger<ClipboardModule>.Instance);
+        var (module, history) = CreateClipboard(clipboard, time, db, new FakeIslandSettings());
         await module.StartAsync(CancellationToken.None);
 
         clipboard.Current = new ClipboardEntry("", ClipboardEntryKind.Text, "linha 1\n   linha 2", null, DateTimeOffset.UnixEpoch);
@@ -83,13 +96,13 @@ public class DownloadsAndClipboardTests : IDisposable
 
         var content = Assert.IsType<ClipboardContent>(_recorder.Posted[0].Content);
         Assert.Equal("linha 1 linha 2", content.LatestPreview);
+        Assert.Single(await history.ListAsync());
 
-        // Painel: histórico do Windows, clicar copia de novo sem gerar novo aviso.
+        // Painel: histórico próprio; copiar de novo não gera novo aviso nem item duplicado.
         content.OnPresentationChanged(IslandState.Interactive);
-        await WaitUntilAsync(() => content.History.Count == 2);
-        await content.History[1].CopyCommand.ExecuteAsync(null);
-        Assert.Equal(["h2"], clipboard.CopiedAgain);
-        Assert.True(content.History[1].JustCopied);
+        await WaitUntilAsync(() => content.History.Count == 1);
+        await content.History[0].CopyCommand.ExecuteAsync(null);
+        Assert.Equal(["linha 1\n   linha 2"], clipboard.SetTexts);
 
         clipboard.RaiseChanged();
         await Task.Delay(50);
@@ -98,13 +111,35 @@ public class DownloadsAndClipboardTests : IDisposable
         time.Advance(TimeSpan.FromSeconds(2));
         clipboard.RaiseChanged();
         await WaitUntilAsync(() => _recorder.Posted.Count == 2);
+        Assert.Single(await history.ListAsync());
     }
 
     [Fact]
-    public async Task Disabled_windows_history_shows_guidance()
+    public async Task Sensitive_text_and_disabled_history_are_not_saved()
     {
+        using var db = new TemporaryDatabase();
+        await db.CreateRunner().MigrateAsync();
+        var clipboard = new FakeClipboard();
+        var settings = new FakeIslandSettings();
+        var (_, history) = CreateClipboard(clipboard, new FakeTimeProvider(), db, settings);
+
+        Assert.False(await history.CaptureAsync(new ClipboardEntry("", ClipboardEntryKind.Text, "4111 1111 1111 1111", null, DateTimeOffset.UnixEpoch)));
+        Assert.True(await history.CaptureAsync(new ClipboardEntry("", ClipboardEntryKind.Text, "texto comum", null, DateTimeOffset.UnixEpoch)));
+
+        await settings.UpdateAsync(s => s with { ClipboardHistoryEnabled = false });
+        Assert.False(await history.CaptureAsync(new ClipboardEntry("", ClipboardEntryKind.Text, "outro texto", null, DateTimeOffset.UnixEpoch)));
+        Assert.Single(await history.ListAsync());
+    }
+
+    [Fact]
+    public async Task Disabled_own_history_falls_back_to_windows_history()
+    {
+        using var db = new TemporaryDatabase();
+        await db.CreateRunner().MigrateAsync();
         var clipboard = new FakeClipboard { HistoryEnabled = false };
-        var module = new ClipboardModule(clipboard, _recorder.Bus, new InlineDispatcher(), new FakeTimeProvider(), new ShortcutRegistry(), TestOptions.Create(), NullLogger<ClipboardModule>.Instance);
+        var settings = new FakeIslandSettings();
+        await settings.UpdateAsync(s => s with { ClipboardHistoryEnabled = false });
+        var (module, _) = CreateClipboard(clipboard, new FakeTimeProvider(), db, settings);
         await module.StartAsync(CancellationToken.None);
         module.OpenPanel();
         var content = Assert.IsType<ClipboardContent>(_recorder.Posted.Single().Content);
@@ -112,7 +147,7 @@ public class DownloadsAndClipboardTests : IDisposable
         content.OnPresentationChanged(IslandState.Interactive);
         await WaitUntilAsync(() => content.HistoryMessage.Length > 0);
 
-        Assert.Contains("Win+V", content.HistoryMessage);
+        Assert.Contains("desligado", content.HistoryMessage);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition)
@@ -190,6 +225,23 @@ public class DownloadsAndClipboardTests : IDisposable
         {
             CopiedAgain.Add(entryId);
             return Task.FromResult(true);
+        }
+
+        public List<string> SetTexts { get; } = [];
+
+        public Task<bool> SetTextAsync(string text)
+        {
+            SetTexts.Add(text);
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> SetImageAsync(byte[] image) => Task.FromResult(true);
+    }
+
+    private sealed class FakeHub : IHubService
+    {
+        public void Open(HubPage page)
+        {
         }
     }
 }
