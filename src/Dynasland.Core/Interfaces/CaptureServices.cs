@@ -86,3 +86,12 @@ public interface IScreenRecorder
     /// <summary>Finaliza o arquivo; o resultado chega em <see cref="Completed"/>.</summary>
     Task StopAsync();
 }
+
+/// <summary>Seleção de uma área da tela pelo usuário (sobreposição com a tela congelada).</summary>
+public interface IRegionSelector
+{
+    /// <param name="background">Captura da área de trabalho virtual inteira, exibida durante a seleção.</param>
+    /// <param name="desktop">Área de trabalho virtual em pixels físicos (posição da captura).</param>
+    /// <returns>Área escolhida em pixels físicos; <c>null</c> se cancelada (Esc).</returns>
+    Task<PixelRect?> SelectAsync(CapturedImage background, PixelRect desktop);
+}

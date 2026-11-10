@@ -245,11 +245,13 @@ public partial class App : Application
         builder.Services.AddSingleton<UpdateNotifier>();
         builder.Services.AddSingleton<SessionStateService>();
         builder.Services.AddSingleton<HotkeyService>();
+        builder.Services.AddSingleton<IRegionSelector>(_ => new RegionSelector(Dispatcher));
         builder.Services.AddSingleton<IHubService>(sp => new HubWindowService(sp, Dispatcher));
         builder.Services.AddTransient<IHubPage, ClipboardPageViewModel>();
         builder.Services.AddTransient<IHubPage, NotificationsPageViewModel>();
         builder.Services.AddTransient<IHubPage, CalendarPageViewModel>();
         builder.Services.AddTransient<IHubPage, FocusPageViewModel>();
+        builder.Services.AddTransient<IHubPage, CapturesPageViewModel>();
         builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
 

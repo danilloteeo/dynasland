@@ -32,7 +32,9 @@
         <DataTemplate DataType="{x:Type hub:CalendarPageViewModel}">
             <views:CalendarPage />
         </DataTemplate>
-        <!-- PAGINAS_PENDENTES -->
+        <DataTemplate DataType="{x:Type hub:CapturesPageViewModel}">
+            <views:CapturesPage />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

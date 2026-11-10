@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Dynasland.Core\Dynasland.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dynasland.Tests" />
+  </ItemGroup>
+
 </Project>
