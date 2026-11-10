@@ -1,5 +1,20 @@
 # Notas da versão
 
+## 1.0.3 — 2026-11-10
+
+### Novidades
+- **Fila do Spotify no painel de mídia**: "A seguir" com as próximas faixas e capas, pular direto para
+  uma faixa e ver a fila completa. Requer conectar sua conta em Configurações › Geral › Spotify
+  (com um Client ID próprio do painel de desenvolvedor do Spotify; o token fica criptografado no PC).
+- **Volume no painel de mídia**: com o Spotify conectado, ajusta o volume do próprio Spotify
+  (Spotify Premium) e avisa quando ele está em 0%; nos outros players, o volume do sistema.
+- **Clima redesenhado**: ícones vetoriais coloridos, máxima e mínima do dia, sensação, umidade, vento
+  e chance de chuva hoje; previsão de 5 dias com a chance de chuva de cada dia.
+
+### Correções
+- Painéis maiores (fila, volume) não são mais cortados pela altura máxima da ilha.
+- O aviso de estado do clima não se sobrepõe mais aos detalhes.
+
 ## 1.0.0 — 2026-11-10
 
 ### Novos módulos

@@ -26,7 +26,7 @@ clique em **Mais informações › Executar assim mesmo**.
 
 | Módulo | O que aparece | Integração com o Windows |
 |---|---|---|
-| **Media Center** | Capa, título, artista, progresso e controles; várias mídias ao mesmo tempo viram abas | Global System Media Transport Controls (Spotify, navegadores, players) |
+| **Media Center** | Capa, título, artista, progresso, controles e volume; várias mídias viram abas; fila do Spotify ("A seguir") com pular para a faixa | Global System Media Transport Controls; Spotify Web API opcional (OAuth PKCE com o seu Client ID) |
 | **Hardware Control** | Volume com troca do dispositivo de saída e microfone; brilho de cada tela | Core Audio (`IPolicyConfig` para a saída padrão), WMI na tela do notebook, DDC/CI em monitores externos |
 | **Notification Center** | Notificações agrupadas por app, histórico, regras por aplicativo (mostrar, só histórico, bloquear, prioridade, duração) | `UserNotificationListener` |
 | **Download Manager** | Arquivo, bytes recebidos e velocidade; abrir ou mostrar na pasta ao terminar | Arquivos temporários dos navegadores na pasta Downloads |
@@ -34,7 +34,7 @@ clique em **Mais informações › Executar assim mesmo**.
 | **Gaming Monitor** | Modo gamer automático, FPS, CPU, GPU, memória, VRAM, frequência e temperaturas disponíveis | Detecção de jogos por loja/tela cheia, PDH, NVML, ETW do DirectX (sem injeção) |
 | **Focus Center** | Cronômetro com voltas, temporizador e Pomodoro configurável, com histórico | Baseado em instantes reais (continua certo após suspender) |
 | **Capture Center** | Captura de região, tela ou janela; gravação de tela em MP4 com áudio do sistema e microfone | GDI/PrintWindow, Windows.Graphics.Capture, Media Foundation, WASAPI loopback |
-| **Life Center** | Tempo agora e próximos dias; agenda local com lembretes | [Open-Meteo](https://open-meteo.com) (gratuito, sem chave), SQLite local |
+| **Life Center** | Tempo agora (sensação, umidade, vento, chuva) e próximos 5 dias; agenda local com lembretes | [Open-Meteo](https://open-meteo.com) (gratuito, sem chave), SQLite local |
 | Bateria · Monitor do sistema · Relógio | Avisos de carga, uso de recursos, tela inicial com atalhos | `PowerManager`, PDH, discos |
 
 Além da ilha, há a **Central** (históricos da área de transferência, notificações, foco e capturas, e a
