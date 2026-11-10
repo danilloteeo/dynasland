@@ -10,10 +10,18 @@ public sealed class SettingsWindowService(IServiceProvider services)
 {
     private SettingsWindow? _window;
 
-    public void Show()
+    public void Show() => Show(null);
+
+    /// <param name="section">Página a exibir; <c>null</c> mantém a atual.</param>
+    public void Show(SettingsSection? section)
     {
         if (_window is not null)
         {
+            if (section is { } target && _window.DataContext is SettingsViewModel current)
+            {
+                current.Section = target;
+            }
+
             if (_window.WindowState == WindowState.Minimized)
             {
                 _window.WindowState = WindowState.Normal;
@@ -23,7 +31,13 @@ public sealed class SettingsWindowService(IServiceProvider services)
             return;
         }
 
-        _window = new SettingsWindow(services.GetRequiredService<SettingsViewModel>(), services.GetRequiredService<ThemeService>());
+        var viewModel = services.GetRequiredService<SettingsViewModel>();
+        if (section is { } initial)
+        {
+            viewModel.Section = initial;
+        }
+
+        _window = new SettingsWindow(viewModel, services.GetRequiredService<ThemeService>());
         _window.Closed += (_, _) => _window = null;
         _window.Show();
         _window.Activate();

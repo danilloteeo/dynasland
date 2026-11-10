@@ -1,0 +1,82 @@
+<UserControl x:Class="Dynasland.App.Views.Settings.PrivacyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
+             xmlns:converters="clr-namespace:Dynasland.App.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:EnumMatchConverter x:Key="EnumMatch" />
+        <converters:EnumMatchToVisibilityConverter x:Key="EnumVisibility" />
+        <converters:InvertedBooleanToVisibilityConverter x:Key="InvertedBoolToVisibility" />
+        <Style x:Key="SettingRowGrid" TargetType="Grid">
+            <Setter Property="MinHeight" Value="36" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="Privacidade" Style="{StaticResource SettingsTitle}" />
+        <TextBlock Text="Tudo fica neste computador. Nada é enviado a servidores, exceto a consulta de versão ao GitHub (se ligada em Sobre) e a previsão do tempo (se você escolher uma cidade)." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
+        <TextBlock Text="Área de transferência" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <StackPanel Margin="0,0,180,0">
+                    <TextBlock Text="Guardar histórico" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Guarda texto e imagens copiados para a Central. Conteúdo marcado como privado pelos aplicativos (ex.: gerenciadores de senha) e textos com aparência de senha, cartão ou chave nunca são guardados." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding Privacy.ClipboardHistoryEnabled}" />
+            </Grid>
+        </Border>
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <StackPanel Margin="0,0,180,0">
+                    <TextBlock Text="Incluir imagens" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Guarda também as imagens copiadas." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding Privacy.ClipboardStoreImages}" />
+            </Grid>
+        </Border>
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid>
+                <StackPanel Margin="0,0,200,0">
+                    <TextBlock Text="Apagar histórico da área de transferência" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Remove todos os itens, inclusive os favoritos." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <Button Style="{StaticResource SettingsButton}" Content="Apagar…" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Privacy.ClearClipboardCommand}" />
+            </Grid>
+        </Border>
+        <TextBlock Text="Notificações" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <StackPanel Margin="0,0,180,0">
+                    <TextBlock Text="Guardar histórico de notificações" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Guarda as notificações recebidas para consulta na Central." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding Privacy.NotificationHistoryEnabled}" />
+            </Grid>
+        </Border>
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid>
+                <StackPanel Margin="0,0,200,0">
+                    <TextBlock Text="Apagar histórico de notificações" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Remove todas as notificações guardadas." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <Button Style="{StaticResource SettingsButton}" Content="Apagar…" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Privacy.ClearNotificationsCommand}" />
+            </Grid>
+        </Border>
+        <TextBlock Text="Foco" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid>
+                <StackPanel Margin="0,0,200,0">
+                    <TextBlock Text="Apagar histórico de foco" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Remove as sessões de Pomodoro, temporizador e cronômetro." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <Button Style="{StaticResource SettingsButton}" Content="Apagar…" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Privacy.ClearFocusCommand}" />
+            </Grid>
+        </Border>
+        <TextBlock Text="{Binding Privacy.LastAction}" Style="{StaticResource CardDescription}" Margin="4,10,0,0" />
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,149 @@
+<UserControl x:Class="Dynasland.App.Views.Settings.AppearancePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
+             xmlns:converters="clr-namespace:Dynasland.App.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:EnumMatchConverter x:Key="EnumMatch" />
+        <converters:EnumMatchToVisibilityConverter x:Key="EnumVisibility" />
+        <converters:InvertedBooleanToVisibilityConverter x:Key="InvertedBoolToVisibility" />
+        <Style x:Key="SettingRowGrid" TargetType="Grid">
+            <Setter Property="MinHeight" Value="36" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+
+            <TextBlock Text="Aparência" Style="{StaticResource SettingsTitle}" />
+            <TextBlock Text="Tema das janelas, cor de destaque e o visual da ilha. A ilha continua predominantemente preta em qualquer tema."
+                       Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
+
+            <TextBlock Text="Tema" Style="{StaticResource SettingsGroupHeader}" />
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Automático"
+                         IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=System}">
+                <StackPanel>
+                    <TextBlock Text="Automático" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Segue o modo de cor dos aplicativos do Windows." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Escuro"
+                         IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Dark}">
+                <TextBlock Text="Escuro" Style="{StaticResource CardTitle}" />
+            </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Claro"
+                         IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Light}">
+                <TextBlock Text="Claro" Style="{StaticResource CardTitle}" />
+            </RadioButton>
+
+            <TextBlock Text="Cor de destaque" Style="{StaticResource SettingsGroupHeader}" />
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="Usada no equalizador, carregamento, botões e controles." Style="{StaticResource CardDescription}" Margin="0,0,0,10" />
+                    <ItemsControl ItemsSource="{Binding AccentOptions}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:AccentOptionViewModel}">
+                                <RadioButton Style="{StaticResource AccentSwatch}" GroupName="Accent" Background="{Binding Brush}"
+                                             IsChecked="{Binding IsSelected}" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Ilha" Style="{StaticResource SettingsGroupHeader}" />
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Opacidade" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding IslandOpacity, StringFormat={}{0:P0} opaca}" Style="{StaticResource CardDescription}" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0.5" Maximum="1" VerticalAlignment="Center"
+                            Value="{Binding IslandOpacity, Delay=200}" />
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Sombra" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding ShadowIntensity, StringFormat={}{0:P0}}" Style="{StaticResource CardDescription}" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0" Maximum="1" VerticalAlignment="Center"
+                            Value="{Binding ShadowIntensity, Delay=200}" />
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Arredondamento" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding Roundness, StringFormat='{}{0:P0} (100% = cápsula)'}" Style="{StaticResource CardDescription}" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0.3" Maximum="1" VerticalAlignment="Center"
+                            Value="{Binding Roundness, Delay=200}" />
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Largura mínima" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding CompactWidth, StringFormat=Ilha compacta: {0:0} px}" Style="{StaticResource CardDescription}" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="140" Maximum="300" VerticalAlignment="Center"
+                            Value="{Binding CompactWidth, Delay=200}" />
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Largura máxima" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding MaxWidth, StringFormat=Ilha expandida: até {0:0} px}" Style="{StaticResource CardDescription}" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="340" Maximum="420" VerticalAlignment="Center"
+                            Value="{Binding MaxWidth, Delay=200}" />
+                </Grid>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="260" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Altura da ilha" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding CompactHeight, StringFormat=Ilha compacta: {0:0} px}" Style="{StaticResource CardDescription}" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="28" Maximum="44" VerticalAlignment="Center"
+                            Value="{Binding CompactHeight, Delay=200}" />
+                </Grid>
+            </Border>
+    </StackPanel>
+</UserControl>

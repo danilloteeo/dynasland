@@ -130,9 +130,11 @@ public partial class App : Application
         }
 
         var handled = false;
-        if (args.Contains("--configuracoes", StringComparer.OrdinalIgnoreCase))
+        // --configuracoes abre a janela; --configuracoes=atalhos (nome da seção em inglês ou português) abre a página.
+        if (args.FirstOrDefault(a => a.StartsWith("--configuracoes", StringComparison.OrdinalIgnoreCase)) is { } settingsArg)
         {
-            _host.Services.GetRequiredService<SettingsWindowService>().Show();
+            var name = settingsArg.Contains('=') ? settingsArg[(settingsArg.IndexOf('=') + 1)..] : null;
+            _host.Services.GetRequiredService<SettingsWindowService>().Show(ParseSection(name));
             handled = true;
         }
 
@@ -146,6 +148,35 @@ public partial class App : Application
         {
             _ = _host.Services.GetRequiredService<IIslandSettingsService>().UpdateAsync(s => s with { IsVisible = true });
         }
+    }
+
+    private static SettingsSection? ParseSection(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        if (Enum.TryParse<SettingsSection>(name, ignoreCase: true, out var section))
+        {
+            return section;
+        }
+
+        return name.ToLowerInvariant() switch
+        {
+            "geral" => SettingsSection.General,
+            "aparencia" or "aparência" => SettingsSection.Appearance,
+            "animacoes" or "animações" => SettingsSection.Animations,
+            "comportamento" => SettingsSection.Behavior,
+            "monitores" => SettingsSection.Monitors,
+            "modulos" or "módulos" => SettingsSection.Modules,
+            "notificacoes" or "notificações" => SettingsSection.Notifications,
+            "privacidade" => SettingsSection.Privacy,
+            "atalhos" => SettingsSection.Shortcuts,
+            "armazenamento" => SettingsSection.Storage,
+            "sobre" => SettingsSection.About,
+            _ => null,
+        };
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -194,6 +225,10 @@ public partial class App : Application
         builder.Services.AddSingleton<IAlertSound, AlertSoundPlayer>();
         builder.Services.AddSingleton<SettingsWindowService>();
         builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.BehaviorSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.PrivacySettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.ShortcutsSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.StorageSettingsViewModel>();
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<FullscreenDetector>();
         builder.Services.AddSingleton<UpdateNotifier>();

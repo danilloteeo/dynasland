@@ -1,105 +1,61 @@
-using System.Runtime.InteropServices;
+using System.ComponentModel;
 using System.Windows;
-using System.Windows.Interop;
+using System.Windows.Controls;
 using Dynasland.App.Services;
 using Dynasland.App.ViewModels;
+using Dynasland.App.Views.Settings;
 
 namespace Dynasland.App.Views;
 
+/// <summary>Janela de configurações: navegação lateral e uma página por categoria, criada ao ser aberta.</summary>
 public partial class SettingsWindow : Window
 {
-    private const int DwmUseImmersiveDarkMode = 20;
-    private const int DwmUseImmersiveDarkModeBefore20H1 = 19;
-
     private readonly SettingsViewModel _viewModel;
-    private readonly ThemeService _theme;
 
     public SettingsWindow(SettingsViewModel viewModel, ThemeService theme)
     {
         _viewModel = viewModel;
-        _theme = theme;
         InitializeComponent();
         DataContext = viewModel;
-        theme.ThemeChanged += OnThemeChanged;
+        TitleBarTheme.Attach(this, theme);
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
-    }
-
-    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        // Cada seção começa do topo.
-        if (e.PropertyName == nameof(SettingsViewModel.Section))
-        {
-            ContentScroll.ScrollToTop();
-        }
-    }
-
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-        ApplyTitleBarTheme();
+        ShowSection(viewModel.Section);
     }
 
     protected override void OnClosed(EventArgs e)
     {
-        _theme.ThemeChanged -= OnThemeChanged;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Dispose();
         base.OnClosed(e);
     }
 
-    private void OnThemeChanged(object? sender, EventArgs e) => ApplyTitleBarTheme();
-
-    /// <summary>Barra de título clara ou escura, coerente com o tema da janela.</summary>
-    private void ApplyTitleBarTheme()
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var hwnd = new WindowInteropHelper(this).Handle;
-        if (hwnd == IntPtr.Zero)
+        if (e.PropertyName == nameof(SettingsViewModel.Section))
         {
-            return;
-        }
-
-        var dark = _theme.IsDark ? 1 : 0;
-        if (DwmSetWindowAttribute(hwnd, DwmUseImmersiveDarkMode, ref dark, sizeof(int)) != 0)
-        {
-            DwmSetWindowAttribute(hwnd, DwmUseImmersiveDarkModeBefore20H1, ref dark, sizeof(int));
-        }
-
-        // O Windows só repinta a barra de título quando o quadro da janela é invalidado.
-        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
-        RedrawWindow(hwnd, IntPtr.Zero, IntPtr.Zero, RdwFrame | RdwInvalidate | RdwUpdateNow);
-    }
-
-    private const uint SwpNoSize = 0x0001;
-    private const uint SwpNoMove = 0x0002;
-    private const uint SwpNoZOrder = 0x0004;
-    private const uint SwpNoActivate = 0x0010;
-    private const uint SwpFrameChanged = 0x0020;
-    private const uint RdwInvalidate = 0x0001;
-    private const uint RdwUpdateNow = 0x0100;
-    private const uint RdwFrame = 0x0400;
-
-    [DllImport("user32.dll")]
-    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
-
-    [DllImport("user32.dll")]
-    private static extern bool RedrawWindow(IntPtr hwnd, IntPtr updateRect, IntPtr region, uint flags);
-
-    private async void OnRestoreDefaultsClick(object sender, RoutedEventArgs e)
-    {
-        var answer = MessageBox.Show(
-            this,
-            "Restaurar todas as configurações do Dynasland para o padrão?\n\nAparência, animações, módulos e notificações voltam ao estado original.",
-            "Restaurar configurações",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question,
-            MessageBoxResult.No);
-
-        if (answer == MessageBoxResult.Yes)
-        {
-            await _viewModel.RestoreDefaultsAsync();
+            ShowSection(_viewModel.Section);
         }
     }
 
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+    /// <summary>Cada seção começa do topo, com a página criada sob demanda (herda o DataContext).</summary>
+    private void ShowSection(SettingsSection section)
+    {
+        PageHost.Content = CreatePage(section);
+        ContentScroll.ScrollToTop();
+    }
+
+    private static UserControl CreatePage(SettingsSection section) => section switch
+    {
+        SettingsSection.Appearance => new AppearancePage(),
+        SettingsSection.Animations => new AnimationsPage(),
+        SettingsSection.Behavior => new BehaviorPage(),
+        SettingsSection.Monitors => new MonitorsPage(),
+        SettingsSection.Modules => new ModulesPage(),
+        SettingsSection.Notifications => new NotificationsPage(),
+        SettingsSection.Privacy => new PrivacyPage(),
+        SettingsSection.Shortcuts => new ShortcutsPage(),
+        SettingsSection.Storage => new StoragePage(),
+        SettingsSection.About => new AboutPage(),
+        _ => new GeneralPage(),
+    };
 }

@@ -19,9 +19,14 @@ public enum SettingsSection
     General,
     Appearance,
     Animations,
+    Behavior,
+    Monitors,
     Modules,
     Notifications,
-    System,
+    Privacy,
+    Shortcuts,
+    Storage,
+    About,
 }
 
 public enum ModuleStatus
@@ -71,8 +76,16 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IShellService shell,
         DatabaseOptions database,
         IUiDispatcher ui,
-        ILogger<SettingsViewModel> logger)
+        ILogger<SettingsViewModel> logger,
+        Settings.BehaviorSettingsViewModel behavior,
+        Settings.PrivacySettingsViewModel privacy,
+        Settings.ShortcutsSettingsViewModel shortcuts,
+        Settings.StorageSettingsViewModel storage)
     {
+        Behavior = behavior;
+        Privacy = privacy;
+        Shortcuts = shortcuts;
+        Storage = storage;
         _modules = modules;
         _moduleOptions = moduleOptions;
         _settings = settings;
@@ -95,6 +108,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         notifications.Changed += OnNotificationsChanged;
         Refresh();
     }
+
+    /// <summary>Categorias com view model próprio.</summary>
+    public Settings.BehaviorSettingsViewModel Behavior { get; }
+
+    public Settings.PrivacySettingsViewModel Privacy { get; }
+
+    public Settings.ShortcutsSettingsViewModel Shortcuts { get; }
+
+    public Settings.StorageSettingsViewModel Storage { get; }
 
     public ObservableCollection<ModuleSettingViewModel> Modules { get; } = [];
 
@@ -306,7 +328,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         foreach (var app in _notifications.KnownApps)
         {
             var shows = app.Rule ?? _notifications.Mode == NotificationFilterMode.AllExceptBlocked;
-            NotificationApps.Add(new NotificationAppViewModel(app.AppId, app.Name, shows, app.Rule is null, SetAppRuleAsync));
+            NotificationApps.Add(new NotificationAppViewModel(app, shows, _notifications, _logger));
         }
 
         OnPropertyChanged(nameof(HasNotificationApps));
@@ -331,8 +353,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private Task SetModuleOptionAsync(string moduleId, ModuleOption option, double value) =>
         Guard(() => _moduleOptions.SetAsync(moduleId, option, value), "opção do módulo");
 
-    private Task SetAppRuleAsync(string appId, bool show) =>
-        Guard(() => _notifications.SetRuleAsync(appId, show), "regra de notificação");
 
     private void SelectMonitor(string? deviceName) => Save(s => s with { MonitorDeviceName = deviceName });
 
@@ -456,6 +476,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             await _moduleOptions.LoadAsync();
             await _notifications.LoadAsync();
             await _modules.ResetAsync();
+            await Shortcuts.ReloadAsync();
         }
         catch (Exception ex)
         {
@@ -519,6 +540,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _modules.ModulesChanged -= OnModulesChanged;
         _settings.Changed -= OnSettingsChanged;
         _notifications.Changed -= OnNotificationsChanged;
+        Behavior.Dispose();
+        Privacy.Dispose();
+        Shortcuts.Dispose();
+        Storage.Dispose();
     }
 }
 
@@ -680,17 +705,24 @@ public sealed partial class AccentOptionViewModel : ObservableObject
 }
 
 /// <summary>Aplicativo que já enviou notificações: mostrar ou não na ilha.</summary>
+/// <summary>Regras de notificação de um aplicativo: mostrar, só no histórico, prioridade e duração próprias.</summary>
 public sealed partial class NotificationAppViewModel : ObservableObject
 {
-    private readonly Func<string, bool, Task> _setRule;
+    private readonly NotificationPreferences _preferences;
+    private readonly ILogger _logger;
 
-    public NotificationAppViewModel(string appId, string name, bool shows, bool followsMode, Func<string, bool, Task> setRule)
+    public NotificationAppViewModel(KnownNotificationApp app, bool shows, NotificationPreferences preferences, ILogger logger)
     {
-        _setRule = setRule;
-        AppId = appId;
-        Name = name;
-        FollowsMode = followsMode;
+        _preferences = preferences;
+        _logger = logger;
+        AppId = app.AppId;
+        Name = app.Name;
+        FollowsMode = app.Rule is null;
         _shows = shows;
+        _historyOnly = app.HistoryOnly;
+        _highPriority = app.HighPriority;
+        _hasCustomDuration = app.DurationSeconds is not null;
+        _durationSeconds = app.DurationSeconds ?? preferences.DurationSeconds;
     }
 
     public string AppId { get; }
@@ -703,5 +735,49 @@ public sealed partial class NotificationAppViewModel : ObservableObject
     [ObservableProperty]
     private bool _shows;
 
-    partial void OnShowsChanged(bool value) => _ = _setRule(AppId, value);
+    [ObservableProperty]
+    private bool _historyOnly;
+
+    [ObservableProperty]
+    private bool _highPriority;
+
+    [ObservableProperty]
+    private bool _hasCustomDuration;
+
+    [ObservableProperty]
+    private double _durationSeconds;
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    partial void OnShowsChanged(bool value) => Guard(_preferences.SetRuleAsync(AppId, value));
+
+    partial void OnHistoryOnlyChanged(bool value) => Guard(_preferences.SetHistoryOnlyAsync(AppId, value));
+
+    partial void OnHighPriorityChanged(bool value) => Guard(_preferences.SetHighPriorityAsync(AppId, value));
+
+    partial void OnHasCustomDurationChanged(bool value) => Guard(_preferences.SetAppDurationAsync(AppId, value ? DurationSeconds : null));
+
+    partial void OnDurationSecondsChanged(double value)
+    {
+        if (HasCustomDuration)
+        {
+            Guard(_preferences.SetAppDurationAsync(AppId, value));
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleExpanded() => IsExpanded = !IsExpanded;
+
+    private async void Guard(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao salvar regra de notificação de {App}.", Name);
+        }
+    }
 }

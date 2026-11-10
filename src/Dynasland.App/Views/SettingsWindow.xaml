@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
         Title="Configurações do Dynasland"
-        Width="900" Height="660" MinWidth="740" MinHeight="500"
+        Width="920" Height="680" MinWidth="760" MinHeight="520"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource SettingsBackgroundBrush}"
         Foreground="{DynamicResource SettingsTextBrush}"
@@ -16,17 +16,7 @@
         UseLayoutRounding="True">
 
     <Window.Resources>
-        <ResourceDictionary>
-            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
-            <converters:EnumMatchConverter x:Key="EnumMatch" />
-            <converters:EnumMatchToVisibilityConverter x:Key="EnumVisibility" />
-            <converters:InvertedBooleanToVisibilityConverter x:Key="InvertedBoolToVisibility" />
-
-            <!-- Linha padrão: título + descrição à esquerda, controle à direita. -->
-            <Style x:Key="SettingRowGrid" TargetType="Grid">
-                <Setter Property="MinHeight" Value="36" />
-            </Style>
-        </ResourceDictionary>
+        <converters:EnumMatchConverter x:Key="EnumMatch" />
     </Window.Resources>
 
     <Grid>
@@ -35,27 +25,42 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Navegação -->
+        <!-- Navegação: cada categoria tem sua própria página (Views/Settings). -->
         <Border Background="{DynamicResource SettingsSidebarBrush}">
-            <DockPanel Margin="14,18">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
+            <DockPanel Margin="14,18,14,10">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,18">
                     <Border Width="34" Height="16" CornerRadius="8" Background="Black" BorderBrush="#33FFFFFF" BorderThickness="1" VerticalAlignment="Center" />
                     <TextBlock Text="Dynasland" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
-                <StackPanel>
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE80F;" Content="Geral"
-                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=General}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE790;" Content="Aparência"
-                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Appearance}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE916;" Content="Animações"
-                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Animations}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE74C;" Content="Módulos"
-                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Modules}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7E7;" Content="Notificações"
-                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Notifications}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE770;" Content="Sistema"
-                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=System}" />
-                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer.Resources>
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource SettingsScrollBar}" />
+                    </ScrollViewer.Resources>
+                    <StackPanel>
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE80F;" Content="Geral"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=General}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE790;" Content="Aparência"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Appearance}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE916;" Content="Animações"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Animations}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE8B0;" Content="Comportamento"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Behavior}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7F4;" Content="Monitores"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Monitors}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE74C;" Content="Módulos"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Modules}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7E7;" Content="Notificações"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Notifications}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE72E;" Content="Privacidade"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Privacy}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE765;" Content="Atalhos"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Shortcuts}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xEDA2;" Content="Armazenamento"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Storage}" />
+                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE946;" Content="Sobre"
+                                     IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=About}" />
+                    </StackPanel>
+                </ScrollViewer>
             </DockPanel>
         </Border>
 
@@ -63,515 +68,7 @@
             <ScrollViewer.Resources>
                 <Style TargetType="ScrollBar" BasedOn="{StaticResource SettingsScrollBar}" />
             </ScrollViewer.Resources>
-            <Grid MaxWidth="760" HorizontalAlignment="Left">
-
-                <!-- ============================ Geral ============================ -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EnumVisibility}, ConverterParameter=General}">
-                    <TextBlock Text="Geral" Style="{StaticResource SettingsTitle}" />
-                    <TextBlock Text="Inicialização, idioma e onde a ilha aparece." Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
-
-                    <TextBlock Text="Inicialização" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel Margin="0,0,180,0">
-                                <TextBlock Text="Iniciar com o Windows" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Abre o Dynasland automaticamente ao entrar no Windows." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding StartWithWindows}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel Margin="0,0,180,0">
-                                <TextBlock Text="Iniciar minimizado" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Abre com a ilha oculta, só com o ícone na bandeja. Mostre pela bandeja quando quiser." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding StartHidden}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel>
-                                <TextBlock Text="Idioma" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Idioma da interface." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <TextBlock Text="{Binding Language}" Style="{StaticResource CardTitle}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                        </Grid>
-                    </Border>
-
-                    <TextBlock Text="Comportamento da ilha" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel Margin="0,0,180,0">
-                                <TextBlock Text="Mostrar a ilha" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Oculta a ilha sem fechar o Dynasland." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding IsIslandVisible}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel Margin="0,0,180,0">
-                                <TextBlock Text="Ocultar em tela cheia" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Esconde a ilha enquanto um jogo, vídeo ou apresentação ocupa o monitor dela." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding HideInFullscreen}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Distância do topo" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding TopMargin, StringFormat={}{0:0} px}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0" Maximum="60" VerticalAlignment="Center"
-                                    Value="{Binding TopMargin, Delay=250}" />
-                        </Grid>
-                    </Border>
-
-                    <TextBlock Text="Exibir no monitor" Style="{StaticResource SettingsGroupHeader}" />
-                    <ItemsControl ItemsSource="{Binding MonitorOptions}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:MonitorOptionViewModel}">
-                                <RadioButton Style="{StaticResource OptionRow}" GroupName="Monitor" IsChecked="{Binding IsSelected}" AutomationProperties.Name="{Binding Name}">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource CardTitle}" />
-                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource CardDescription}" />
-                                    </StackPanel>
-                                </RadioButton>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-
-                <!-- ============================ Aparência ============================ -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EnumVisibility}, ConverterParameter=Appearance}">
-                    <TextBlock Text="Aparência" Style="{StaticResource SettingsTitle}" />
-                    <TextBlock Text="Tema das janelas, cor de destaque e o visual da ilha. A ilha continua predominantemente preta em qualquer tema."
-                               Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
-
-                    <TextBlock Text="Tema" Style="{StaticResource SettingsGroupHeader}" />
-                    <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Automático"
-                                 IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=System}">
-                        <StackPanel>
-                            <TextBlock Text="Automático" Style="{StaticResource CardTitle}" />
-                            <TextBlock Text="Segue o modo de cor dos aplicativos do Windows." Style="{StaticResource CardDescription}" />
-                        </StackPanel>
-                    </RadioButton>
-                    <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Escuro"
-                                 IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Dark}">
-                        <TextBlock Text="Escuro" Style="{StaticResource CardTitle}" />
-                    </RadioButton>
-                    <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Claro"
-                                 IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Light}">
-                        <TextBlock Text="Claro" Style="{StaticResource CardTitle}" />
-                    </RadioButton>
-
-                    <TextBlock Text="Cor de destaque" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
-                            <TextBlock Text="Usada no equalizador, carregamento, botões e controles." Style="{StaticResource CardDescription}" Margin="0,0,0,10" />
-                            <ItemsControl ItemsSource="{Binding AccentOptions}" Focusable="False">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:AccentOptionViewModel}">
-                                        <RadioButton Style="{StaticResource AccentSwatch}" GroupName="Accent" Background="{Binding Brush}"
-                                                     IsChecked="{Binding IsSelected}" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Ilha" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Opacidade" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding IslandOpacity, StringFormat={}{0:P0} opaca}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0.5" Maximum="1" VerticalAlignment="Center"
-                                    Value="{Binding IslandOpacity, Delay=200}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Sombra" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding ShadowIntensity, StringFormat={}{0:P0}}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0" Maximum="1" VerticalAlignment="Center"
-                                    Value="{Binding ShadowIntensity, Delay=200}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Arredondamento" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding Roundness, StringFormat='{}{0:P0} (100% = cápsula)'}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0.3" Maximum="1" VerticalAlignment="Center"
-                                    Value="{Binding Roundness, Delay=200}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Largura mínima" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding CompactWidth, StringFormat=Ilha compacta: {0:0} px}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="140" Maximum="300" VerticalAlignment="Center"
-                                    Value="{Binding CompactWidth, Delay=200}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Largura máxima" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding MaxWidth, StringFormat=Ilha expandida: até {0:0} px}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="340" Maximum="420" VerticalAlignment="Center"
-                                    Value="{Binding MaxWidth, Delay=200}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Altura da ilha" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding CompactHeight, StringFormat=Ilha compacta: {0:0} px}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="28" Maximum="44" VerticalAlignment="Center"
-                                    Value="{Binding CompactHeight, Delay=200}" />
-                        </Grid>
-                    </Border>
-                </StackPanel>
-
-                <!-- ============================ Animações ============================ -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EnumVisibility}, ConverterParameter=Animations}">
-                    <TextBlock Text="Animações" Style="{StaticResource SettingsTitle}" />
-                    <TextBlock Text="Como a ilha se move ao expandir, recolher e trocar de conteúdo." Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
-
-                    <TextBlock Text="Movimento" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel Margin="0,0,180,0">
-                                <TextBlock Text="Animações" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Desligadas, a ilha muda de tamanho instantaneamente e o equalizador fica parado." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding AnimationsEnabled}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}" IsEnabled="{Binding AnimationsEnabled}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Velocidade" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding AnimationSpeed, StringFormat={}{0:0.##}×}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0.5" Maximum="2" VerticalAlignment="Center"
-                                    Value="{Binding AnimationSpeed, Delay=200}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}" IsEnabled="{Binding AnimationsEnabled}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Intensidade" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding AnimationIntensity, StringFormat=Efeito de mola ao expandir: {0:0.#}×}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0" Maximum="2" VerticalAlignment="Center"
-                                    Value="{Binding AnimationIntensity, Delay=200}" />
-                        </Grid>
-                    </Border>
-
-                    <TextBlock Text="Tempo" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Tempo de permanência expandida" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding ExpandedDurationSeconds, StringFormat=Recolhe após {0:0} s sem interação}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="2" Maximum="20" VerticalAlignment="Center"
-                                    Value="{Binding ExpandedDurationSeconds, Delay=250}" />
-                        </Grid>
-                    </Border>
-                </StackPanel>
-
-                <!-- ============================ Módulos ============================ -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EnumVisibility}, ConverterParameter=Modules}">
-                    <TextBlock Text="Módulos" Style="{StaticResource SettingsTitle}" />
-                    <TextBlock Text="O que a ilha mostra. Cada módulo pode ser ligado ou desligado e tem suas próprias opções; os indisponíveis dependem de um recurso que este computador não tem."
-                               Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,4" />
-                    <TextBlock Text="{Binding ModulesSummary}" FontSize="12" Foreground="{DynamicResource SettingsTertiaryTextBrush}" Margin="0,0,0,16" />
-
-                    <ItemsControl ItemsSource="{Binding Modules}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:ModuleSettingViewModel}">
-                                <Border Style="{StaticResource SettingsCard}">
-                                    <StackPanel>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Margin="0,0,20,0">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource CardTitle}" VerticalAlignment="Center" />
-                                                    <Border Style="{StaticResource StatusChip}" Margin="10,0,0,0" VerticalAlignment="Center">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Ellipse x:Name="Dot" Width="7" Height="7" Fill="{DynamicResource StatusActiveBrush}" VerticalAlignment="Center" />
-                                                            <TextBlock Text="{Binding StatusText}" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center"
-                                                                       Foreground="{DynamicResource SettingsSecondaryTextBrush}" />
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding Description}" Style="{StaticResource CardDescription}" />
-                                                <TextBlock x:Name="Reason" Text="{Binding Reason}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
-                                                           Foreground="{DynamicResource StatusUnavailableBrush}"
-                                                           Visibility="{Binding HasReason, Converter={StaticResource BoolToVisibility}}" />
-                                            </StackPanel>
-                                            <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
-                                                      IsChecked="{Binding IsEnabled}" IsEnabled="{Binding CanToggle}" />
-                                        </Grid>
-
-                                        <!-- Opções do módulo -->
-                                        <ItemsControl ItemsSource="{Binding Options}" Focusable="False" Margin="0,10,0,0"
-                                                      Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type vm:ModuleOptionViewModel}">
-                                                    <Border BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,4">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <StackPanel Margin="0,0,16,0">
-                                                                <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource SettingsTextBrush}" />
-                                                                <TextBlock Text="{Binding Description}" Style="{StaticResource CardDescription}" />
-                                                            </StackPanel>
-                                                            <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
-                                                                      IsChecked="{Binding IsOn}"
-                                                                      Visibility="{Binding IsToggle, Converter={StaticResource BoolToVisibility}}" />
-                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
-                                                                        Visibility="{Binding IsSlider, Converter={StaticResource BoolToVisibility}}">
-                                                                <TextBlock Text="{Binding ValueText}" FontSize="12" Width="76" TextAlignment="Right" VerticalAlignment="Center"
-                                                                           Foreground="{DynamicResource SettingsSecondaryTextBrush}" Margin="0,0,10,0" />
-                                                                <Slider Style="{StaticResource SettingsSlider}" Width="180" VerticalAlignment="Center"
-                                                                        Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
-                                                                        TickFrequency="{Binding Step}" IsSnapToTickEnabled="True"
-                                                                        Value="{Binding Value, Delay=250}" />
-                                                            </StackPanel>
-                                                        </Grid>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding Status}" Value="Disabled">
-                                        <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource StatusDisabledBrush}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="Unavailable">
-                                        <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource StatusUnavailableBrush}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="Failed">
-                                        <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource StatusFailedBrush}" />
-                                        <Setter TargetName="Reason" Property="Foreground" Value="{DynamicResource StatusFailedBrush}" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="Applying">
-                                        <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource SettingsAccentBrush}" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-
-                <!-- ============================ Notificações ============================ -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EnumVisibility}, ConverterParameter=Notifications}">
-                    <TextBlock Text="Notificações" Style="{StaticResource SettingsTitle}" />
-                    <TextBlock Text="Quais aplicativos aparecem na ilha e como. O Windows continua exibindo as notificações normalmente."
-                               Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
-
-                    <TextBlock Text="Aplicativos permitidos" Style="{StaticResource SettingsGroupHeader}" />
-                    <RadioButton Style="{StaticResource OptionRow}" GroupName="NotificationMode" AutomationProperties.Name="Todos, exceto os bloqueados"
-                                 IsChecked="{Binding NotificationMode, Converter={StaticResource EnumMatch}, ConverterParameter=AllExceptBlocked}">
-                        <StackPanel>
-                            <TextBlock Text="Todos, exceto os bloqueados" Style="{StaticResource CardTitle}" />
-                            <TextBlock Text="Aplicativos novos aparecem na ilha até você desligá-los." Style="{StaticResource CardDescription}" />
-                        </StackPanel>
-                    </RadioButton>
-                    <RadioButton Style="{StaticResource OptionRow}" GroupName="NotificationMode" AutomationProperties.Name="Somente os permitidos"
-                                 IsChecked="{Binding NotificationMode, Converter={StaticResource EnumMatch}, ConverterParameter=OnlyAllowed}">
-                        <StackPanel>
-                            <TextBlock Text="Somente os permitidos" Style="{StaticResource CardTitle}" />
-                            <TextBlock Text="Apenas os aplicativos ligados abaixo aparecem na ilha." Style="{StaticResource CardDescription}" />
-                        </StackPanel>
-                    </RadioButton>
-
-                    <TextBlock Text="Exibição" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="260" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Duração" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="{Binding NotificationDuration, StringFormat=Cada notificação fica {0:0} s na ilha}" Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="2" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True"
-                                    VerticalAlignment="Center" Value="{Binding NotificationDuration, Delay=250}" />
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid Style="{StaticResource SettingRowGrid}">
-                            <StackPanel Margin="0,0,180,0">
-                                <TextBlock Text="Prioridade alta" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Ligado, notificações interrompem a ilha mesmo enquanto você usa um controle ou painel." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding NotificationsCanInterrupt}" />
-                        </Grid>
-                    </Border>
-
-                    <TextBlock Text="Aplicativos" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}" Visibility="{Binding HasNotificationApps, Converter={StaticResource InvertedBoolToVisibility}}">
-                        <TextBlock Text="Os aplicativos aparecem aqui depois de enviarem a primeira notificação." Style="{StaticResource CardDescription}" />
-                    </Border>
-                    <ItemsControl ItemsSource="{Binding NotificationApps}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:NotificationAppViewModel}">
-                                <Border Style="{StaticResource SettingsCard}">
-                                    <Grid>
-                                        <StackPanel Margin="0,0,180,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="Segue a opção acima" Style="{StaticResource CardDescription}"
-                                                       Visibility="{Binding FollowsMode, Converter={StaticResource BoolToVisibility}}" />
-                                        </StackPanel>
-                                        <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding Shows}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-
-                <!-- ============================ Sistema ============================ -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EnumVisibility}, ConverterParameter=System}">
-                    <TextBlock Text="Sistema" Style="{StaticResource SettingsTitle}" />
-                    <TextBlock Text="Atualizações, restauração e informações da versão." Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
-
-                    <TextBlock Text="Atualizações" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
-                            <Grid>
-                                <StackPanel Margin="0,0,180,0">
-                                    <TextBlock Text="Verificar atualizações automaticamente" Style="{StaticResource CardTitle}" />
-                                    <TextBlock Text="Ao iniciar, consulta as versões publicadas no GitHub. Nenhum dado pessoal é enviado." Style="{StaticResource CardDescription}" />
-                                </StackPanel>
-                                <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                          IsChecked="{Binding CheckForUpdates}" IsEnabled="{Binding UpdatesConfigured}" />
-                            </Grid>
-                            <Border BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0">
-                                <Grid>
-                                    <StackPanel Margin="0,0,260,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding UpdateStatusText}" FontSize="13" Foreground="{DynamicResource SettingsTextBrush}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding UpdateSource}" Style="{StaticResource CardDescription}" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                        <Button Style="{StaticResource AccentButton}" Content="Baixar nova versão" Command="{Binding OpenReleaseCommand}"
-                                                Visibility="{Binding HasReleaseUrl, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0" />
-                                        <Button Style="{StaticResource SettingsButton}" Content="Verificar agora" Command="{Binding CheckUpdatesNowCommand}" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Restaurar" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid>
-                            <StackPanel Margin="0,0,200,0">
-                                <TextBlock Text="Restaurar configurações padrão" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Volta aparência, animações, módulos e notificações ao padrão. “Iniciar com o Windows” não é alterado."
-                                           Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Button Style="{StaticResource SettingsButton}" Content="Restaurar…" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                    Click="OnRestoreDefaultsClick" />
-                        </Grid>
-                    </Border>
-
-                    <TextBlock Text="Informações" Style="{StaticResource SettingsGroupHeader}" />
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
-                            <TextBlock Text="{Binding Version, StringFormat=Dynasland {0}}" Style="{StaticResource CardTitle}" />
-                            <TextBlock Text="Ilha dinâmica para Windows 10 e Windows 11." Style="{StaticResource CardDescription}" />
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
-                            <TextBlock Text="Privacidade" Style="{StaticResource CardTitle}" />
-                            <TextBlock Text="Nada é enviado a servidores, exceto a consulta de versão ao GitHub (se ligada). Configurações ficam no arquivo abaixo; o conteúdo da área de transferência não é armazenado."
-                                       Style="{StaticResource CardDescription}" />
-                            <TextBlock Text="{Binding DataPath}" FontFamily="Consolas" FontSize="12" Foreground="{DynamicResource SettingsTertiaryTextBrush}"
-                                       Margin="0,8,0,0" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource SettingsCard}">
-                        <Grid>
-                            <StackPanel Margin="0,0,160,0">
-                                <TextBlock Text="Registro de diagnóstico" Style="{StaticResource CardTitle}" />
-                                <TextBlock Text="Ajuda a investigar problemas. Não contém conteúdo de notificações nem da área de transferência." Style="{StaticResource CardDescription}" />
-                            </StackPanel>
-                            <Button Style="{StaticResource SettingsButton}" Content="Abrir pasta" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                    Command="{Binding OpenLogsFolderCommand}" />
-                        </Grid>
-                    </Border>
-                </StackPanel>
-            </Grid>
+            <ContentControl x:Name="PageHost" MaxWidth="760" HorizontalAlignment="Left" Focusable="False" />
         </ScrollViewer>
     </Grid>
 </Window>
