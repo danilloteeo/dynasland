@@ -9,11 +9,13 @@ using Dynasland.Modules.Common;
 namespace Dynasland.Modules.Notifications;
 
 /// <summary>Uma notificação na ilha. Imutável: cada notificação recebida gera um novo conteúdo.</summary>
+/// <param name="logoOnPlate">O ícone veio com margem transparente grande e foi recortado até o desenho.</param>
 /// <param name="accent">Cor dominante do ícone do aplicativo; <c>null</c> deixa o cartão neutro.</param>
 /// <param name="duration">Tempo em que a notificação fica expandida na ilha.</param>
 public sealed partial class NotificationContent(
     NotificationInfo info,
     ImageSource? logo,
+    bool logoOnPlate,
     Color? accent,
     TimeSpan duration,
     bool showMessageText,
@@ -28,6 +30,16 @@ public sealed partial class NotificationContent(
     public ImageSource? Logo { get; } = logo;
 
     public bool HasLogo => Logo is not null;
+
+    public bool HasNoLogo => !HasLogo;
+
+    /// <summary>
+    /// O ícone é só um desenho solto (sem fundo próprio) e vai menor, sobre uma placa. Ícones que já
+    /// preenchem o quadrado aparecem inteiros, sem placa.
+    /// </summary>
+    public bool LogoOnPlate { get; } = logo is not null && logoOnPlate;
+
+    public bool ShowPlate => !HasLogo || LogoOnPlate;
 
     public string AppName => Info.AppName;
 

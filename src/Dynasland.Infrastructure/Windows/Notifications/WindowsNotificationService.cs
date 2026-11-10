@@ -20,7 +20,7 @@ namespace Dynasland.Infrastructure.Windows.Notifications;
 public sealed class WindowsNotificationService(TimeProvider time, ILogger<WindowsNotificationService> logger) : INotificationService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1.5);
-    private static readonly global::Windows.Foundation.Size LogoSize = new(64, 64);
+    private static readonly global::Windows.Foundation.Size LogoSize = new(144, 144);
 
     private readonly SemaphoreSlim _syncGate = new(1, 1);
     private readonly ConcurrentDictionary<string, byte[]?> _logoCache = new(StringComparer.OrdinalIgnoreCase);

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
@@ -24,7 +25,9 @@ public sealed class NotificationsModule(
     ILogger<NotificationsModule> logger) : IIslandModule
 {
     public const string ModuleId = "notifications";
-    private const int LogoDecodeWidth = 72;
+    // Folga para o recorte da margem transparente: o desenho costuma ocupar só parte do ícone.
+    private const int LogoDecodeWidth = 144;
+    private const double LooseDrawingShare = 0.7;
 
     public static readonly ModuleOption ShowMessageText = ModuleOption.Toggle(
         "showMessageText", "Mostrar o texto das mensagens", "Desligado, a ilha mostra apenas o aplicativo e o título (mais privacidade).");
@@ -89,9 +92,10 @@ public sealed class NotificationsModule(
             return;
         }
 
-        var logo = ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth);
+        var decoded = ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth);
+        var logo = ImageDecoder.TrimTransparentMargin(decoded);
         var accent = _accents.GetOrAdd(info.AppId, _ => AccentColorExtractor.FromImage(logo));
-        var content = new NotificationContent(info, logo, accent, decision.Duration, options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
+        var content = new NotificationContent(info, logo, IsLooseDrawing(decoded, logo), accent, decision.Duration, options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
         bus.PostActivity(new IslandActivity(ActivityIdFor(info.Id), ModuleId, ActivityKind.Transient, content)
         {
             Duration = decision.Duration,
@@ -101,6 +105,15 @@ public sealed class NotificationsModule(
             GroupKey = $"notification.{info.AppId}",
         });
     }
+
+    /// <summary>
+    /// Ícones de bloco (aplicativos da Store) trazem um desenho pequeno no meio de uma área transparente;
+    /// depois do recorte sobra só o desenho, que fica melhor sobre uma placa do que solto.
+    /// </summary>
+    public static bool IsLooseDrawing(ImageSource? original, ImageSource? trimmed) =>
+        original is BitmapSource full && trimmed is BitmapSource drawing
+        && drawing.PixelWidth < full.PixelWidth * LooseDrawingShare
+        && drawing.PixelHeight < full.PixelHeight * LooseDrawingShare;
 
     private async Task SaveAsync(NotificationInfo info, bool shown)
     {

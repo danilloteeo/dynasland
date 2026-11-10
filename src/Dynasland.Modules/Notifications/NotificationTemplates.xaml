@@ -4,15 +4,35 @@
 
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
-    <!-- Ícone do aplicativo; sem ícone, um sino genérico. -->
+    <!--
+        Ícone do aplicativo. Ícones que preenchem o quadrado aparecem inteiros; desenhos soltos (recortados
+        de um bloco transparente) vão menores sobre uma placa; sem ícone, um sino genérico na placa.
+    -->
     <DataTemplate x:Key="NotificationLogo">
         <Grid>
-            <Border CornerRadius="9" Background="{DynamicResource IslandSurfaceBrush}">
+            <Border CornerRadius="9" Background="{DynamicResource IslandSurfaceBrush}"
+                    Visibility="{Binding ShowPlate, Converter={StaticResource BoolToVisibility}}">
                 <TextBlock Text="{Binding FallbackGlyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="15"
-                           Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="{Binding HasNoLogo, Converter={StaticResource BoolToVisibility}}" />
             </Border>
             <Image Source="{Binding Logo}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
-                   Visibility="{Binding HasLogo, Converter={StaticResource BoolToVisibility}}" />
+                   RenderTransformOrigin="0.5,0.5"
+                   Visibility="{Binding HasLogo, Converter={StaticResource BoolToVisibility}}">
+                <Image.Style>
+                    <Style TargetType="Image">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding LogoOnPlate}" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.66" ScaleY="0.66" />
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Image.Style>
+            </Image>
         </Grid>
     </DataTemplate>
 

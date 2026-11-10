@@ -1,5 +1,12 @@
 # Notas da versão
 
+## 1.0.6 — 2026-11-10
+
+### Correções
+- **Ícone das notificações**: aplicativos da Store (como o WhatsApp) apareciam com o ícone minúsculo
+  dentro de uma placa cinza. Agora a margem transparente é recortada e o ícone aparece no tamanho
+  certo e mais nítido.
+
 ## 1.0.5 — 2026-11-10
 
 ### Novidades

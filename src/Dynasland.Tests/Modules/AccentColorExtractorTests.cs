@@ -73,6 +73,57 @@ public class AccentColorExtractorTests
         Assert.True(accent.Value.G > accent.Value.R && accent.Value.G > accent.Value.B);
     }
 
+    [Fact]
+    public void Tile_icon_is_trimmed_to_its_drawing_and_goes_on_a_plate()
+    {
+        var tile = Tile(size: 100, drawingStart: 35, drawingSize: 30);
+
+        var trimmed = Assert.IsAssignableFrom<BitmapSource>(ImageDecoder.TrimTransparentMargin(tile));
+
+        Assert.Equal((30, 30), (trimmed.PixelWidth, trimmed.PixelHeight));
+        Assert.True(Dynasland.Modules.Notifications.NotificationsModule.IsLooseDrawing(tile, trimmed));
+        Assert.NotNull(AccentColorExtractor.FromImage(trimmed));
+    }
+
+    [Fact]
+    public void Icon_that_fills_the_square_is_kept_whole_without_plate()
+    {
+        var full = Tile(size: 64, drawingStart: 0, drawingSize: 64);
+        var almostFull = Tile(size: 64, drawingStart: 4, drawingSize: 56);
+
+        Assert.Same(full, ImageDecoder.TrimTransparentMargin(full));
+        var trimmed = ImageDecoder.TrimTransparentMargin(almostFull);
+        Assert.False(Dynasland.Modules.Notifications.NotificationsModule.IsLooseDrawing(full, full));
+        Assert.False(Dynasland.Modules.Notifications.NotificationsModule.IsLooseDrawing(almostFull, trimmed));
+    }
+
+    [Fact]
+    public void Fully_transparent_or_missing_icon_is_left_alone()
+    {
+        var empty = Tile(size: 32, drawingStart: 0, drawingSize: 0);
+
+        Assert.Same(empty, ImageDecoder.TrimTransparentMargin(empty));
+        Assert.Null(ImageDecoder.TrimTransparentMargin(null));
+    }
+
+    /// <summary>Quadrado transparente com um bloco verde opaco dentro.</summary>
+    private static BitmapSource Tile(int size, int drawingStart, int drawingSize)
+    {
+        var pixels = new byte[size * size * 4];
+        for (var y = drawingStart; y < drawingStart + drawingSize; y++)
+        {
+            for (var x = drawingStart; x < drawingStart + drawingSize; x++)
+            {
+                var i = ((y * size) + x) * 4;
+                (pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]) = (Green.B, Green.G, Green.R, 255);
+            }
+        }
+
+        var bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, pixels, size * 4);
+        bitmap.Freeze();
+        return bitmap;
+    }
+
     private static byte[] Pixels(params (Color Color, byte Alpha, int Count)[] runs)
     {
         var pixels = new List<byte>();
