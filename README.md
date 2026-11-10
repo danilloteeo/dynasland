@@ -61,7 +61,7 @@ Todos podem ser trocados ou desligados em Configurações › Atalhos (outras a�
 ## Uso rápido
 
 - **Passar o mouse** amplia a ilha; **clicar** abre o painel da atividade atual; clicar fora (ou esperar) recolhe.
-- Com várias atividades, a **roda do mouse** e os pontos do rodapé trocam de aba. No rodapé também há
+- Com várias atividades, as setas e os pontos do rodapé trocam de aba. No rodapé também há
   **fixar** (o módulo fica sempre no compacto), **fechar** a atividade e as configurações.
 - Sem nenhuma atividade, o clique mostra hora, data, tempo, próximo compromisso e atalhos dos módulos.
 - A ilha nunca rouba o foco do programa em uso, deixa passar os cliques fora da cápsula e se esconde em

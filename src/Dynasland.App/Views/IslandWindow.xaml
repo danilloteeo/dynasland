@@ -79,8 +79,7 @@
               Cursor="Hand"
               MouseEnter="OnIslandMouseEnter"
               MouseLeave="OnIslandMouseLeave"
-              MouseLeftButtonUp="OnIslandMouseLeftButtonUp"
-              MouseWheel="OnIslandMouseWheel">
+              MouseLeftButtonUp="OnIslandMouseLeftButtonUp">
             <Grid.RenderTransform>
                 <ScaleTransform x:Name="HoverScaleTransform" />
             </Grid.RenderTransform>

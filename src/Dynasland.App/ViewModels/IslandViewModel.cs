@@ -105,8 +105,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenSettings() => _settingsWindow.Show();
 
-    public void Cycle(int direction) => _controller.Cycle(direction);
-
     public void OnPointerEntered() => _controller.PointerEntered();
 
     public void OnPointerExited() => _controller.PointerExited();

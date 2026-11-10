@@ -12,8 +12,8 @@ A ilha é a cápsula preta no topo da tela. Ela tem três estados:
 
 - **Passar o mouse** amplia levemente a ilha; enquanto o ponteiro estiver sobre ela, nada se fecha sozinho.
 - **Clique** abre o painel interativo; clique de novo (fora dos botões) para recolher. Sem uso, recolhe em 6 s.
-- Com várias atividades (ex.: Spotify e um vídeo no navegador), o painel tem **abas**: use a **roda do mouse**,
-  as setas ou os pontos do rodapé para trocar.
+- Com várias atividades (ex.: Spotify e um vídeo no navegador), o painel tem **abas**: use as setas
+  ou os pontos do rodapé para trocar.
 - A **engrenagem** no rodapé abre as configurações.
 - A ilha nunca rouba o foco do programa que você está usando, e os cliques fora da cápsula passam para
   a janela de trás.

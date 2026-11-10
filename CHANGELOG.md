@@ -1,5 +1,11 @@
 # Notas da versão
 
+## 1.0.4 — 2026-11-10
+
+### Mudanças
+- A roda do mouse não troca mais a aba da ilha (evita trocas acidentais ao rolar a página);
+  use as setas ou os pontos do rodapé.
+
 ## 1.0.3 — 2026-11-10
 
 ### Novidades

@@ -328,15 +328,6 @@ public partial class IslandWindow : Window
         return screenX >= topLeft.X && screenX <= bottomRight.X && screenY >= topLeft.Y && screenY <= bottomRight.Y;
     }
 
-    private void OnIslandMouseWheel(object sender, MouseWheelEventArgs e)
-    {
-        if (_viewModel.State == IslandState.Interactive)
-        {
-            _viewModel.Cycle(e.Delta > 0 ? -1 : 1);
-            e.Handled = true;
-        }
-    }
-
     private void ApplyDimensions(IslandDimensions requested, bool animate)
     {
         var target = IslandAppearance.Adjust(requested, _viewModel.State, _settings.Current);
