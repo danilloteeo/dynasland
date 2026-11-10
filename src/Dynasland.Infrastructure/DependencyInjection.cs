@@ -11,6 +11,7 @@ using Dynasland.Infrastructure.Weather;
 using Dynasland.Infrastructure.Windows;
 using Dynasland.Infrastructure.Windows.Audio;
 using Dynasland.Infrastructure.Windows.Brightness;
+using Dynasland.Infrastructure.Windows.Capture;
 using Dynasland.Infrastructure.Windows.Clipboard;
 using Dynasland.Infrastructure.Windows.Downloads;
 using Dynasland.Infrastructure.Windows.Metrics;
@@ -48,6 +49,8 @@ public static class DependencyInjection
         services.AddSingleton<IAudioVolumeService, CoreAudioVolumeService>();
         services.AddSingleton<IBrightnessService, WmiBrightnessService>();
         services.AddSingleton<IExternalBrightnessService, DdcBrightnessService>();
+        services.AddSingleton<IScreenshotService, ScreenshotService>();
+        services.AddSingleton<IScreenRecorder, ScreenRecorder>();
         services.AddSingleton<IAudioDeviceService, CoreAudioDeviceService>();
         services.AddSingleton<IPowerService, WindowsPowerService>();
         services.AddSingleton<INotificationService, WindowsNotificationService>();
