@@ -9,9 +9,28 @@ using Dynasland.Core.Models;
 
 namespace Dynasland.Modules.Life;
 
-public sealed record ForecastDayViewModel(string DayName, string Glyph, string MaxText, string MinText, string? RainText);
+/// <summary>Ícone vetorial do clima (desenhado em <c>LifeTemplates.xaml</c>, chave <c>WeatherIcon</c>).</summary>
+public enum WeatherIconKind
+{
+    Sun,
+    Moon,
+    PartlyCloudyDay,
+    PartlyCloudyNight,
+    Cloud,
+    Fog,
+    Drizzle,
+    Rain,
+    Snow,
+    Storm,
+}
 
-/// <summary>Painel do clima: condição atual, sensação, umidade, vento e os próximos dias.</summary>
+/// <param name="RainText">Chance de chuva ("60%"), quando houver.</param>
+public sealed record ForecastDayViewModel(string DayName, WeatherIconKind Icon, string MaxText, string MinText, string? RainText)
+{
+    public bool HasRain => RainText is not null;
+}
+
+/// <summary>Painel do clima: condição atual, máxima/mínima, sensação, umidade, vento e os próximos dias.</summary>
 public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObject, IActivityContent
 {
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
@@ -28,10 +47,22 @@ public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObjec
     private string _conditionText = string.Empty;
 
     [ObservableProperty]
-    private string _glyph = WeatherText.GlyphOf(WeatherCondition.Cloudy, true);
+    private WeatherIconKind _icon = WeatherIconKind.Cloud;
 
     [ObservableProperty]
-    private string _detailsText = string.Empty;
+    private string _todayRangeText = string.Empty;
+
+    [ObservableProperty]
+    private string _feelsLikeText = "--";
+
+    [ObservableProperty]
+    private string _humidityText = "--";
+
+    [ObservableProperty]
+    private string _windText = "--";
+
+    [ObservableProperty]
+    private string _rainText = "--";
 
     [ObservableProperty]
     private string _updatedText = string.Empty;
@@ -43,11 +74,10 @@ public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObjec
     private bool _hasReport;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasStatus))]
     private StatusContent? _status;
 
     public bool HasStatus => Status is not null;
-
-    partial void OnStatusChanged(StatusContent? value) => OnPropertyChanged(nameof(HasStatus));
 
     public void Apply(WeatherReport report, DateTimeOffset now, TimeSpan staleAfter)
     {
@@ -55,12 +85,17 @@ public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObjec
         LocationText = report.Location.Name;
         TemperatureText = WeatherText.Temperature(current.TemperatureC);
         ConditionText = WeatherText.ConditionName(current.Condition);
-        Glyph = WeatherText.GlyphOf(current.Condition, current.IsDay);
-        DetailsText = $"Sensação {WeatherText.Temperature(current.ApparentTemperatureC)} · Umidade {current.HumidityPercent}% · Vento {current.WindKmh:0} km/h";
+        Icon = WeatherText.IconOf(current.Condition, current.IsDay);
+        FeelsLikeText = WeatherText.Temperature(current.ApparentTemperatureC);
+        HumidityText = $"{current.HumidityPercent}%";
+        WindText = $"{current.WindKmh:0} km/h";
+
+        var today = report.Days.FirstOrDefault();
+        TodayRangeText = today is null ? string.Empty : $"Máx {Math.Round(today.MaxC)}°  Mín {Math.Round(today.MinC)}°";
+        RainText = today?.PrecipitationChancePercent is { } chance ? $"{chance}%" : "--";
 
         // Nunca apresentar dado velho como atual: mostra a hora da consulta e marca como desatualizado.
-        var age = now - report.FetchedAt;
-        IsStale = age > staleAfter;
+        IsStale = now - report.FetchedAt > staleAfter;
         var at = report.FetchedAt.ToLocalTime();
         UpdatedText = IsStale
             ? $"Desatualizado · consultado {(at.Date == now.ToLocalTime().Date ? at.ToString("'às' HH:mm", PtBr) : at.ToString("'em' dd/MM 'às' HH:mm", PtBr))}"
@@ -72,10 +107,10 @@ public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObjec
             var name = day.Date.ToDateTime(TimeOnly.MinValue).ToString("ddd", PtBr).TrimEnd('.');
             Days.Add(new ForecastDayViewModel(
                 char.ToUpper(name[0], PtBr) + name[1..],
-                WeatherText.GlyphOf(day.Condition, true),
+                WeatherText.IconOf(day.Condition, true),
                 $"{Math.Round(day.MaxC)}°",
                 $"{Math.Round(day.MinC)}°",
-                day.PrecipitationChancePercent is > 0 and var chance ? $"{chance}%" : null));
+                day.PrecipitationChancePercent is >= 20 and var dayChance ? $"{dayChance}%" : null));
         }
 
         HasReport = true;
@@ -86,7 +121,7 @@ public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObjec
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
-        IslandState.Interactive => new IslandDimensions(410, HasReport ? 196 : 120, 36),
+        IslandState.Interactive => new IslandDimensions(410, HasReport ? 252 : 120, 36),
         _ => null,
     };
 
@@ -120,19 +155,15 @@ public static class WeatherText
         _ => string.Empty,
     };
 
-    /// <summary>
-    /// Símbolos de clima (Segoe UI Emoji/Symbol, monocromáticos no WPF). As fontes de ícones do Windows 10
-    /// não têm ícones de clima; os templates usam <c>WeatherGlyphFont</c>.
-    /// </summary>
-    public static string GlyphOf(WeatherCondition condition, bool isDay) => condition switch
+    public static WeatherIconKind IconOf(WeatherCondition condition, bool isDay) => condition switch
     {
-        WeatherCondition.Clear => isDay ? "☀" : "☾",
-        WeatherCondition.PartlyCloudy => isDay ? "⛅" : "☁",
-        WeatherCondition.Cloudy => "☁",
-        WeatherCondition.Fog => "🌫",
-        WeatherCondition.Drizzle or WeatherCondition.Rain => "🌧",
-        WeatherCondition.Snow => "❄",
-        WeatherCondition.Thunderstorm => "⛈",
-        _ => "☁",
+        WeatherCondition.Clear => isDay ? WeatherIconKind.Sun : WeatherIconKind.Moon,
+        WeatherCondition.PartlyCloudy => isDay ? WeatherIconKind.PartlyCloudyDay : WeatherIconKind.PartlyCloudyNight,
+        WeatherCondition.Fog => WeatherIconKind.Fog,
+        WeatherCondition.Drizzle => WeatherIconKind.Drizzle,
+        WeatherCondition.Rain => WeatherIconKind.Rain,
+        WeatherCondition.Snow => WeatherIconKind.Snow,
+        WeatherCondition.Thunderstorm => WeatherIconKind.Storm,
+        _ => WeatherIconKind.Cloud,
     };
 }

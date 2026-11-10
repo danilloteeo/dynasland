@@ -3,47 +3,181 @@
 
     <BooleanToVisibilityConverter x:Key="LifeBoolToVisibility" />
 
-    <!-- Ícones de clima: as fontes de ícones do Windows 10 não têm, então usa os símbolos do Segoe UI Emoji. -->
-    <FontFamily x:Key="WeatherGlyphFont">Segoe UI Emoji, Segoe UI Symbol</FontFamily>
+    <!-- Cores dos ícones de clima. -->
+    <SolidColorBrush x:Key="WeatherSunBrush" Color="#FFFFD60A" />
+    <SolidColorBrush x:Key="WeatherMoonBrush" Color="#FFE9E6F5" />
+    <SolidColorBrush x:Key="WeatherCloudBrush" Color="#FFD3D8E2" />
+    <SolidColorBrush x:Key="WeatherCloudDarkBrush" Color="#FF8F97A6" />
+    <SolidColorBrush x:Key="WeatherRainBrush" Color="#FF64D2FF" />
+    <SolidColorBrush x:Key="WeatherBoltBrush" Color="#FFFFD60A" />
+
+    <!--
+        Ícones de clima vetoriais (24×24), nítidos em qualquer escala e coloridos — as fontes de ícones do
+        Windows 10 não têm clima. O conteúdo é um WeatherIconKind; cada camada aparece conforme o tipo.
+    -->
+    <DataTemplate x:Key="WeatherIcon">
+        <Viewbox Stretch="Uniform">
+            <Canvas Width="24" Height="24">
+                <!-- Sol grande -->
+                <Canvas x:Name="Sun" Visibility="Collapsed">
+                    <Path Data="M12,7.5 A4.5,4.5 0 1 1 11.99,7.5 Z" Fill="{StaticResource WeatherSunBrush}" />
+                    <Path Data="M12,1.8 V4.3 M12,19.7 V22.2 M1.8,12 H4.3 M19.7,12 H22.2 M4.8,4.8 L6.6,6.6 M17.4,17.4 L19.2,19.2 M4.8,19.2 L6.6,17.4 M17.4,6.6 L19.2,4.8"
+                          Stroke="{StaticResource WeatherSunBrush}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                </Canvas>
+
+                <!-- Lua grande -->
+                <Path x:Name="Moon" Visibility="Collapsed" Data="M14.5,2.5 A9.5,9.5 0 1 0 21.5,15.5 A7.5,7.5 0 1 1 14.5,2.5 Z" Fill="{StaticResource WeatherMoonBrush}" />
+
+                <!-- Sol/lua pequenos atrás da nuvem (parcialmente nublado) -->
+                <Canvas x:Name="SmallSun" Visibility="Collapsed">
+                    <Path Data="M16,4.6 A3.4,3.4 0 1 1 15.99,4.6 Z" Fill="{StaticResource WeatherSunBrush}" />
+                    <Path Data="M16,0.6 V2.2 M21.6,8 H23.2 M19.9,4.1 L21,3 M20,11.9 L21.1,13 M12.1,4.1 L11,3"
+                          Stroke="{StaticResource WeatherSunBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                </Canvas>
+                <Path x:Name="SmallMoon" Visibility="Collapsed" Data="M17.5,2.5 A6,6 0 1 0 22.6,11 A4.6,4.6 0 1 1 17.5,2.5 Z" Fill="{StaticResource WeatherMoonBrush}" />
+
+                <!-- Nuvem (sobe um pouco quando há chuva/neve/raio embaixo) -->
+                <Canvas x:Name="CloudLayer" Visibility="Collapsed">
+                    <Path x:Name="CloudShape" Data="M7,19.5 H17.5 A4.5,4.5 0 0 0 17.9,10.52 A6,6 0 0 0 6.2,11.6 A4,4 0 0 0 7,19.5 Z"
+                          Fill="{StaticResource WeatherCloudBrush}" />
+                </Canvas>
+
+                <!-- Precipitação -->
+                <Path x:Name="Rain" Visibility="Collapsed" Data="M8.5,19.5 L7.2,22.6 M12.5,19.5 L11.2,22.6 M16.5,19.5 L15.2,22.6"
+                      Stroke="{StaticResource WeatherRainBrush}" StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                <Path x:Name="Drizzle" Visibility="Collapsed" Data="M9,19.8 L8.4,21.4 M13,19.8 L12.4,21.4 M17,19.8 L16.4,21.4"
+                      Stroke="{StaticResource WeatherRainBrush}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                <Path x:Name="Snow" Visibility="Collapsed" Fill="White"
+                      Data="M8,20.4 A1.2,1.2 0 1 1 7.99,20.4 Z M12,21.6 A1.2,1.2 0 1 1 11.99,21.6 Z M16,20.4 A1.2,1.2 0 1 1 15.99,20.4 Z" />
+                <Path x:Name="Bolt" Visibility="Collapsed" Data="M13.2,15 L9.6,20.6 H12.4 L11.2,24 L15.6,18.2 H12.8 L14.4,15 Z" Fill="{StaticResource WeatherBoltBrush}" />
+
+                <!-- Neblina -->
+                <Path x:Name="Fog" Visibility="Collapsed" Data="M3,8.5 H21 M5,12.5 H19 M3,16.5 H21"
+                      Stroke="{StaticResource WeatherCloudBrush}" StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+            </Canvas>
+        </Viewbox>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding}" Value="Sun">
+                <Setter TargetName="Sun" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Moon">
+                <Setter TargetName="Moon" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="PartlyCloudyDay">
+                <Setter TargetName="SmallSun" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="1.5" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="PartlyCloudyNight">
+                <Setter TargetName="SmallMoon" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="1.5" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Cloud">
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="-1.5" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Fog">
+                <Setter TargetName="Fog" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Drizzle">
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="-4" />
+                <Setter TargetName="Drizzle" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Rain">
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="-4" />
+                <Setter TargetName="CloudShape" Property="Fill" Value="{StaticResource WeatherCloudDarkBrush}" />
+                <Setter TargetName="Rain" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Snow">
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="-4" />
+                <Setter TargetName="Snow" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding}" Value="Storm">
+                <Setter TargetName="CloudLayer" Property="Visibility" Value="Visible" />
+                <Setter TargetName="CloudLayer" Property="Canvas.Top" Value="-5" />
+                <Setter TargetName="CloudShape" Property="Fill" Value="{StaticResource WeatherCloudDarkBrush}" />
+                <Setter TargetName="Bolt" Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
 
     <DataTemplate x:Key="Dynasland.Modules.Life.WeatherContent:Interactive">
-        <Grid Margin="22,14,22,12">
-            <!-- Estado (carregando, sem cidade, sem conexão) quando ainda não há previsão. -->
-            <ContentPresenter Content="{Binding Status}" ContentTemplate="{DynamicResource Dynasland.Core.Activities.StatusContent:Expanded}"
-                              Visibility="{Binding HasStatus, Converter={StaticResource LifeBoolToVisibility}}" />
+        <Grid Margin="20,14,18,10">
+            <!-- Estado (carregando, sem cidade, sem conexão) quando ainda não há previsão.
+                 A visibilidade fica no Border: dentro do ContentPresenter o DataContext seria o próprio estado. -->
+            <Border Visibility="{Binding HasStatus, Converter={StaticResource LifeBoolToVisibility}}">
+                <ContentPresenter Content="{Binding Status}" ContentTemplate="{DynamicResource Dynasland.Core.Activities.StatusContent:Expanded}" />
+            </Border>
 
             <Grid Visibility="{Binding HasReport, Converter={StaticResource LifeBoolToVisibility}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+
+                <!-- Agora -->
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource WeatherGlyphFont}" FontSize="34"
-                               Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
-                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                        <TextBlock FontFamily="{DynamicResource IslandTextFont}" Foreground="{DynamicResource IslandPrimaryTextBrush}">
-                            <Run Text="{Binding TemperatureText, Mode=OneWay}" FontFamily="{DynamicResource IslandFont}" FontSize="30" FontWeight="SemiBold" />
-                            <Run Text="{Binding ConditionText, Mode=OneWay}" FontSize="14" />
-                        </TextBlock>
-                        <TextBlock Text="{Binding LocationText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                                   Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                    <ContentPresenter Width="52" Height="52" Content="{Binding Icon}" ContentTemplate="{StaticResource WeatherIcon}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding TemperatureText}" FontFamily="{DynamicResource IslandFont}" FontSize="40" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" Margin="12,0,12,0" />
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ConditionText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding TodayRangeText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5"
+                                   Foreground="{DynamicResource IslandSecondaryTextBrush}" />
                     </StackPanel>
-                    <Button Grid.Column="2" Style="{DynamicResource IslandIconButtonStyle}" Content="&#xE72C;" Command="{Binding RefreshCommand}"
-                            ToolTip="Atualizar agora" VerticalAlignment="Top" Width="30" Height="30" FontSize="12" />
+                    <StackPanel Grid.Column="3" VerticalAlignment="Top" HorizontalAlignment="Right">
+                        <Button Style="{DynamicResource IslandIconButtonStyle}" Content="&#xE72C;" Command="{Binding RefreshCommand}"
+                                ToolTip="Atualizar agora" Width="28" Height="28" FontSize="11" HorizontalAlignment="Right" />
+                    </StackPanel>
                 </Grid>
-                <TextBlock Grid.Row="1" Text="{Binding DetailsText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" Margin="0,6,0,8"
-                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
-                <Grid Grid.Row="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+
+                <!-- Local e detalhes -->
+                <Grid Grid.Row="1" Margin="2,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="Sensação" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                            <TextBlock Text="{Binding FeelsLikeText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="Umidade" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                            <TextBlock Text="{Binding HumidityText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="Vento" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                            <TextBlock Text="{Binding WindText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Chuva hoje" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                            <TextBlock Text="{Binding RainText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource WeatherRainBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                        <TextBlock Text="&#xE81D;" FontFamily="{DynamicResource IslandIconFont}" FontSize="11" Foreground="{DynamicResource IslandSecondaryTextBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,4,0" />
+                        <TextBlock Text="{Binding LocationText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" MaxWidth="120"
+                                   Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Próximos dias -->
+                <Border Grid.Row="2" Margin="0,12,0,0" CornerRadius="12" Background="{DynamicResource IslandSurfaceBrush}" Padding="4,8">
                     <ItemsControl ItemsSource="{Binding Days}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -55,30 +189,43 @@
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding DayName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
                                                Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Center" />
-                                    <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource WeatherGlyphFont}" FontSize="16"
-                                               Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Center" Margin="0,2" />
-                                    <TextBlock FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" HorizontalAlignment="Center">
-                                        <Run Text="{Binding MaxText, Mode=OneWay}" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                                    <ContentPresenter Width="26" Height="26" Margin="0,3" Content="{Binding Icon}" ContentTemplate="{StaticResource WeatherIcon}" HorizontalAlignment="Center" />
+                                    <TextBlock FontFamily="{DynamicResource IslandTextFont}" FontSize="12" HorizontalAlignment="Center">
+                                        <Run Text="{Binding MaxText, Mode=OneWay}" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
                                         <Run Text="{Binding MinText, Mode=OneWay}" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding RainText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10" HorizontalAlignment="Center"
+                                               Foreground="{StaticResource WeatherRainBrush}" Margin="0,1,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasRain}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
                                     </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Grid.Row="1" Text="{Binding UpdatedText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" HorizontalAlignment="Right"
-                               Margin="0,4,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{DynamicResource IslandTertiaryTextBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStale}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource IslandWarningBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
+                </Border>
+
+                <TextBlock Grid.Row="3" Text="{Binding UpdatedText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" HorizontalAlignment="Right"
+                           Margin="0,6,2,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource IslandTertiaryTextBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsStale}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource IslandWarningBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </Grid>
         </Grid>
     </DataTemplate>
