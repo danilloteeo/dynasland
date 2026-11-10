@@ -20,4 +20,14 @@ public sealed record SystemMetrics(
     double? CpuTemperatureCelsius,
     string? CpuTemperatureSource,
     double? GpuTemperatureCelsius,
-    IReadOnlyList<DiskUsage> Disks);
+    IReadOnlyList<DiskUsage> Disks)
+{
+    /// <summary>Memória dedicada da GPU em uso; <c>null</c> se o Windows não informar.</summary>
+    public ulong? VideoMemoryUsedBytes { get; init; }
+
+    /// <summary>Memória dedicada total da GPU principal.</summary>
+    public ulong? VideoMemoryTotalBytes { get; init; }
+
+    /// <summary>Frequência atual da CPU (como no Gerenciador de Tarefas).</summary>
+    public double? CpuFrequencyMhz { get; init; }
+}

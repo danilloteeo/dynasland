@@ -1,0 +1,66 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="GamingBrush" Color="#FFBF5AF2" />
+
+    <DataTemplate x:Key="Dynasland.Modules.Gaming.GameContent:Compact">
+        <Grid Margin="14,0">
+            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="14"
+                       Foreground="{StaticResource GamingBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding CompactText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Gaming.GameContent:Expanded">
+        <Grid Margin="20,0">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="Modo gamer" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Foreground="{StaticResource GamingBrush}" />
+                <TextBlock Text="{Binding GameName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold" MaxWidth="200"
+                           TextTrimming="CharacterEllipsis" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+            </StackPanel>
+            <TextBlock Text="{Binding CompactText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Gaming.GameContent:Interactive">
+        <StackPanel Margin="22,14">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" FontFamily="{DynamicResource IslandFont}" VerticalAlignment="Center">
+                    <Run Text="{Binding FpsText, Mode=OneWay}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource GamingBrush}" />
+                    <Run Text="FPS" FontSize="12" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </TextBlock>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GameName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                    <TextBlock Text="{Binding SessionText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </StackPanel>
+            </DockPanel>
+            <UniformGrid Columns="3" Margin="0,10,0,0">
+                <StackPanel>
+                    <TextBlock Text="CPU" FontSize="11" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                    <TextBlock Text="{Binding CpuText}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="GPU" FontSize="11" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                    <TextBlock Text="{Binding GpuText}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Memória" FontSize="11" Foreground="{DynamicResource IslandTertiaryTextBrush}" />
+                    <TextBlock Text="{Binding MemoryText}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                </StackPanel>
+            </UniformGrid>
+            <TextBlock FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" Margin="0,8,0,0" Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis">
+                <Run Text="{Binding VideoMemoryText, Mode=OneWay, StringFormat=Vídeo {0}}" />
+                <Run Text=" · " />
+                <Run Text="{Binding FrequencyText, Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Text="{Binding TemperatureText, StringFormat=Temperaturas: {0}}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5"
+                       Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+            <TextBlock Text="{Binding FpsHint}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" TextWrapping="Wrap" Margin="0,4,0,0"
+                       Foreground="{DynamicResource IslandWarningBrush}" />
+        </StackPanel>
+    </DataTemplate>
+
+</ResourceDictionary>

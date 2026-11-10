@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
     <PackageReference Include="System.Management" Version="10.0.14" />

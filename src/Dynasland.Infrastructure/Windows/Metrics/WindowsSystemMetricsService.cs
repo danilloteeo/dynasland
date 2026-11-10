@@ -18,6 +18,10 @@ public sealed class WindowsSystemMetricsService : ISystemMetricsService, IDispos
     private readonly Lazy<PdhWildcardCounter?> _gpuEngines = new(() => PdhWildcardCounter.TryCreate(@"\GPU Engine(*)\Utilization Percentage"));
     private readonly Lazy<PdhWildcardCounter?> _thermalZones = new(() => PdhWildcardCounter.TryCreate(@"\Thermal Zone Information(*)\Temperature"));
     private readonly Lazy<NvmlGpuSensor?> _nvml = new(NvmlGpuSensor.TryCreate);
+    private readonly Lazy<PdhWildcardCounter?> _gpuMemory = new(() => PdhWildcardCounter.TryCreate(@"\GPU Adapter Memory(*)\Dedicated Usage"));
+    private readonly Lazy<PdhWildcardCounter?> _cpuPerformance = new(() => PdhWildcardCounter.TryCreate(@"\Processor Information(_Total)\% Processor Performance"));
+    private readonly Lazy<ulong?> _videoMemoryTotal = new(ReadVideoMemoryTotal);
+    private readonly Lazy<double?> _baseFrequency = new(ReadBaseFrequencyMhz);
 
     private ulong _lastIdle;
     private ulong _lastTotal;
@@ -34,7 +38,12 @@ public sealed class WindowsSystemMetricsService : ISystemMetricsService, IDispos
                 ReadThermalZoneCelsius(),
                 _thermalZones.Value is null ? null : "Zona térmica (ACPI)",
                 nvml?.ReadTemperature(),
-                GetDisks());
+                GetDisks())
+            {
+                VideoMemoryUsedBytes = ReadVideoMemoryUsed(),
+                VideoMemoryTotalBytes = _videoMemoryTotal.Value,
+                CpuFrequencyMhz = ReadCpuFrequency(),
+            };
         }
     }
 
@@ -71,6 +80,69 @@ public sealed class WindowsSystemMetricsService : ISystemMetricsService, IDispos
         }
 
         return disks;
+    }
+
+    /// <summary>Memória dedicada em uso, do adaptador mais usado (soma por adaptador).</summary>
+    private ulong? ReadVideoMemoryUsed()
+    {
+        var samples = _gpuMemory.Value?.Read();
+        return samples is { Count: > 0 } ? (ulong)samples.Max(s => s.Value) : null;
+    }
+
+    /// <summary>"% Processor Performance" × frequência base: a frequência atual com turbo, como no Gerenciador de Tarefas.</summary>
+    private double? ReadCpuFrequency()
+    {
+        var performance = _cpuPerformance.Value?.Read();
+        return performance is { Count: > 0 } && _baseFrequency.Value is { } baseMhz
+            ? Math.Round(baseMhz * performance[0].Value / 100)
+            : null;
+    }
+
+    private static double? ReadBaseFrequencyMhz()
+    {
+        using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
+        return key?.GetValue("~MHz") is int mhz && mhz > 0 ? mhz : null;
+    }
+
+    /// <summary>Memória dedicada informada pelo driver de vídeo (chave da classe de adaptadores de vídeo).</summary>
+    private static ulong? ReadVideoMemoryTotal()
+    {
+        const string displayClass = @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
+        using var root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(displayClass);
+        if (root is null)
+        {
+            return null;
+        }
+
+        ulong? largest = null;
+        foreach (var name in root.GetSubKeyNames().Where(n => n.Length == 4 && n.All(char.IsDigit)))
+        {
+            try
+            {
+                using var adapter = root.OpenSubKey(name);
+                var value = adapter?.GetValue("HardwareInformation.qwMemorySize") switch
+                {
+                    long q => (ulong)q,
+                    byte[] { Length: >= 8 } b => BitConverter.ToUInt64(b, 0),
+                    _ => adapter?.GetValue("HardwareInformation.MemorySize") switch
+                    {
+                        int d => (ulong)(uint)d,
+                        byte[] { Length: >= 4 } b => BitConverter.ToUInt32(b, 0),
+                        _ => 0UL,
+                    },
+                };
+                if (value > (largest ?? 0))
+                {
+                    largest = value;
+                }
+            }
+            catch (System.Security.SecurityException)
+            {
+                // Chave de outro adaptador sem permissão de leitura.
+            }
+        }
+
+        return largest;
     }
 
     /// <summary>Uso desde a leitura anterior; <c>null</c> na primeira chamada.</summary>

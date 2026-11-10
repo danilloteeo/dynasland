@@ -35,6 +35,9 @@ public sealed class NotificationsModule(
 
     public IReadOnlyList<ModuleOption> Options => [ShowMessageText];
 
+    private IDisposable? _gamingSubscription;
+    private volatile bool _muteForGame;
+
     public static string ActivityIdFor(uint notificationId) => $"notification.{notificationId}";
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -52,12 +55,15 @@ public sealed class NotificationsModule(
 
         notifications.Received += OnReceived;
         notifications.Removed += OnRemoved;
+        _gamingSubscription = bus.Subscribe<GamingModeChangedEvent>(e => _muteForGame = e.Active && e.MuteNotifications);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         notifications.Received -= OnReceived;
         notifications.Removed -= OnRemoved;
+        _gamingSubscription?.Dispose();
+        _muteForGame = false;
         await notifications.StopAsync();
     }
 
@@ -70,8 +76,10 @@ public sealed class NotificationsModule(
             return;
         }
 
-        _ = SaveAsync(info, shown: decision.Visibility == NotificationVisibility.Show);
-        if (decision.Visibility != NotificationVisibility.Show)
+        // Modo gamer: só as de prioridade alta interrompem o jogo; as demais vão direto para o histórico.
+        var show = decision.Visibility == NotificationVisibility.Show && !(_muteForGame && !decision.HighPriority);
+        _ = SaveAsync(info, shown: show);
+        if (!show)
         {
             return;
         }

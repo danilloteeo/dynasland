@@ -9,6 +9,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Dynasland.App.Services;
 using Dynasland.App.ViewModels;
+using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
@@ -50,11 +51,13 @@ public partial class IslandWindow : Window
     private readonly IslandActions _actions;
     private readonly OutsideClickWatcher _outsideClicks = new();
     private DispatcherTimer? _pendingClick;
+    private bool _hiddenForGame;
+    private readonly IDisposable _gamingSubscription;
     private bool _repositionPending;
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
 
-    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions)
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus)
     {
         _viewModel = viewModel;
         _placement = placement;
@@ -71,6 +74,11 @@ public partial class IslandWindow : Window
         settings.Changed += OnSettingsChanged;
         fullscreen.Changed += OnFullscreenChanged;
         session.Changed += OnSessionChanged;
+        _gamingSubscription = bus.Subscribe<GamingModeChangedEvent>(e => Dispatcher.BeginInvoke(() =>
+        {
+            _hiddenForGame = e.Active && e.HideIsland;
+            UpdateVisibility();
+        }));
     }
 
     public double CornerSize
@@ -114,6 +122,7 @@ public partial class IslandWindow : Window
         _fullscreen.Changed -= OnFullscreenChanged;
         _session.Changed -= OnSessionChanged;
         _outsideClicks.Dispose();
+        _gamingSubscription.Dispose();
         base.OnClosed(e);
     }
 
@@ -193,7 +202,7 @@ public partial class IslandWindow : Window
         var coveredByFullscreen = settings.HideInFullscreen
             && _fullscreen.FullscreenMonitor is { } fullscreenMonitor
             && string.Equals(fullscreenMonitor, _placement.CurrentMonitor, StringComparison.OrdinalIgnoreCase);
-        ApplyVisibility(settings.IsVisible && !coveredByFullscreen && !_session.IsInterrupted);
+        ApplyVisibility(settings.IsVisible && !coveredByFullscreen && !_session.IsInterrupted && !_hiddenForGame);
     }
 
     private void ApplyVisibility(bool visible)
