@@ -42,6 +42,9 @@ public enum IdleDisplay
     /// <summary>Próximo compromisso e a hora; sem compromisso, a data.</summary>
     NextEvent,
 
+    /// <summary>Velocidade de download e upload e a hora.</summary>
+    Network,
+
     /// <summary>Ilha vazia.</summary>
     Nothing,
 }

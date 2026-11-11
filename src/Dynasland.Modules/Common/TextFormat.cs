@@ -47,6 +47,9 @@ public static class TextFormat
         return $"{bytes.ToString(format, PtBr)} {units[unit]}";
     }
 
+    /// <summary>Velocidade de transferência: <c>850 KB/s</c>, <c>12,4 MB/s</c>.</summary>
+    public static string Rate(double bytesPerSecond) => $"{Bytes(bytesPerSecond)}/s";
+
     /// <summary>Duração aproximada: <c>2 h 15 min</c>, <c>40 min</c>, <c>menos de 1 min</c>.</summary>
     public static string Duration(TimeSpan value)
     {

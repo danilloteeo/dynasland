@@ -22,7 +22,18 @@
     </Style>
 
     <DataTemplate x:Key="Dynasland.Modules.SystemMonitor.SystemMonitorContent:Interactive">
-        <UniformGrid Columns="4" Margin="20,16">
+        <DockPanel Margin="20,16,20,12">
+            <!-- Rede: download e upload somados de todas as conexões. -->
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                <TextBlock Text="Rede" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" Width="40" />
+                <TextBlock Text="↓" FontSize="12" Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding NetworkDownText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" Margin="5,0,0,0" MinWidth="86" />
+                <TextBlock Text="↑" FontSize="12" Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding NetworkUpText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Margin="5,0,0,0" />
+            </StackPanel>
+        <UniformGrid Columns="4">
             <StackPanel Margin="0,0,12,0">
                 <TextBlock Text="CPU" Style="{StaticResource MetricLabel}" />
                 <TextBlock Text="{Binding CpuText}" Style="{StaticResource MetricValue}" />
@@ -48,6 +59,7 @@
                 <TextBlock Text="{Binding DiskDetail}" Style="{StaticResource MetricDetail}" />
             </StackPanel>
         </UniformGrid>
+        </DockPanel>
     </DataTemplate>
 
     <DataTemplate x:Key="Dynasland.Modules.SystemMonitor.SystemAlertContent:Expanded">

@@ -133,6 +133,22 @@ public interface IAudioDeviceService
     void SetMicrophoneMuted(bool muted);
 }
 
+/// <summary>Som de um aplicativo no dispositivo de saída padrão (todas as sessões do mesmo programa juntas).</summary>
+/// <param name="Id">Identifica o programa (nome do processo).</param>
+/// <param name="Level">Volume de 0 a 1, relativo ao volume geral.</param>
+/// <param name="IsActive">Está tocando som agora.</param>
+public sealed record AppAudioSession(string Id, string Name, float Level, bool IsMuted, bool IsActive);
+
+/// <summary>Volume por aplicativo (misturador do Windows).</summary>
+public interface IAppVolumeService
+{
+    Task<IReadOnlyList<AppAudioSession>> GetSessionsAsync();
+
+    Task SetLevelAsync(string id, float level);
+
+    Task SetMutedAsync(string id, bool muted);
+}
+
 /// <summary>Brilho de um monitor externo (DDC/CI), em porcentagem.</summary>
 public sealed record ExternalDisplayBrightness(string Id, string Name, int Percent);
 

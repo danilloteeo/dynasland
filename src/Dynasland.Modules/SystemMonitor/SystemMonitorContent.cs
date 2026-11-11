@@ -49,10 +49,23 @@ public sealed partial class SystemMonitorContent(Action<IslandState?> presentati
     [ObservableProperty]
     private string _diskDetail = string.Empty;
 
+    [ObservableProperty]
+    private string _networkDownText = "…";
+
+    [ObservableProperty]
+    private string _networkUpText = "…";
+
     public string Glyph => Glyphs.Diagnostic;
 
     public void Apply(SystemMetrics metrics)
     {
+        // A primeira leitura ainda não tem base de comparação: mantém o que estava.
+        if (metrics.Network is { } network)
+        {
+            NetworkDownText = TextFormat.Rate(network.DownloadBytesPerSecond);
+            NetworkUpText = TextFormat.Rate(network.UploadBytesPerSecond);
+        }
+
         CpuText = Percent(metrics.CpuPercent) ?? (CpuText == "…" ? "…" : Unavailable);
         CpuValue = metrics.CpuPercent ?? 0;
         CpuDetail = metrics.CpuTemperatureCelsius is { } cpuTemp
@@ -86,7 +99,7 @@ public sealed partial class SystemMonitorContent(Action<IslandState?> presentati
     }
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) =>
-        state == IslandState.Interactive ? new IslandDimensions(420, 132, 34) : null;
+        state == IslandState.Interactive ? new IslandDimensions(420, 152, 34) : null;
 
     public void OnPresentationChanged(IslandState? state) => presentationChanged(state);
 

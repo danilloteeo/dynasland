@@ -56,6 +56,7 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
         {
             IdleDisplay.Weather => Life.WeatherModule.GlanceId,
             IdleDisplay.NextEvent => Life.CalendarModule.GlanceId,
+            IdleDisplay.Network => SystemMonitor.SystemMonitorModule.NetworkGlanceId,
             _ => null,
         };
 
@@ -81,10 +82,20 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
 
     public bool HasGlances => Glances.Count > 0;
 
+    private IslandGlance[] _glanceSource = [];
+
     public void SetGlances(IEnumerable<IslandGlance> glances)
     {
+        // Informações só da ilha em repouso (ex.: rede, que muda a cada 2 s) não entram nem refazem a lista.
+        var visible = glances.Where(g => !g.IdleOnly).ToArray();
+        if (visible.SequenceEqual(_glanceSource))
+        {
+            return;
+        }
+
+        _glanceSource = visible;
         Glances.Clear();
-        foreach (var glance in glances)
+        foreach (var glance in visible)
         {
             Glances.Add(new GlanceViewModel(glance.Glyph, glance.Text, glance.Invoke is { } invoke ? new RelayCommand(invoke) : null));
         }

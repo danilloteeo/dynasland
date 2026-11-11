@@ -26,7 +26,38 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+
+            <!-- Volume por aplicativo (misturador do Windows): só quem está fazendo som. -->
+            <StackPanel Grid.Row="4" Margin="0,10,0,0" Visibility="{Binding HasApps, Converter={StaticResource VolumeBoolToVisibility}}">
+                <TextBlock Text="Aplicativos" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
+                           Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="6,0,0,2" />
+                <ItemsControl ItemsSource="{Binding Apps}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Height="32">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="96" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="40" />
+                                </Grid.ColumnDefinitions>
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" FontSize="13" Content="{Binding Glyph}"
+                                        Command="{Binding ToggleMuteCommand}" ToolTip="Silenciar este aplicativo" />
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Margin="6,0,0,0"
+                                           Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Name}" />
+                                <Slider Grid.Column="2" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                        AutomationProperties.Name="{Binding Name}" Value="{Binding Level, Mode=TwoWay, Delay=40}" />
+                                <TextBlock Grid.Column="3" Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                           Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
             <Grid Margin="6,0,0,0">
                 <TextBlock Text="{Binding DeviceName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
                            Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,0,48,0" />

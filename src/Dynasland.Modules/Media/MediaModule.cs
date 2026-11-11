@@ -22,8 +22,15 @@ public sealed class MediaModule(
     IIslandSettingsService settings,
     ISpotifyService? spotify = null,
     IAudioVolumeService? volume = null,
-    IIslandTint? tint = null) : IIslandModule
+    IIslandTint? tint = null,
+    ILyricsService? lyrics = null) : IIslandModule
 {
+    // A sessão costuma anunciar o título novo antes da duração nova; a busca da letra usa a duração.
+    private static readonly TimeSpan LyricsSettleDelay = TimeSpan.FromSeconds(1.2);
+
+    public static readonly ModuleOption ShowLyrics = ModuleOption.Toggle(
+        "showLyrics", "Letra sincronizada", "Mostra a letra acompanhando a música no painel. Consulta o lrclib.net, enviando título, artista, álbum e duração da faixa.", defaultValue: false);
+
     public const string QueueActivityId = "media.queue";
     private const int FullQueueSize = 20;
     private static readonly TimeSpan SkipStepDelay = TimeSpan.FromMilliseconds(350);
@@ -64,7 +71,7 @@ public sealed class MediaModule(
 
     public string Description => "Música e vídeos em reprodução (Spotify, navegadores e outros apps). Várias mídias aparecem como abas.";
 
-    public IReadOnlyList<ModuleOption> Options => [AnnounceTracks, AnnounceVideos, AnimatedEqualizer, PausedTimeout];
+    public IReadOnlyList<ModuleOption> Options => [AnnounceTracks, AnnounceVideos, AnimatedEqualizer, ShowLyrics, PausedTimeout];
 
     public static string SessionActivityId(string sessionId) => SessionActivityPrefix + sessionId;
 
@@ -135,6 +142,18 @@ public sealed class MediaModule(
     {
         if (e.ModuleId == ModuleId)
         {
+            if (e.Key == ShowLyrics.Key)
+            {
+                // Ligou ou desligou a letra: reavalia a faixa atual de cada sessão.
+                lock (_lock)
+                {
+                    foreach (var state in _sessions.Values)
+                    {
+                        state.LyricsTrackKey = null;
+                    }
+                }
+            }
+
             RefreshAnimation();
             Apply(announce: true);
         }
@@ -232,6 +251,12 @@ public sealed class MediaModule(
                     state.QueueTrackKey = snapshot.TrackKey;
                     _ = RefreshQueueAsync(snapshot.Id);
                 }
+
+                if (snapshot.TrackKey != state.LyricsTrackKey)
+                {
+                    state.LyricsTrackKey = snapshot.TrackKey;
+                    _ = LoadLyricsAsync(snapshot, state.Content);
+                }
             }
 
             // Cor da capa do que está tocando (a sessão atual do Windows primeiro) para o fundo da ilha.
@@ -287,6 +312,49 @@ public sealed class MediaModule(
         {
             // Na inicialização, o que já estava carregado (mesmo pausado) não é anunciado ao retomar.
             state.AnnouncedTrackKey = snapshot.TrackKey;
+        }
+    }
+
+    /// <summary>
+    /// Faixa nova: tira a letra anterior e, com a opção ligada, busca a da faixa (só música com artista).
+    /// Sem letra sincronizada ou sem internet, o painel fica como sempre foi.
+    /// </summary>
+    private async Task LoadLyricsAsync(MediaSnapshot snapshot, MediaContent content)
+    {
+        ui.Post(() =>
+        {
+            if (content.ClearLyrics())
+            {
+                Repost(snapshot.Id);
+            }
+        });
+
+        if (lyrics is null || !options.IsOn(ModuleId, ShowLyrics) || IsLikelyVideo(snapshot) || string.IsNullOrWhiteSpace(snapshot.Artist))
+        {
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(LyricsSettleDelay, time);
+            var current = media.Sessions.FirstOrDefault(s => s.Id == snapshot.Id);
+            if (current is null || current.TrackKey != snapshot.TrackKey)
+            {
+                return;
+            }
+
+            var lines = await lyrics.GetAsync(current.Title, current.Artist, current.AlbumTitle, current.Duration);
+            ui.Post(() =>
+            {
+                if (content.SetLyrics(snapshot.TrackKey, lines))
+                {
+                    Repost(snapshot.Id);
+                }
+            });
+        }
+        catch (Exception)
+        {
+            // A letra é um extra: qualquer falha deixa o painel sem ela.
         }
     }
 
@@ -554,6 +622,9 @@ public sealed class MediaModule(
 
         /// <summary>O controle de volume do painel age no volume do próprio Spotify (API Web).</summary>
         public bool SpotifyVolume { get; set; }
+
+        /// <summary>Faixa para a qual a letra foi buscada por último.</summary>
+        public string? LyricsTrackKey { get; set; }
 
         /// <summary>Faixa para a qual a fila do Spotify foi lida por último.</summary>
         public string? QueueTrackKey { get; set; }

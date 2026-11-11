@@ -5,6 +5,8 @@ using Dynasland.Core.Services;
 using Dynasland.Core.Shortcuts;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Database.Migrations;
+using Dynasland.Infrastructure.Lyrics;
+using Dynasland.Infrastructure.Windows.Bluetooth;
 using Dynasland.Infrastructure.Repositories;
 using Dynasland.Infrastructure.Spotify;
 using Dynasland.Infrastructure.Updates;
@@ -62,6 +64,11 @@ public static class DependencyInjection
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SpotifyService>>()));
         services.AddSingleton<IFpsProvider, EtwFpsProvider>();
         services.AddSingleton<IAudioDeviceService, CoreAudioDeviceService>();
+        services.AddSingleton<IAppVolumeService, CoreAudioAppVolumeService>();
+        services.AddSingleton<IBluetoothService, WinRtBluetoothService>();
+        services.AddSingleton<ILyricsService>(sp => new LrcLibLyricsService(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(12), DefaultRequestHeaders = { { "User-Agent", "Dynasland (https://github.com/danilloteeo/dynasland)" } } },
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<LrcLibLyricsService>>()));
         services.AddSingleton<IPowerService, WindowsPowerService>();
         services.AddSingleton<INotificationService, WindowsNotificationService>();
         services.AddSingleton<ISystemMetricsService, WindowsSystemMetricsService>();

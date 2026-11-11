@@ -17,7 +17,9 @@ public sealed class VolumeModule(
     IEventBus bus,
     IUiDispatcher ui,
     IModuleOptions options,
-    IGlobalShortcutRegistry shortcuts) : IIslandModule
+    IGlobalShortcutRegistry shortcuts,
+    IAppVolumeService? appVolumes = null,
+    IShortcutRegistry? homeShortcuts = null) : IIslandModule
 {
     public const string MicrophoneActivityId = "volume.microphone";
 
@@ -44,7 +46,8 @@ public sealed class VolumeModule(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var content = new VolumeContent(audio, devices);
+        var content = new VolumeContent(audio, devices, appVolumes);
+        content.SizeChanged += OnPanelSizeChanged;
         _content = content;
         _microphoneStatus = new StatusContent(StatusKind.Info, "Microfone");
         audio.Changed += OnVolumeChanged;
@@ -81,7 +84,43 @@ public sealed class VolumeModule(
             new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'M'), ToggleMicrophone)));
         _registrations.Add(shortcuts.Register(new GlobalShortcut(
             "volume.nextOutput", "Próximo dispositivo de saída", "Áudio", null, () => _ = NextOutputAsync())));
+        if (homeShortcuts is not null)
+        {
+            _registrations.Add(homeShortcuts.Register(new IslandShortcut("volume.panel", ModuleId, Common.Glyphs.VolumeHigh, "Volume e aplicativos", () => _ = OpenPanelAsync())));
+        }
     }
+
+    /// <summary>Abre o painel de volume (atalho da tela inicial), já com os aplicativos lidos para abrir no tamanho certo.</summary>
+    public async Task OpenPanelAsync()
+    {
+        if (_content is not { } content)
+        {
+            return;
+        }
+
+        try
+        {
+            await content.RefreshAppsAsync();
+        }
+        catch (Exception)
+        {
+            // Sem a lista de aplicativos o painel abre só com o volume geral.
+        }
+
+        PostPanel(content);
+    }
+
+    private void OnPanelSizeChanged(object? sender, EventArgs e)
+    {
+        if (_content is { } content)
+        {
+            PostPanel(content);
+        }
+    }
+
+    /// <summary>Publicar de novo com o painel aberto faz a ilha recalcular a altura.</summary>
+    private void PostPanel(VolumeContent content) =>
+        bus.PostActivity(new IslandActivity(ActivityId, ModuleId, ActivityKind.Transient, content) { OpenInteractive = true });
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {

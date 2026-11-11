@@ -1,5 +1,19 @@
 # Notas da versão
 
+## 1.4.0 — 2026-11-11
+
+### Novidades
+- **Volume por aplicativo**: o painel de volume ganhou o bloco "Aplicativos", com controle e mudo para
+  cada programa que está fazendo som. Há um atalho novo, "Volume e aplicativos", na tela inicial da ilha.
+- **Letra sincronizada**: o painel de mídia mostra o verso anterior, o atual e o próximo acompanhando a
+  música. Vem desligada: ligue em Configurações › Módulos › Música e mídia. Consulta o lrclib.net,
+  enviando título, artista, álbum e duração da faixa.
+- **Velocidade de rede**: download e upload ao vivo no painel do sistema e como opção "Rede e hora" em
+  Aparência › Ilha em repouso (precisa do módulo Monitor do sistema ligado).
+- **Bluetooth** (novo módulo): aviso quando um dispositivo pareado conecta ou desconecta, com a bateria
+  quando o Windows informa, e alerta de bateria baixa. Precisa de um adaptador Bluetooth ligado ao
+  iniciar o Dynasland.
+
 ## 1.3.0 — 2026-11-11
 
 ### Novidades

@@ -213,6 +213,80 @@ internal interface IMMNotificationClient
     int OnPropertyValueChanged([MarshalAs(UnmanagedType.LPWStr)] string deviceId, PropertyKey key);
 }
 
+// Sessões de áudio por aplicativo (audiopolicy.h / audioclient.h): o misturador de volume do Windows.
+
+[ComImport]
+[Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IAudioSessionManager2
+{
+    // IAudioSessionManager
+    [PreserveSig] int GetAudioSessionControl(IntPtr sessionGuid, int streamFlags, out IntPtr sessionControl);
+    [PreserveSig] int GetSimpleAudioVolume(IntPtr sessionGuid, int streamFlags, out IntPtr audioVolume);
+
+    [PreserveSig]
+    int GetSessionEnumerator(out IAudioSessionEnumerator sessions);
+}
+
+[ComImport]
+[Guid("E2F5BB11-0570-40CA-ACDD-3AA01277DEE8")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IAudioSessionEnumerator
+{
+    [PreserveSig]
+    int GetCount(out int count);
+
+    [PreserveSig]
+    int GetSession(int index, out IAudioSessionControl2 session);
+}
+
+/// <summary>IAudioSessionControl seguido dos métodos de IAudioSessionControl2 (mesma vtable).</summary>
+[ComImport]
+[Guid("BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface IAudioSessionControl2
+{
+    // IAudioSessionControl
+    [PreserveSig] int GetState(out int state);
+    [PreserveSig] int GetDisplayName(out IntPtr name);
+    [PreserveSig] int SetDisplayName(IntPtr name, IntPtr eventContext);
+    [PreserveSig] int GetIconPath(out IntPtr path);
+    [PreserveSig] int SetIconPath(IntPtr path, IntPtr eventContext);
+    [PreserveSig] int GetGroupingParam(out Guid groupingParam);
+    [PreserveSig] int SetGroupingParam(IntPtr groupingParam, IntPtr eventContext);
+    [PreserveSig] int RegisterAudioSessionNotification(IntPtr notifications);
+    [PreserveSig] int UnregisterAudioSessionNotification(IntPtr notifications);
+
+    // IAudioSessionControl2
+    [PreserveSig] int GetSessionIdentifier(out IntPtr id);
+    [PreserveSig] int GetSessionInstanceIdentifier(out IntPtr id);
+
+    [PreserveSig]
+    int GetProcessId(out uint processId);
+
+    /// <returns>0 (S_OK) se for a sessão de sons do sistema; 1 (S_FALSE) caso contrário.</returns>
+    [PreserveSig]
+    int IsSystemSoundsSession();
+}
+
+[ComImport]
+[Guid("87CE5498-68D6-44E5-9215-6DA47EF883D8")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal interface ISimpleAudioVolume
+{
+    [PreserveSig]
+    int SetMasterVolume(float level, ref Guid eventContext);
+
+    [PreserveSig]
+    int GetMasterVolume(out float level);
+
+    [PreserveSig]
+    int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute, ref Guid eventContext);
+
+    [PreserveSig]
+    int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
+}
+
 /// <summary>AUDIO_VOLUME_NOTIFICATION_DATA (sem o array de canais, que não é usado).</summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct AudioVolumeNotificationData

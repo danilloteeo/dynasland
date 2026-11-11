@@ -20,10 +20,18 @@ public sealed class SystemMonitorModule(
     TimeProvider time,
     IShortcutRegistry shortcuts,
     IModuleOptions options,
-    ILogger<SystemMonitorModule> logger) : IIslandModule
+    ILogger<SystemMonitorModule> logger,
+    IIslandSettingsService? settings = null,
+    IGlanceRegistry? glances = null) : IIslandModule
 {
     public const string ModuleId = "system";
     public const string PanelActivityId = "system.panel";
+
+    /// <summary>Velocidade de rede para a ilha em repouso (só publicada com essa opção escolhida).</summary>
+    public const string NetworkGlanceId = "system.network";
+
+    private static readonly TimeSpan NetworkInterval = TimeSpan.FromSeconds(2);
+    private ITimer? _networkTimer;
 
     private static readonly TimeSpan SampleInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan AlertInterval = TimeSpan.FromSeconds(30);
@@ -64,15 +72,66 @@ public sealed class SystemMonitorModule(
         }
 
         _shortcut = shortcuts.Register(new IslandShortcut("system.panel", ModuleId, Glyphs.Diagnostic, "Sistema", OpenPanel));
+        if (settings is not null)
+        {
+            settings.Changed += OnSettingsChanged;
+            UpdateNetworkGlance(settings.Current);
+        }
+
         return Task.CompletedTask;
+    }
+
+    private void OnSettingsChanged(object? sender, IslandSettings current) => UpdateNetworkGlance(current);
+
+    /// <summary>Mede a rede a cada 2 s somente enquanto a ilha em repouso está configurada para mostrá-la.</summary>
+    private void UpdateNetworkGlance(IslandSettings current)
+    {
+        var wanted = current.IdleDisplay == IdleDisplay.Network;
+        lock (_lock)
+        {
+            if (wanted && _networkTimer is null && _content is not null)
+            {
+                _networkTimer = time.CreateTimer(_ => PublishNetwork(), null, TimeSpan.Zero, NetworkInterval);
+            }
+            else if (!wanted && _networkTimer is not null)
+            {
+                _networkTimer.Dispose();
+                _networkTimer = null;
+                glances?.Remove(NetworkGlanceId);
+            }
+        }
+    }
+
+    private void PublishNetwork()
+    {
+        try
+        {
+            if (metrics.GetNetworkRate() is { } rate)
+            {
+                var text = $"↓ {TextFormat.Rate(rate.DownloadBytesPerSecond)}  ↑ {TextFormat.Rate(rate.UploadBytesPerSecond)}";
+                glances?.Set(new IslandGlance(NetworkGlanceId, string.Empty, text, Order: 9, IdleOnly: true));
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Falha ao ler a velocidade de rede.");
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
         _shortcut?.Dispose();
         _shortcut = null;
+        if (settings is not null)
+        {
+            settings.Changed -= OnSettingsChanged;
+        }
+
+        glances?.Remove(NetworkGlanceId);
         lock (_lock)
         {
+            _networkTimer?.Dispose();
+            _networkTimer = null;
             _sampler?.Dispose();
             _alertTimer?.Dispose();
             _sampler = null;

@@ -43,7 +43,68 @@ public sealed class WindowsSystemMetricsService : ISystemMetricsService, IDispos
                 VideoMemoryUsedBytes = ReadVideoMemoryUsed(),
                 VideoMemoryTotalBytes = _videoMemoryTotal.Value,
                 CpuFrequencyMhz = ReadCpuFrequency(),
+                Network = GetNetworkRate(),
             };
+        }
+    }
+
+    private static readonly TimeSpan NetworkMinimumInterval = TimeSpan.FromMilliseconds(400);
+
+    private readonly Lock _networkLock = new();
+    private long _networkTimestamp;
+    private long _networkReceived;
+    private long _networkSent;
+    private NetworkRate? _networkRate;
+
+    /// <summary>
+    /// Soma os bytes de todas as interfaces ativas (menos loopback e túneis) e divide pelo tempo desde a
+    /// chamada anterior. Chamadas muito próximas (painel e ilha em repouso juntos) reutilizam a última taxa.
+    /// </summary>
+    public NetworkRate? GetNetworkRate()
+    {
+        lock (_networkLock)
+        {
+            var now = System.Diagnostics.Stopwatch.GetTimestamp();
+            var hadPrevious = _networkTimestamp != 0;
+            var elapsed = hadPrevious ? System.Diagnostics.Stopwatch.GetElapsedTime(_networkTimestamp, now) : TimeSpan.Zero;
+            if (hadPrevious && elapsed < NetworkMinimumInterval)
+            {
+                return _networkRate;
+            }
+
+            long received = 0;
+            long sent = 0;
+            try
+            {
+                foreach (var nic in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (nic.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up
+                        || nic.NetworkInterfaceType is System.Net.NetworkInformation.NetworkInterfaceType.Loopback
+                            or System.Net.NetworkInformation.NetworkInterfaceType.Tunnel)
+                    {
+                        continue;
+                    }
+
+                    var statistics = nic.GetIPStatistics();
+                    received += statistics.BytesReceived;
+                    sent += statistics.BytesSent;
+                }
+            }
+            catch (System.Net.NetworkInformation.NetworkInformationException)
+            {
+                return null;
+            }
+
+            // Uma interface que cai zera a contagem dela: diferença negativa vira zero.
+            _networkRate = hadPrevious
+                ? new NetworkRate(
+                    Math.Max(0, (received - _networkReceived) / elapsed.TotalSeconds),
+                    Math.Max(0, (sent - _networkSent) / elapsed.TotalSeconds))
+                : null;
+            _networkTimestamp = now;
+            _networkReceived = received;
+            _networkSent = sent;
+            return _networkRate;
         }
     }
 

@@ -5,6 +5,7 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
+using Dynasland.Core.Services;
 using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Media;
@@ -113,6 +114,81 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
 
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromSeconds(1);
 
+    // A letra troca de verso com mais precisão que a barra de progresso.
+    private static readonly TimeSpan LyricsInterval = TimeSpan.FromMilliseconds(250);
+
+    private IReadOnlyList<LyricLine> _lyrics = [];
+    private int _lyricIndex = -2;
+    private ITimer? _lyricsTimer;
+
+    /// <summary>Há letra sincronizada para a faixa atual.</summary>
+    public bool HasLyrics => _lyrics.Count > 0;
+
+    [ObservableProperty]
+    private string _lyricPrevious = string.Empty;
+
+    [ObservableProperty]
+    private string _lyricCurrent = string.Empty;
+
+    [ObservableProperty]
+    private string _lyricNext = string.Empty;
+
+    /// <summary>Define a letra da faixa (ou nenhuma). Ignorada se a faixa já mudou. Chamar na thread de UI.</summary>
+    /// <returns><c>true</c> se o painel mudou de tamanho (passou a ter ou deixou de ter letra).</returns>
+    public bool SetLyrics(string trackKey, IReadOnlyList<LyricLine>? lines)
+    {
+        if (_snapshot is null || _snapshot.TrackKey != trackKey)
+        {
+            return false;
+        }
+
+        var had = HasLyrics;
+        _lyrics = lines ?? [];
+        _lyricIndex = -2;
+        OnPropertyChanged(nameof(HasLyrics));
+        RefreshLyrics();
+        UpdateTimers();
+        return had != HasLyrics;
+    }
+
+    /// <summary>Tira a letra (a faixa mudou ou a opção foi desligada). Chamar na thread de UI.</summary>
+    /// <returns><c>true</c> se havia letra e o painel encolheu.</returns>
+    public bool ClearLyrics()
+    {
+        if (!HasLyrics)
+        {
+            return false;
+        }
+
+        _lyrics = [];
+        OnPropertyChanged(nameof(HasLyrics));
+        UpdateTimers();
+        return true;
+    }
+
+    private void RefreshLyrics()
+    {
+        if (!HasLyrics || _snapshot is null)
+        {
+            return;
+        }
+
+        var index = LrcParser.IndexAt(_lyrics, _snapshot.EstimatePosition(time.GetUtcNow()) ?? TimeSpan.Zero);
+        if (index == _lyricIndex)
+        {
+            return;
+        }
+
+        _lyricIndex = index;
+        LyricPrevious = LineAt(index - 1);
+        LyricCurrent = index < 0 ? "♪" : LineAt(index);
+        LyricNext = LineAt(index + 1);
+    }
+
+    /// <summary>Versos vazios no arquivo marcam trechos instrumentais.</summary>
+    private string LineAt(int index) =>
+        index < 0 || index >= _lyrics.Count ? string.Empty : _lyrics[index].Text.Length == 0 ? "♪" : _lyrics[index].Text;
+
     private MediaSnapshot? _snapshot;
     private IslandState? _presentedIn;
     private ITimer? _progressTimer;
@@ -206,7 +282,7 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     {
         IslandState.Compact => new IslandDimensions(HasOtherSessions ? 252 : 232, 34, 17),
         IslandState.Expanded => new IslandDimensions(360, 72, 30),
-        IslandState.Interactive => new IslandDimensions(400, 168 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0), 36),
+        IslandState.Interactive => new IslandDimensions(400, 168 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0) + (HasLyrics ? 70 : 0), 36),
         _ => null,
     };
 
@@ -249,10 +325,22 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
             _progressTimer.Dispose();
             _progressTimer = null;
         }
+
+        var needsLyrics = IsPlaying && HasLyrics && _presentedIn == IslandState.Interactive;
+        if (needsLyrics && _lyricsTimer is null)
+        {
+            _lyricsTimer = time.CreateTimer(_ => ui.Post(RefreshLyrics), null, LyricsInterval, LyricsInterval);
+        }
+        else if (!needsLyrics && _lyricsTimer is not null)
+        {
+            _lyricsTimer.Dispose();
+            _lyricsTimer = null;
+        }
     }
 
     private void RefreshProgress()
     {
+        RefreshLyrics();
         if (_snapshot?.Duration is { } duration && duration > TimeSpan.Zero
             && _snapshot.EstimatePosition(time.GetUtcNow()) is { } position)
         {
@@ -272,5 +360,7 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     {
         _progressTimer?.Dispose();
         _progressTimer = null;
+        _lyricsTimer?.Dispose();
+        _lyricsTimer = null;
     }
 }

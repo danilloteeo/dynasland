@@ -118,6 +118,13 @@
                     <TextBlock Text="O próximo item da agenda. Sem compromisso próximo, mostra a data." Style="{StaticResource CardDescription}" />
                 </StackPanel>
             </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Rede e hora"
+                         IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=Network}">
+                <StackPanel>
+                    <TextBlock Text="Rede e hora" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Velocidade de download e upload ao vivo. Precisa do módulo Monitor do sistema ligado." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+            </RadioButton>
             <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Nada"
                          IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=Nothing}">
                 <StackPanel>

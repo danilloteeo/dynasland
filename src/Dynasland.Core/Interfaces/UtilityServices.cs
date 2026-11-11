@@ -13,6 +13,39 @@ public interface ISystemMetricsService
     MemoryUsage GetMemory();
 
     IReadOnlyList<DiskUsage> GetDisks();
+
+    /// <summary>Velocidade de rede desde a chamada anterior (leitura barata); <c>null</c> se ainda não há base de comparação.</summary>
+    NetworkRate? GetNetworkRate() => null;
+}
+
+/// <summary>Verso de uma letra sincronizada: aparece a partir de <paramref name="Time"/>.</summary>
+public sealed record LyricLine(TimeSpan Time, string Text);
+
+/// <summary>Letras sincronizadas de músicas, de um serviço na internet.</summary>
+public interface ILyricsService
+{
+    /// <returns>Versos em ordem de tempo; <c>null</c> se a música não tem letra sincronizada ou o serviço falhou.</returns>
+    Task<IReadOnlyList<LyricLine>?> GetAsync(string title, string artist, string? album, TimeSpan? duration, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Dispositivo Bluetooth pareado.</summary>
+public sealed record BluetoothDeviceInfo(string Id, string Name, bool IsConnected);
+
+/// <summary>Dispositivos Bluetooth pareados: conexão, desconexão e bateria (quando o Windows informa).</summary>
+public interface IBluetoothService
+{
+    /// <summary>Um dispositivo pareado conectou ou desconectou (qualquer thread).</summary>
+    event EventHandler<BluetoothDeviceInfo>? ConnectionChanged;
+
+    IReadOnlyList<BluetoothDeviceInfo> Devices { get; }
+
+    /// <returns><c>false</c> se o computador não tem adaptador Bluetooth.</returns>
+    Task<bool> StartAsync(CancellationToken cancellationToken = default);
+
+    Task StopAsync();
+
+    /// <summary>Bateria em porcentagem; <c>null</c> quando o dispositivo ou o Windows não informam.</summary>
+    Task<int?> GetBatteryAsync(string deviceId);
 }
 
 /// <summary>

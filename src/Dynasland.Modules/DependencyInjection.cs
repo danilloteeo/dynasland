@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddSingleton<IIslandModule, NotificationsModule>();
         services.AddSingleton<IIslandModule, DownloadsModule>();
         services.AddSingleton<IIslandModule, BatteryModule>();
+        services.AddSingleton<IIslandModule, Bluetooth.BluetoothModule>();
         services.AddSingleton<IIslandModule, TimerModule>();
         services.AddSingleton<IIslandModule, ClipboardModule>();
         services.AddSingleton<IIslandModule, GamingModule>();
