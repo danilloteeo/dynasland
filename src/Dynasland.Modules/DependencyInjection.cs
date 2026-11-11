@@ -12,6 +12,7 @@ using Dynasland.Modules.Notifications;
 using Dynasland.Modules.SystemMonitor;
 using Dynasland.Modules.Timer;
 using Dynasland.Modules.Volume;
+using Dynasland.Modules.Water;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dynasland.Modules;
@@ -35,6 +36,7 @@ public static class DependencyInjection
         services.AddSingleton<IIslandModule, CaptureModule>();
         services.AddSingleton<IIslandModule, WeatherModule>();
         services.AddSingleton<IIslandModule, CalendarModule>();
+        services.AddSingleton<IIslandModule, WaterModule>();
         services.AddSingleton<IIslandModule, ClockModule>();
 
         services.AddSingleton<NotificationPreferences>();
@@ -55,6 +57,7 @@ public static class DependencyInjection
                      "Capture/CaptureTemplates.xaml",
                      "Gaming/GamingTemplates.xaml",
                      "Life/LifeTemplates.xaml",
+                     "Water/WaterTemplates.xaml",
                      "Clock/ClockTemplates.xaml",
                  })
         {

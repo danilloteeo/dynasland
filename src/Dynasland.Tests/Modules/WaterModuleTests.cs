@@ -1,3 +1,4 @@
+using Dynasland.App.ViewModels.Hub;
 using Dynasland.Core.Activities;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
@@ -196,6 +197,27 @@ public class WaterModuleTests : IDisposable
         }
 
         Assert.True(condition());
+    }
+
+    [Fact]
+    public async Task Hub_page_shows_progress_and_adjusts_the_count()
+    {
+        await _db.CreateRunner().MigrateAsync();
+        var store = new SqliteWaterStore(_db.Factory);
+        var viewModel = new WaterPageViewModel(store, TestOptions.Create(), new InlineDispatcher(), new FakeTimeProvider(T0), NullLogger<WaterPageViewModel>.Instance);
+
+        await viewModel.LoadAsync();
+        Assert.Equal("0 de 8 copos", viewModel.ProgressText);
+        Assert.Equal(0, viewModel.Progress);
+
+        await viewModel.AddCommand.ExecuteAsync(null);
+        await viewModel.AddCommand.ExecuteAsync(null);
+        await viewModel.RemoveCommand.ExecuteAsync(null);
+
+        Assert.Equal("1 de 8 copos", viewModel.ProgressText);
+        Assert.Equal(1 / 8d, viewModel.Progress);
+        Assert.Equal("Faltam 7 copos para a meta.", viewModel.Message);
+        viewModel.Dispose();
     }
 
     private sealed class NoHub : IHubService

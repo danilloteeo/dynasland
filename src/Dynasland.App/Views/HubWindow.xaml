@@ -35,6 +35,9 @@
         <DataTemplate DataType="{x:Type hub:CapturesPageViewModel}">
             <views:CapturesPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type hub:WaterPageViewModel}">
+            <views:WaterPage />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -60,6 +63,8 @@
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Focus}" />
                     <RadioButton Style="{StaticResource NavButton}" Tag="&#xE722;" Content="Capturas"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Captures}" />
+                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE9CA;" Content="Água"
+                                 IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Water}" />
                 </StackPanel>
             </DockPanel>
         </Border>

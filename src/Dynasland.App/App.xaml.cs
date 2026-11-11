@@ -140,7 +140,7 @@ public partial class App : Application
             handled = true;
         }
 
-        // --central abre a Central; --central=agenda (ou notificacoes, foco, capturas) abre a página.
+        // --central abre a Central; --central=agenda (ou notificacoes, foco, capturas, agua) abre a página.
         if (args.FirstOrDefault(a => a.StartsWith("--central", StringComparison.OrdinalIgnoreCase)) is { } hubArg)
         {
             var name = hubArg.Contains('=') ? hubArg[(hubArg.IndexOf('=') + 1)..].ToLowerInvariant() : null;
@@ -150,6 +150,7 @@ public partial class App : Application
                 "agenda" or "calendar" => HubPage.Calendar,
                 "foco" or "focus" => HubPage.Focus,
                 "capturas" or "captures" => HubPage.Captures,
+                "agua" or "água" or "water" => HubPage.Water,
                 _ => HubPage.Clipboard,
             };
             _host.Services.GetRequiredService<IHubService>().Open(page);
@@ -256,6 +257,7 @@ public partial class App : Application
         builder.Services.AddTransient<IHubPage, CalendarPageViewModel>();
         builder.Services.AddTransient<IHubPage, FocusPageViewModel>();
         builder.Services.AddTransient<IHubPage, CapturesPageViewModel>();
+        builder.Services.AddTransient<IHubPage, WaterPageViewModel>();
         builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
 

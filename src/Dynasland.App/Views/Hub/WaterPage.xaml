@@ -1,0 +1,27 @@
+<UserControl x:Class="Dynasland.App.Views.Hub.WaterPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:hub="clr-namespace:Dynasland.App.ViewModels.Hub"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=hub:WaterPageViewModel}">
+    <StackPanel>
+        <TextBlock Text="Água" Style="{StaticResource SettingsTitle}" />
+        <TextBlock Text="Copos de hoje. Ajuste o intervalo, o horário e a meta em Configurações › Módulos › Água."
+                   Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
+
+        <Border Style="{StaticResource SettingsCard}" Margin="0,18,0,0" Padding="20,16">
+            <StackPanel>
+                <TextBlock Text="{Binding ProgressText}" FontSize="26" FontWeight="SemiBold" />
+                <ProgressBar Maximum="1" Value="{Binding Progress, Mode=OneWay}" Height="10" Margin="0,12,0,0"
+                             Foreground="{DynamicResource SettingsAccentBrush}" AutomationProperties.Name="Progresso da meta de água" />
+                <TextBlock Text="{Binding Message}" Style="{StaticResource CardDescription}" Margin="0,10,0,0" />
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <Button Style="{StaticResource SettingsButton}" Content="Bebi um copo (+1)" Command="{Binding AddCommand}" />
+                    <Button Style="{StaticResource SettingsButton}" Content="Desfazer (−1)" Command="{Binding RemoveCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
