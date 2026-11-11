@@ -62,15 +62,29 @@ public sealed partial class WaterPageViewModel : ObservableObject, IHubPage
     [RelayCommand]
     private async Task AddAsync()
     {
-        await _store.AddAsync(Today(), 1);
-        await LoadAsync();
+        try
+        {
+            await _store.AddAsync(Today(), 1);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao registrar o copo de água.");
+        }
     }
 
     [RelayCommand]
     private async Task RemoveAsync()
     {
-        await _store.AddAsync(Today(), -1);
-        await LoadAsync();
+        try
+        {
+            await _store.AddAsync(Today(), -1);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao remover o copo de água.");
+        }
     }
 
     public void Dispose()

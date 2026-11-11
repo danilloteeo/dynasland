@@ -114,14 +114,14 @@ public class WaterModuleTests : IDisposable
     [Fact]
     public async Task The_count_restarts_on_the_next_day()
     {
-        var f = await StartAsync(T0);
+        // Fora do horário ativo o próximo aviso é só às 08:00; a virada do dia precisa agendar o glance sozinha.
+        var f = await StartAsync(T0.AddHours(15)); // 23:30
         await f.Module.DrinkAsync();
         await WaitUntil(() => f.Glances.Glances.Single().Text == "1/8 copos");
 
-        f.Time.Advance(TimeSpan.FromHours(16)); // 00:30 do dia seguinte
-        await f.Module.RescheduleAsync();
+        f.Time.Advance(TimeSpan.FromMinutes(30) + TimeSpan.FromSeconds(1)); // 00:00:01 do dia seguinte
 
-        Assert.Equal("0/8 copos", f.Glances.Glances.Single().Text);
+        await WaitUntil(() => f.Glances.Glances.Single().Text == "0/8 copos");
         await f.Module.StopAsync(CancellationToken.None);
     }
 

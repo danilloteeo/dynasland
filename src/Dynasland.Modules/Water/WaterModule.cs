@@ -170,6 +170,11 @@ public sealed class WaterModule(
             var now = time.GetLocalNow();
             var (start, end, interval, goal) = ReadSettings();
             var glasses = await store.GetAsync(DateOnly.FromDateTime(now.DateTime));
+            if (!_running)
+            {
+                return;
+            }
+
             glances.Set(new IslandGlance(GlanceId, "", $"{glasses}/{goal} copos", Order: 2, Invoke: () => hub.Open(HubPage.Water)));
 
             lock (_lock)
@@ -186,6 +191,13 @@ public sealed class WaterModule(
                 else
                 {
                     next = WaterSchedule.Next(now, start, end, interval);
+                }
+
+                // A virada do dia sempre agenda um evento, para o glance zerar mesmo sem aviso à meia-noite.
+                var midnight = new DateTimeOffset(now.Date.AddDays(1), now.Offset);
+                if (next > midnight)
+                {
+                    next = midnight;
                 }
 
                 var delay = next - time.GetLocalNow();
@@ -217,17 +229,22 @@ public sealed class WaterModule(
             var now = time.GetLocalNow();
             var (start, end, _, goal) = ReadSettings();
             var glasses = await store.GetAsync(DateOnly.FromDateTime(now.DateTime));
-            var due = glasses < goal
-                && WaterSchedule.IsActive(now, start, end)
-                && now - _lastReminder > TimeSpan.FromMinutes(1);
-            if (due)
+            var due = false;
+            if (_running && glasses < goal && WaterSchedule.IsActive(now, start, end))
             {
-                _lastReminder = now;
                 lock (_lock)
                 {
-                    _snoozeUntil = null;
+                    if (now - _lastReminder > TimeSpan.FromMinutes(1))
+                    {
+                        _lastReminder = now;
+                        _snoozeUntil = null;
+                        due = true;
+                    }
                 }
+            }
 
+            if (due && _running)
+            {
                 Announce(glasses, goal);
             }
         }
