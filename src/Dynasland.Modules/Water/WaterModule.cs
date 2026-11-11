@@ -54,6 +54,7 @@ public sealed class WaterModule(
         "goal", "Meta diária", "Quantos copos beber por dia.", 8, 1, 20, 1, "copos");
 
     private readonly Lock _lock = new();
+    private readonly SemaphoreSlim _reschedule = new(1, 1); // serializa RescheduleAsync; nunca descartado (chamadas atrasadas)
     private readonly List<IDisposable> _registrations = [];
     private ITimer? _timer;
     private bool _running;
@@ -158,16 +159,22 @@ public sealed class WaterModule(
             return;
         }
 
+        await _reschedule.WaitAsync();
         try
         {
+            if (!_running)
+            {
+                return;
+            }
+
             var now = time.GetLocalNow();
             var (start, end, interval, goal) = ReadSettings();
             var glasses = await store.GetAsync(DateOnly.FromDateTime(now.DateTime));
             glances.Set(new IslandGlance(GlanceId, "", $"{glasses}/{goal} copos", Order: 2, Invoke: () => hub.Open(HubPage.Water)));
 
-            DateTimeOffset next;
             lock (_lock)
             {
+                DateTimeOffset next;
                 if (glasses >= goal)
                 {
                     next = new DateTimeOffset(now.Date.AddDays(1), now.Offset);
@@ -181,15 +188,25 @@ public sealed class WaterModule(
                     next = WaterSchedule.Next(now, start, end, interval);
                 }
 
+                var delay = next - time.GetLocalNow();
+                if (delay < TimeSpan.Zero)
+                {
+                    delay = TimeSpan.Zero;
+                }
+
                 _timer?.Dispose();
                 _timer = _running
-                    ? time.CreateTimer(_ => _ = OnTimerAsync(), null, next - now, Timeout.InfiniteTimeSpan)
+                    ? time.CreateTimer(_ => _ = OnTimerAsync(), null, delay, Timeout.InfiniteTimeSpan)
                     : null;
             }
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Falha ao agendar os lembretes de água.");
+        }
+        finally
+        {
+            _reschedule.Release();
         }
     }
 

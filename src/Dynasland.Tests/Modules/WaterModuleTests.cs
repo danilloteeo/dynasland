@@ -25,14 +25,14 @@ public class WaterModuleTests : IDisposable
 
     private sealed record Fixture(WaterModule Module, SqliteWaterStore Store, FakeTimeProvider Time, GlanceRegistry Glances, ModuleOptionsService Options);
 
-    private async Task<Fixture> StartAsync(DateTimeOffset now)
+    private async Task<Fixture> StartAsync(DateTimeOffset now, Func<SqliteWaterStore, IWaterStore>? wrap = null)
     {
         await _db.CreateRunner().MigrateAsync();
         var store = new SqliteWaterStore(_db.Factory);
         var time = new FakeTimeProvider(now);
         var glances = new GlanceRegistry();
         var options = TestOptions.Create();
-        var module = new WaterModule(store, new NoHub(), _recorder.Bus, time, new ShortcutRegistry(), glances, new SilentSound(),
+        var module = new WaterModule(wrap?.Invoke(store) ?? store, new NoHub(), _recorder.Bus, time, new ShortcutRegistry(), glances, new SilentSound(),
             options, new GlobalShortcutRegistry(new InMemorySettingsStore()), NullLogger<WaterModule>.Instance);
         await module.StartAsync(CancellationToken.None);
         await module.RescheduleAsync();
@@ -135,6 +135,57 @@ public class WaterModuleTests : IDisposable
         f.Time.Advance(TimeSpan.FromMinutes(30)); // 09:00 está no horário padrão 8–22
         await WaitUntil(() => Reminders.Count == 1);
         await f.Module.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Overlapping_reschedules_keep_the_timer_of_the_final_settings()
+    {
+        GatedStore? gated = null;
+        var f = await StartAsync(T0, s => gated = new GatedStore(s));
+        gated!.ArmNext();
+
+        // A primeira mudança fica presa na leitura do store; a segunda termina antes dela no código sem serialização.
+        await f.Options.SetAsync(WaterModule.ModuleId, WaterModule.StartHour, 20);
+        await gated.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await f.Options.SetAsync(WaterModule.ModuleId, WaterModule.StartHour, 8);
+        await Task.Delay(100);
+        gated.Release.SetResult();
+        await Task.Delay(200);
+
+        f.Time.Advance(TimeSpan.FromMinutes(30)); // 09:00 vale para o início final (8h), não para 20h
+        await WaitUntil(() => Reminders.Count == 1);
+        await f.Module.StopAsync(CancellationToken.None);
+    }
+
+    private sealed class GatedStore(IWaterStore inner) : IWaterStore
+    {
+        private int _armed;
+
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public event EventHandler? Changed
+        {
+            add => inner.Changed += value;
+            remove => inner.Changed -= value;
+        }
+
+        public void ArmNext() => Interlocked.Exchange(ref _armed, 1);
+
+        public async Task<int> GetAsync(DateOnly day, CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Exchange(ref _armed, 0) == 1)
+            {
+                Entered.SetResult();
+                await Release.Task;
+            }
+
+            return await inner.GetAsync(day, cancellationToken);
+        }
+
+        public Task<int> AddAsync(DateOnly day, int delta, CancellationToken cancellationToken = default) =>
+            inner.AddAsync(day, delta, cancellationToken);
     }
 
     private static async Task WaitUntil(Func<bool> condition)
