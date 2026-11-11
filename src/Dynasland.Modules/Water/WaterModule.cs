@@ -74,7 +74,7 @@ public sealed class WaterModule(
         _running = true;
         store.Changed += OnChanged;
         options.Changed += OnOptionChanged;
-        _registrations.Add(shortcuts.Register(new IslandShortcut("water.drink", ModuleId, "", "Bebi um copo", () => _ = DrinkAsync())));
+        _registrations.Add(shortcuts.Register(new IslandShortcut("water.drink", ModuleId, "\U0001F4A7", "Bebi um copo", () => _ = DrinkAsync())));
         _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
             "water.drink", "Registrar um copo de água", "Água",
             new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'G'), () => _ = DrinkAsync())));
