@@ -70,8 +70,17 @@ public class WaterModuleTests : IDisposable
         Reminders[0].DrinkCommand.Execute(null);
 
         await WaitUntil(() => f.Glances.Glances.Single().Text == "1/8 copos");
-        var confirmation = Assert.IsType<StatusContent>(_recorder.Posted[^1].Content);
+        var posted = _recorder.Posted[^1];
+        var confirmation = Assert.IsType<WaterDrankContent>(posted.Content);
+        Assert.Equal("Boa!", confirmation.Title);
         Assert.Equal("1 de 8 copos hoje", confirmation.Message);
+        Assert.Equal(0, confirmation.FromProgress, 3);
+        Assert.Equal(0.125, confirmation.ToProgress, 3);
+        Assert.False(confirmation.GoalReached);
+        Assert.Equal("water.reminder", posted.Id);
+        Assert.Equal(ActivityKind.Transient, posted.Kind);
+        Assert.Equal(TimeSpan.FromSeconds(5), posted.Duration);
+        Assert.False(posted.OpenInteractive);
         Assert.Equal(1, await f.Store.GetAsync(new DateOnly(2026, 11, 11)));
         await f.Module.StopAsync(CancellationToken.None);
     }
@@ -103,8 +112,12 @@ public class WaterModuleTests : IDisposable
 
         await f.Module.DrinkAsync();
 
-        var congrats = Assert.IsType<StatusContent>(_recorder.Posted[^1].Content);
+        var congrats = Assert.IsType<WaterDrankContent>(_recorder.Posted[^1].Content);
         Assert.Equal("Meta de água batida!", congrats.Title);
+        Assert.Equal("1 de 1 copos hoje", congrats.Message);
+        Assert.Equal(0, congrats.FromProgress, 3);
+        Assert.Equal(1, congrats.ToProgress, 3);
+        Assert.True(congrats.GoalReached);
         f.Time.Advance(TimeSpan.FromHours(3));
         await Task.Delay(100);
         Assert.Empty(Reminders);

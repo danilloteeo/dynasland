@@ -10,7 +10,8 @@
   `Ctrl+Alt+G` registra um copo sem abrir nada. Um ícone próprio de gota, no estilo dos ícones do
   Windows, marca o atalho na tela inicial da ilha, o aviso e o item **Água** da Central.
 - **Página Água animada**: uma garrafa que enche conforme você bebe, com ondas, respingos a cada copo
-  e brilho ao bater a meta. Funciona também com o **Bebi** da ilha e o `Ctrl+Alt+G`.
+  e brilho ao bater a meta. Funciona também com o **Bebi** da ilha e o `Ctrl+Alt+G`. Ao marcar que bebeu pela ilha
+  ou com `Ctrl+Alt+G`, uma gota enche de água na própria ilha.
 
 ## 1.4.0 — 2026-11-11
 

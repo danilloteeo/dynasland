@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:common="clr-namespace:Dynasland.Modules.Common">
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common"
+                    xmlns:water="clr-namespace:Dynasland.Modules.Water">
 
     <common:GlyphContentConverter x:Key="GlyphContent" />
 
@@ -47,6 +48,49 @@
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding SnoozeLabel}" Command="{Binding SnoozeCommand}" />
                 <Button Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding DrinkLabel}" Command="{Binding DrinkCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Confirmação de um copo: a gota enche do progresso anterior ao novo (WaterFillMeter). -->
+    <DataTemplate x:Key="Dynasland.Modules.Water.WaterDrankContent:Compact">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <water:WaterFillMeter Width="18" Height="18" VerticalAlignment="Center"
+                                  From="{Binding FromProgress}" To="{Binding ToProgress}" Celebrate="{Binding GoalReached}"
+                                  Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+            <TextBlock Text="{Binding Count}" Margin="8,0,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Water.WaterDrankContent:Expanded">
+        <Grid Margin="20,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <water:WaterFillMeter Width="40" Height="40" VerticalAlignment="Center"
+                                      From="{Binding FromProgress}" To="{Binding ToProgress}" Celebrate="{Binding GoalReached}"
+                                      Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Message}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Water.WaterDrankContent:Interactive">
+        <Grid Margin="22,16">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <water:WaterFillMeter Width="56" Height="56" VerticalAlignment="Center"
+                                      From="{Binding FromProgress}" To="{Binding ToProgress}" Celebrate="{Binding GoalReached}"
+                                      Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                <StackPanel Margin="16,0,0,0" MaxWidth="300" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandPrimaryTextBrush}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Message}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </StackPanel>
             </StackPanel>
         </Grid>
     </DataTemplate>

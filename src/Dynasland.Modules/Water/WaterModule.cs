@@ -37,6 +37,7 @@ public sealed class WaterModule(
     private const int DefaultEndHour = 22;
     private static readonly TimeSpan ReminderDisplayDuration = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan ConfirmationDuration = TimeSpan.FromSeconds(4);
+    private static readonly TimeSpan DrankDuration = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan SnoozeDelay = TimeSpan.FromMinutes(10);
 
     public static readonly ModuleOption Sound = ModuleOption.Toggle(
@@ -133,7 +134,11 @@ public sealed class WaterModule(
                 _snoozeUntil = null;
             }
 
-            PostStatus(glasses >= goal ? "Meta de água batida!" : "Boa!", $"{glasses} de {goal} copos hoje");
+            bus.PostActivity(new IslandActivity(ActivityId, ModuleId, ActivityKind.Transient, new WaterDrankContent(glasses, goal))
+            {
+                Duration = DrankDuration,
+                GroupKey = ActivityId,
+            });
         }
         catch (Exception ex)
         {
@@ -274,7 +279,7 @@ public sealed class WaterModule(
         }
     }
 
-    /// <summary>Resposta curta que substitui o aviso (mesmo Id) depois de Bebi ou Adiar.</summary>
+    /// <summary>Resposta curta que substitui o aviso (mesmo Id) depois de Adiar.</summary>
     private void PostStatus(string title, string message) =>
         bus.PostActivity(new IslandActivity(ActivityId, ModuleId, ActivityKind.Transient, new StatusContent(StatusKind.Info, title, message))
         {
