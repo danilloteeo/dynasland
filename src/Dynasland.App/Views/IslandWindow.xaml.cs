@@ -9,6 +9,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Dynasland.App.Services;
 using Dynasland.App.ViewModels;
+using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
@@ -33,6 +34,13 @@ public partial class IslandWindow : Window
     private const double HoverMilliseconds = 160;
     private const double HoverScale = 1.05;
     private const double SwapOffset = 6;
+    private const double GhostRise = -4;
+    private const double PulseMilliseconds = 600;
+    private const double PulseOpacity = 0.6;
+    private const double PulseScale = 1.04;
+
+    /// <summary>Republicar o mesmo aviso dentro deste intervalo (ex.: brilho ajustado várias vezes) não pulsa de novo.</summary>
+    private static readonly TimeSpan PulseRepeatWindow = TimeSpan.FromSeconds(2);
 
     /// <summary>Altura do rodapé (abas e configurações), somada à do conteúdo no estado interativo.</summary>
     private const double FooterHeight = 28;
@@ -53,6 +61,10 @@ public partial class IslandWindow : Window
     private DispatcherTimer? _pendingClick;
     private bool _hiddenForGame;
     private readonly IDisposable _gamingSubscription;
+    private readonly IDisposable _alertSubscription;
+    private Image? _ghost;
+    private string? _lastPulseId;
+    private long _lastPulseTicks;
     private bool _repositionPending;
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
@@ -72,6 +84,7 @@ public partial class IslandWindow : Window
         DataContext = viewModel;
 
         ApplyLayers(viewModel.State, animate: false);
+        viewModel.PropertyChanging += OnViewModelPropertyChanging;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
         fullscreen.Changed += OnFullscreenChanged;
@@ -81,6 +94,14 @@ public partial class IslandWindow : Window
             _hiddenForGame = e.Active && e.HideIsland;
             UpdateVisibility();
         }));
+        _alertSubscription = bus.Subscribe<ActivityPostedEvent>(e =>
+        {
+            if (IslandAlertPulse.ShouldPulse(e.Activity))
+            {
+                Dispatcher.BeginInvoke(() => PlayAlertPulse(e.Activity.Id));
+            }
+        });
+        ApplyPressFeedback();
     }
 
     public double CornerSize
@@ -89,7 +110,10 @@ public partial class IslandWindow : Window
         set => SetValue(CornerSizeProperty, value);
     }
 
-    private bool ShouldAnimate => IsVisible && _settings.Current.AnimationsEnabled;
+    /// <summary>Animações ligadas no Dynasland e na opção do Windows "Animar controles e elementos dentro das janelas".</summary>
+    private bool AnimationsAllowed => _settings.Current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
+
+    private bool ShouldAnimate => IsVisible && AnimationsAllowed;
 
     private double Speed => Math.Clamp(_settings.Current.AnimationSpeed, 0.25, 3);
 
@@ -119,12 +143,15 @@ public partial class IslandWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _viewModel.PropertyChanging -= OnViewModelPropertyChanging;
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _settings.Changed -= OnSettingsChanged;
         _fullscreen.Changed -= OnFullscreenChanged;
         _session.Changed -= OnSessionChanged;
         _outsideClicks.Dispose();
         _gamingSubscription.Dispose();
+        _alertSubscription.Dispose();
+        RemoveGhost();
         base.OnClosed(e);
     }
 
@@ -143,6 +170,11 @@ public partial class IslandWindow : Window
 
             case WindowMessages.WM_SETTINGCHANGE when wParam.ToInt64() == WindowMessages.SPI_SETWORKAREA:
                 RequestReposition();
+                break;
+
+            case WindowMessages.WM_SETTINGCHANGE:
+                // Ex.: "Animar controles e elementos dentro das janelas"; lido depois que o WPF atualiza o cache.
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, ApplyPressFeedback);
                 break;
         }
 
@@ -175,8 +207,12 @@ public partial class IslandWindow : Window
 
         UpdateVisibility();
         ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
+        ApplyPressFeedback();
         RequestReposition();
     }
+
+    /// <summary>A resposta ao toque dos botões (estilos da ilha) segue a mesma regra das demais animações.</summary>
+    private void ApplyPressFeedback() => IslandPressFeedback.SetIsEnabled(this, AnimationsAllowed);
 
     private void OnFullscreenChanged(object? sender, string? monitor) => UpdateVisibility();
 
@@ -220,6 +256,21 @@ public partial class IslandWindow : Window
         }
 
         _viewModel.SetWindowVisible(visible);
+    }
+
+    /// <summary>Antes de trocar o conteúdo no mesmo estado, guarda uma imagem do atual para o cross-fade.</summary>
+    private void OnViewModelPropertyChanging(object? sender, PropertyChangingEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(IslandViewModel.ExpandedContent) when _viewModel.State == IslandState.Expanded:
+                CaptureGhost(ExpandedLayer);
+                break;
+
+            case nameof(IslandViewModel.InteractiveContent) when _viewModel.State == IslandState.Interactive:
+                CaptureGhost(InteractiveLayer);
+                break;
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -405,6 +456,7 @@ public partial class IslandWindow : Window
     {
         if (!ShouldAnimate)
         {
+            RemoveGhost();
             return;
         }
 
@@ -414,6 +466,97 @@ public partial class IslandWindow : Window
         {
             translate.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(SwapOffset, 0, duration) { EasingFunction = SoftEasing }));
         }
+
+        FadeOutGhost(duration);
+    }
+
+    /// <summary>
+    /// Fotografa a camada (ainda com o conteúdo antigo) e põe a imagem logo acima dela. Um fantasma anterior,
+    /// de uma troca ainda em andamento, é descartado antes.
+    /// </summary>
+    private void CaptureGhost(ContentPresenter layer)
+    {
+        RemoveGhost();
+        if (!ShouldAnimate || layer.Content is null || layer.Opacity <= 0.01)
+        {
+            return;
+        }
+
+        var width = layer.ActualWidth;
+        var height = layer.ActualHeight;
+        if (width < 1 || height < 1)
+        {
+            return;
+        }
+
+        // A imagem já sai com a opacidade atual da camada (troca no meio de outra), então o fantasma começa em 1.
+        _ghost = new Image
+        {
+            Source = IslandSnapshotImage.Capture(layer, width, height),
+            Width = width,
+            Height = height,
+            Stretch = Stretch.Fill,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false,
+            RenderTransform = new TranslateTransform(),
+        };
+        ContentGrid.Children.Insert(ContentGrid.Children.IndexOf(layer) + 1, _ghost);
+    }
+
+    /// <summary>O fantasma esmaece e sobe um pouco enquanto o conteúdo novo entra por baixo dele.</summary>
+    private void FadeOutGhost(TimeSpan duration)
+    {
+        if (_ghost is not { } ghost)
+        {
+            return;
+        }
+
+        // Sem congelar: o Completed é inscrito antes de a animação começar.
+        var fade = new DoubleAnimation(0, duration) { EasingFunction = SoftEasing };
+        fade.Completed += (_, _) =>
+        {
+            if (_ghost == ghost)
+            {
+                RemoveGhost();
+            }
+        };
+        ghost.BeginAnimation(OpacityProperty, fade);
+        ghost.RenderTransform.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(0, GhostRise, duration) { EasingFunction = SoftEasing }));
+    }
+
+    private void RemoveGhost()
+    {
+        if (_ghost is not { } ghost)
+        {
+            return;
+        }
+
+        _ghost = null;
+        ghost.BeginAnimation(OpacityProperty, null);
+        ghost.RenderTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ghost.Source = null;
+        ContentGrid.Children.Remove(ghost);
+    }
+
+    /// <summary>Um aviso importante chegou: o anel de acento pulsa uma vez ao redor da cápsula.</summary>
+    private void PlayAlertPulse(string activityId)
+    {
+        var now = Environment.TickCount64;
+        var repeated = activityId == _lastPulseId && now - _lastPulseTicks < PulseRepeatWindow.TotalMilliseconds;
+        _lastPulseId = activityId;
+        _lastPulseTicks = now;
+
+        if (repeated || !ShouldAnimate || !IslandHost.IsVisible)
+        {
+            return;
+        }
+
+        var duration = Scaled(PulseMilliseconds);
+        AlertRing.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(PulseOpacity, 0, duration) { EasingFunction = SoftEasing }));
+        var grow = Frozen(new DoubleAnimation(1, PulseScale, duration) { EasingFunction = SoftEasing });
+        AlertRingScale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+        AlertRingScale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
     }
 
     private void AnimateHover(bool hovering)

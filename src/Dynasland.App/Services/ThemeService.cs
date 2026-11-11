@@ -117,8 +117,9 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
         bottom.A = alpha;
 
         brush.EndPoint = media is null && IslandThemes.IsHorizontal(current.IslandTheme) ? new Point(1, 0) : new Point(0, 1);
-        Fade(brush.GradientStops[0], top, current.AnimationsEnabled);
-        Fade(brush.GradientStops[1], bottom, current.AnimationsEnabled);
+        var animate = current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
+        Fade(brush.GradientStops[0], top, animate);
+        Fade(brush.GradientStops[1], bottom, animate);
 
         // Cópia congelada para quem usa o recurso fora da janela da ilha.
         var snapshot = new LinearGradientBrush(top, bottom, brush.StartPoint, brush.EndPoint);

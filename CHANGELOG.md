@@ -12,6 +12,10 @@
 - **Página Água animada**: uma garrafa que enche conforme você bebe, com ondas, respingos a cada copo
   e brilho ao bater a meta. Funciona também com o **Bebi** da ilha e o `Ctrl+Alt+G`. Ao marcar que bebeu pela ilha
   ou com `Ctrl+Alt+G`, uma gota enche de água na própria ilha.
+- **Ilha mais fluida**: ao trocar de conteúdo, o anterior esmaece enquanto o novo entra (sem quadro
+  vazio); os botões da ilha encolhem de leve ao toque; avisos importantes (lembretes, fim de timer,
+  bateria baixa) fazem um anel de destaque pulsar uma vez ao redor da cápsula; e as animações da ilha
+  também respeitam a opção do Windows "Animar controles e elementos dentro das janelas".
 
 ## 1.4.0 — 2026-11-11
 
