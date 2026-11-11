@@ -55,6 +55,24 @@ Em `Dynasland.Tests/Modules`, com `TimeProvider` falso:
 - Agendamento: respeita o horário ativo, soma o intervalo, adiar em 10 min, para ao atingir a meta, vira o dia.
 - Store: incrementar, decrementar sem ficar abaixo de zero, contagem por dia.
 
+## Aba Água animada (revisão pedida após a primeira versão)
+
+A página Água da Central (`WaterPage`) vira a tela principal do recurso, com uma garrafa que enche.
+
+- **Garrafa:** grande, ao centro; o nível da água sobe até a meta, com duas camadas de onda contínuas
+  (velocidades diferentes). Abaixo: "N de M copos", a mensagem de progresso e os botões
+  **Bebi um copo** (principal) e **Desfazer**.
+- **+1:** a água sobe com easing, a onda agita por um instante, sobem gotas/respingos do topo e o número
+  faz um pulso. **−1:** a água desce com a mesma suavidade, sem respingos.
+- **Meta batida:** a garrafa brilha e sobem gotas comemorativas; a mensagem vira "Meta de hoje batida!".
+- **Qualquer origem dispara:** botão da página, **Bebi** da ilha e `Ctrl+Alt+G`, com a aba aberta (a página
+  reage à mudança de `Glasses`, não ao clique).
+- **Desempenho e acessibilidade:** animações contínuas (ondas) só rodam enquanto a página está carregada e
+  visível; com `SystemParameters.ClientAreaAnimation` desligado, o nível muda direto, sem movimento.
+- **Tema:** água azul fixa; garrafa e fundo seguem o tema claro/escuro (`Settings*Brush`).
+- **Código:** só `WaterPage.xaml`, `WaterPage.xaml.cs` e `WaterPageViewModel` (expõe `Glasses` e `Goal`
+  como números). Módulo, store e ilha não mudam.
+
 ## Fora de escopo
 
 Histórico por dia e gráfico semanal; volume em ml; sincronização externa.
