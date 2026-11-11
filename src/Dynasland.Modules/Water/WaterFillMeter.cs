@@ -31,11 +31,6 @@ public sealed class WaterFillMeter : UserControl
 
     private static readonly TimeSpan LevelDuration = TimeSpan.FromMilliseconds(900);
     private static readonly TimeSpan PulseDuration = TimeSpan.FromMilliseconds(350);
-    private static readonly TimeSpan DropDuration = TimeSpan.FromMilliseconds(750);
-    private static readonly Color WaterColor = Color.FromRgb(0x3A, 0xA7, 0xFF);
-    private static readonly Brush WaterBrush = Frozen(new LinearGradientBrush(WaterColor, Color.FromRgb(0x1E, 0x6F, 0xD9), 90));
-    private static readonly Brush BackWaterBrush = Frozen(new SolidColorBrush(Color.FromArgb(0x8C, 0x5F, 0xB8, 0xFF)));
-    private static readonly Brush DropBrush = Frozen(new RadialGradientBrush(Color.FromRgb(0x9A, 0xD4, 0xFF), WaterColor) { GradientOrigin = new Point(0.35, 0.35) });
 
     public static readonly DependencyProperty FromProperty = DependencyProperty.Register(
         nameof(From), typeof(double), typeof(WaterFillMeter), new PropertyMetadata(0d, OnInputChanged));
@@ -57,7 +52,7 @@ public sealed class WaterFillMeter : UserControl
     private readonly TranslateTransform _frontWaveShift = new();
     private readonly TranslateTransform _backWaveShift = new();
     private readonly Canvas _effects = new() { IsHitTestVisible = false, ClipToBounds = false };
-    private readonly DropShadowEffect _glow = new() { Color = WaterColor, ShadowDepth = 0, Opacity = 0 };
+    private readonly DropShadowEffect _glow = new() { Color = WaterFx.WaterColor, ShadowDepth = 0, Opacity = 0 };
     private AnimationClock? _frontClock;
     private AnimationClock? _backClock;
     private bool _restartPending;
@@ -73,8 +68,8 @@ public sealed class WaterFillMeter : UserControl
 
         // A água sobe dentro de um Canvas recortado pelo contorno da gota.
         var water = new Canvas { Width = 24, Height = 24, RenderTransform = _levelShift };
-        water.Children.Add(new Path { Data = WaveGeometry(-0.35), Fill = BackWaterBrush, RenderTransform = _backWaveShift });
-        water.Children.Add(new Path { Data = WaveGeometry(0), Fill = WaterBrush, RenderTransform = _frontWaveShift });
+        water.Children.Add(new Path { Data = WaveGeometry(-0.35), Fill = WaterFx.BackWaterBrush, RenderTransform = _backWaveShift });
+        water.Children.Add(new Path { Data = WaveGeometry(0), Fill = WaterFx.WaterBrush, RenderTransform = _frontWaveShift });
         var waterHost = new Canvas { Width = 24, Height = 24, Clip = outline };
         waterHost.Children.Add(water);
 
@@ -122,9 +117,9 @@ public sealed class WaterFillMeter : UserControl
         set => SetValue(CelebrateProperty, value);
     }
 
-    private static bool AnimationsEnabled => SystemParameters.ClientAreaAnimation;
+    private static bool AnimationsEnabled => WaterFx.AnimationsEnabled;
 
-    private static double Clamp01(double value) => double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
+    private static double Clamp01(double value) => WaterFx.Clamp01(value);
 
     /// <summary>
     /// Topo da água na grade 24×24. Em 0 a crista inteira fica abaixo da base (gota vazia); em 1 chega perto da ponta.
@@ -214,11 +209,10 @@ public sealed class WaterFillMeter : UserControl
         StopWaves();
         BeginAnimation(LevelProperty, null);
         SetCurrentValue(LevelProperty, Clamp01(To));
-        _pulse.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-        _pulse.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        WaterFx.StopPulse(_pulse);
         _glow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
         SetGlow(0);
-        ClearDrops();
+        WaterFx.ClearDrops(_effects);
     }
 
     private void SetGlow(double opacity)
@@ -236,36 +230,18 @@ public sealed class WaterFillMeter : UserControl
     // Ondas: cada camada desliza exatamente um período em loop, em sentidos opostos.
     private void StartWaves()
     {
-        _frontClock = StartWave(_frontWaveShift, -WavePeriod, TimeSpan.FromSeconds(1.4));
-        _backClock = StartWave(_backWaveShift, WavePeriod, TimeSpan.FromSeconds(2.1));
-    }
-
-    private static AnimationClock StartWave(TranslateTransform shift, double to, TimeSpan duration)
-    {
-        var clock = new DoubleAnimation(0, to, duration) { RepeatBehavior = RepeatBehavior.Forever }.CreateClock();
-        shift.ApplyAnimationClock(TranslateTransform.XProperty, clock);
-        return clock;
+        _frontClock = WaterFx.StartWave(_frontWaveShift, -WavePeriod, TimeSpan.FromSeconds(1.4));
+        _backClock = WaterFx.StartWave(_backWaveShift, WavePeriod, TimeSpan.FromSeconds(2.1));
     }
 
     private void StopWaves()
     {
-        _frontClock?.Controller?.Stop();
-        _backClock?.Controller?.Stop();
-        _frontWaveShift.ApplyAnimationClock(TranslateTransform.XProperty, null);
-        _backWaveShift.ApplyAnimationClock(TranslateTransform.XProperty, null);
-        _frontClock = null;
-        _backClock = null;
+        WaterFx.StopWave(ref _frontClock, _frontWaveShift);
+        WaterFx.StopWave(ref _backClock, _backWaveShift);
     }
 
     /// <summary>Pulso da gota: 1 → 1,12 → 1.</summary>
-    private void Pulse()
-    {
-        var animation = new DoubleAnimationUsingKeyFrames { Duration = PulseDuration };
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(1.12, KeyTime.FromPercent(0.4), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromPercent(1), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
-        _pulse.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-        _pulse.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
-    }
+    private void Pulse() => WaterFx.Pulse(_pulse, 1.12, PulseDuration);
 
     /// <summary>Gotinhas que sobem da superfície e somem; cada uma sai do Canvas ao terminar.</summary>
     private void Splash(int count)
@@ -287,53 +263,12 @@ public sealed class WaterFillMeter : UserControl
         for (var i = 0; i < count; i++)
         {
             var dropSize = Math.Max(2, size * (0.07 + _random.NextDouble() * 0.06));
-            var drop = new Ellipse { Width = dropSize, Height = dropSize, Fill = DropBrush, Opacity = 0, IsHitTestVisible = false };
-            Canvas.SetLeft(drop, left + size * (0.35 + _random.NextDouble() * 0.3) - dropSize / 2);
-            Canvas.SetTop(drop, surface - dropSize / 2);
-            var move = new TranslateTransform();
-            drop.RenderTransform = move;
-            _effects.Children.Add(drop);
-
+            var x = left + size * (0.35 + _random.NextDouble() * 0.3);
             var begin = TimeSpan.FromMilliseconds(_random.NextDouble() * (celebrate ? 350 : 120));
-            var duration = DropDuration + TimeSpan.FromMilliseconds(_random.Next(-80, 120));
             var rise = size * (0.45 + _random.NextDouble() * (celebrate ? 0.6 : 0.35));
-
-            var x = new DoubleAnimation(0, (_random.NextDouble() - 0.5) * 2 * spread, duration) { BeginTime = begin };
-            var y = new DoubleAnimationUsingKeyFrames { BeginTime = begin, Duration = duration };
-            y.KeyFrames.Add(new EasingDoubleKeyFrame(-rise, KeyTime.FromPercent(0.5), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
-            y.KeyFrames.Add(new EasingDoubleKeyFrame(-rise * 0.55, KeyTime.FromPercent(1), new QuadraticEase { EasingMode = EasingMode.EaseIn }));
-            var fade = new DoubleAnimationUsingKeyFrames { BeginTime = begin, Duration = duration };
-            fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromPercent(0.1)));
-            fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromPercent(0.5)));
-            fade.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(1)));
-            fade.Completed += (_, _) => RemoveDrop(drop);
-
-            move.BeginAnimation(TranslateTransform.XProperty, x);
-            move.BeginAnimation(TranslateTransform.YProperty, y);
-            drop.BeginAnimation(OpacityProperty, fade);
+            var drift = (_random.NextDouble() - 0.5) * 2 * spread;
+            WaterFx.LaunchDrop(_effects, _random, x, surface, dropSize, rise, drift, begin);
         }
-    }
-
-    private void RemoveDrop(Ellipse drop)
-    {
-        drop.BeginAnimation(OpacityProperty, null);
-        if (drop.RenderTransform is TranslateTransform move)
-        {
-            move.BeginAnimation(TranslateTransform.XProperty, null);
-            move.BeginAnimation(TranslateTransform.YProperty, null);
-        }
-
-        _effects.Children.Remove(drop);
-    }
-
-    private void ClearDrops()
-    {
-        foreach (var drop in _effects.Children.OfType<Ellipse>().ToList())
-        {
-            RemoveDrop(drop);
-        }
-
-        _effects.Children.Clear();
     }
 
     /// <summary>Traço da gota no Foreground herdado, igual ao template implícito de <see cref="VectorIcon"/>.</summary>
@@ -355,25 +290,6 @@ public sealed class WaterFillMeter : UserControl
     /// Superfície em senoide com a linha média em y = <paramref name="offset"/> e corpo até bem abaixo da base;
     /// vai de x −12 a 36 para cobrir a gota enquanto desliza um período para qualquer lado.
     /// </summary>
-    private static Geometry WaveGeometry(double offset)
-    {
-        var points = new PointCollection();
-        for (var x = -12.0; x <= 36.0001; x += 0.5)
-        {
-            points.Add(new Point(x, offset + WaveAmplitude * Math.Sin(x / WavePeriod * 2 * Math.PI)));
-        }
-
-        points.Add(new Point(36, 30));
-        points.Add(new Point(-12, 30));
-        var figure = new PathFigure(new Point(-12, offset), [new PolyLineSegment(points, false)], closed: true);
-        var geometry = new PathGeometry([figure]);
-        geometry.Freeze();
-        return geometry;
-    }
-
-    private static Brush Frozen(Brush brush)
-    {
-        brush.Freeze();
-        return brush;
-    }
+    private static Geometry WaveGeometry(double offset) =>
+        WaterFx.WaveGeometry(offset, WaveAmplitude, WavePeriod, -12, 36, 30, 0.5);
 }
