@@ -1,5 +1,14 @@
 # Notas da versão
 
+## 1.5.0 — 2026-11-11
+
+### Novidades
+- **Lembrete de água** (novo módulo): a ilha avisa de hora em hora, das 8h às 22h, com os botões
+  **Bebi** e **Adiar 10 min**. Conta os copos do dia contra uma meta (8 por padrão) e, batida a meta,
+  para os avisos até o dia seguinte. Intervalo, horário, meta e som ficam em Configurações › Módulos ›
+  Água. O progresso aparece na tela inicial da ilha ("3/8 copos") e na nova página **Água** da Central.
+  `Ctrl+Alt+G` registra um copo sem abrir nada.
+
 ## 1.4.0 — 2026-11-11
 
 ### Novidades
