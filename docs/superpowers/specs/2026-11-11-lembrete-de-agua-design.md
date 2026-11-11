@@ -73,6 +73,25 @@ A página Água da Central (`WaterPage`) vira a tela principal do recurso, com u
 - **Código:** só `WaterPage.xaml`, `WaterPage.xaml.cs` e `WaterPageViewModel` (expõe `Glasses` e `Goal`
   como números). Módulo, store e ilha não mudam.
 
+## Confirmação animada na ilha (revisão pedida: "cadê a animação quando marco que bebi?")
+
+Hoje, **Bebi** (aviso ou atalho da ilha) e `Ctrl+Alt+G` mostram só o texto "Boa! N de M copos hoje". Passam a
+mostrar uma confirmação animada na própria ilha, sem precisar abrir a Central.
+
+- **Conteúdo novo** `WaterDrankContent` (substitui o `StatusContent` de confirmação do `DrinkAsync`; "Adiado"
+  continua `StatusContent`). Textos iguais aos de hoje: título "Boa!" ou "Meta de água batida!" e mensagem
+  "N de M copos hoje". Carrega o progresso anterior ((N−1)/M) e o novo (N/M, no máximo 1) e se a meta foi batida.
+- **Animação:** a gota do ícone (mesmo contorno de `VectorIcons.Water`) **enche de água** do nível anterior ao novo
+  (~900 ms, easing de desaceleração), com uma onda deslizando na superfície, um pulso final (1 → 1,12 → 1) e
+  algumas gotinhas subindo. Meta batida: brilho azul e mais gotas.
+- **Tamanhos:** templates Compact/Expanded/Interactive (como o aviso); a gota maior no Expanded/Interactive.
+- **Controle reutilizável** `WaterFillMeter` (em `Dynasland.Modules/Water`): propriedades `From`, `To`,
+  `Celebrate`; anima ao carregar; para tudo ao descarregar; respeita `SystemParameters.ClientAreaAnimation`
+  (desligado: mostra direto o nível final).
+- **Duração** da confirmação: 5 s (a animação toca nos primeiros ~1,2 s).
+- **Testes:** os testes do módulo passam a verificar `WaterDrankContent` (título, mensagem, progresso
+  anterior/novo, meta batida) em vez de `StatusContent`.
+
 ## Fora de escopo
 
 Histórico por dia e gráfico semanal; volume em ml; sincronização externa.
