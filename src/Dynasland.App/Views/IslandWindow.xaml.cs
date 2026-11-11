@@ -57,7 +57,7 @@ public partial class IslandWindow : Window
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
 
-    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus)
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus, ThemeService theme)
     {
         _viewModel = viewModel;
         _placement = placement;
@@ -67,6 +67,8 @@ public partial class IslandWindow : Window
         _actions = actions;
 
         InitializeComponent();
+        // O fundo animável vale só nesta janela (sobrepõe o recurso congelado da aplicação).
+        Resources["IslandBackgroundBrush"] = theme.IslandBrush;
         DataContext = viewModel;
 
         ApplyLayers(viewModel.State, animate: false);

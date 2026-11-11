@@ -181,6 +181,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private AppTheme _theme;
 
     [ObservableProperty]
+    private bool _islandThemeFollowsMedia;
+
+    [ObservableProperty]
+    private IdleDisplay _idleDisplay;
+
+    [ObservableProperty]
     private double _islandOpacity;
 
     [ObservableProperty]
@@ -263,6 +269,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         HideInFullscreen = s.HideInFullscreen;
         TopMargin = s.TopMargin;
         Theme = s.Theme;
+        IslandThemeFollowsMedia = s.IslandThemeFollowsMedia;
+        IdleDisplay = s.IdleDisplay;
         IslandOpacity = s.IslandOpacity;
         ShadowIntensity = s.ShadowIntensity;
         Roundness = s.Roundness;
@@ -406,6 +414,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnTopMarginChanged(double value) => Save(s => s with { TopMargin = Math.Round(value) });
 
     partial void OnThemeChanged(AppTheme value) => Save(s => s with { Theme = value });
+
+    partial void OnIslandThemeFollowsMediaChanged(bool value) => Save(s => s with { IslandThemeFollowsMedia = value });
+
+    partial void OnIdleDisplayChanged(IdleDisplay value) => Save(s => s with { IdleDisplay = value });
 
     partial void OnIslandOpacityChanged(double value) => Save(s => s with { IslandOpacity = Math.Round(value, 2) });
 

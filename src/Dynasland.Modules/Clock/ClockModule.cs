@@ -1,6 +1,7 @@
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
 
 namespace Dynasland.Modules.Clock;
@@ -9,7 +10,13 @@ namespace Dynasland.Modules.Clock;
 /// Atividade contínua de baixa prioridade com hora e data: é o que a ilha mostra ao ser
 /// aberta quando nenhum outro módulo tem algo a exibir. Atualiza uma vez por minuto.
 /// </summary>
-public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider time, IShortcutRegistry shortcuts, IGlanceRegistry glances) : IIslandModule, IDisposable
+public sealed class ClockModule(
+    IEventBus bus,
+    IUiDispatcher ui,
+    TimeProvider time,
+    IShortcutRegistry shortcuts,
+    IGlanceRegistry glances,
+    IIslandSettingsService? settings = null) : IIslandModule, IDisposable
 {
     public const string ModuleId = "clock";
     public const string ActivityId = "clock.now";
@@ -31,8 +38,13 @@ public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         content.Update(time.GetLocalNow());
         content.SetShortcuts(shortcuts.Shortcuts);
         content.SetGlances(glances.Glances);
+        content.SetIdle(IdleDisplay, glances.Glances);
         shortcuts.Changed += OnShortcutsChanged;
         glances.Changed += OnGlancesChanged;
+        if (settings is not null)
+        {
+            settings.Changed += OnSettingsChanged;
+        }
 
         lock (_lock)
         {
@@ -79,7 +91,29 @@ public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
         if (content is not null)
         {
             var current = glances.Glances;
-            ui.Post(() => content.SetGlances(current));
+            var display = IdleDisplay;
+            ui.Post(() =>
+            {
+                content.SetGlances(current);
+                content.SetIdle(display, current);
+            });
+        }
+    }
+
+    private IdleDisplay IdleDisplay => settings?.Current.IdleDisplay ?? IdleDisplay.DateAndTime;
+
+    private void OnSettingsChanged(object? sender, IslandSettings current)
+    {
+        ClockContent? content;
+        lock (_lock)
+        {
+            content = _content;
+        }
+
+        if (content is not null)
+        {
+            var available = glances.Glances;
+            ui.Post(() => content.SetIdle(current.IdleDisplay, available));
         }
     }
 
@@ -87,6 +121,10 @@ public sealed class ClockModule(IEventBus bus, IUiDispatcher ui, TimeProvider ti
     {
         shortcuts.Changed -= OnShortcutsChanged;
         glances.Changed -= OnGlancesChanged;
+        if (settings is not null)
+        {
+            settings.Changed -= OnSettingsChanged;
+        }
         lock (_lock)
         {
             _timer?.Dispose();

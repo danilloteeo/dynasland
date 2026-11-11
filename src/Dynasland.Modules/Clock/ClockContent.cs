@@ -32,6 +32,44 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
     [ObservableProperty]
     private string _shortDateText = string.Empty;
 
+    private IdleDisplay _idleDisplay = IdleDisplay.DateAndTime;
+    private IslandGlance? _idleGlance;
+
+    /// <summary>Em repouso a ilha mostra algo (desligado em <see cref="IdleDisplay.Nothing"/>).</summary>
+    public bool IsIdleVisible => _idleDisplay != IdleDisplay.Nothing;
+
+    /// <summary>Só a hora, centralizada.</summary>
+    public bool IsIdleTimeOnly => _idleDisplay == IdleDisplay.TimeOnly;
+
+    /// <summary>Ícone da informação à esquerda da hora (clima, compromisso); vazio para a data.</summary>
+    public string IdleGlyph => _idleGlance?.Glyph ?? string.Empty;
+
+    public bool HasIdleGlyph => IdleGlyph.Length > 0;
+
+    /// <summary>Texto à esquerda da hora: a informação escolhida ou, na falta dela, a data.</summary>
+    public string IdleText => _idleGlance is { } glance ? glance.ShortText ?? glance.Text : ShortDateText;
+
+    /// <summary>Define o que aparece em repouso, a partir da preferência e das informações disponíveis.</summary>
+    public void SetIdle(IdleDisplay display, IEnumerable<IslandGlance> glances)
+    {
+        var glanceId = display switch
+        {
+            IdleDisplay.Weather => Life.WeatherModule.GlanceId,
+            IdleDisplay.NextEvent => Life.CalendarModule.GlanceId,
+            _ => null,
+        };
+
+        _idleDisplay = display;
+        _idleGlance = glanceId is null ? null : glances.FirstOrDefault(g => g.Id == glanceId);
+        OnPropertyChanged(nameof(IsIdleVisible));
+        OnPropertyChanged(nameof(IsIdleTimeOnly));
+        OnPropertyChanged(nameof(IdleGlyph));
+        OnPropertyChanged(nameof(HasIdleGlyph));
+        OnPropertyChanged(nameof(IdleText));
+    }
+
+    partial void OnShortDateTextChanged(string value) => OnPropertyChanged(nameof(IdleText));
+
     /// <summary>Atalhos por linha no painel (o restante quebra para a linha seguinte).</summary>
     public const int ShortcutsPerRow = 7;
 

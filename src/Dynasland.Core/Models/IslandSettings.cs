@@ -30,6 +30,22 @@ public enum IslandTheme
     Accent,
 }
 
+/// <summary>O que a ilha compacta mostra em repouso (sem nenhuma atividade de outro módulo).</summary>
+public enum IdleDisplay
+{
+    DateAndTime,
+    TimeOnly,
+
+    /// <summary>Clima agora e a hora; sem clima disponível, a data.</summary>
+    Weather,
+
+    /// <summary>Próximo compromisso e a hora; sem compromisso, a data.</summary>
+    NextEvent,
+
+    /// <summary>Ilha vazia.</summary>
+    Nothing,
+}
+
 /// <summary>Preferências da aplicação. Imutável: alterações geram uma nova instância.</summary>
 /// <summary>Ação do duplo clique na ilha.</summary>
 public enum DoubleClickAction
@@ -83,6 +99,11 @@ public sealed record IslandSettings
 
     /// <summary>Tema (fundo) da ilha.</summary>
     public IslandTheme IslandTheme { get; init; } = IslandTheme.Black;
+
+    /// <summary>Enquanto uma mídia toca, o fundo da ilha usa a cor da capa em vez do tema.</summary>
+    public bool IslandThemeFollowsMedia { get; init; }
+
+    public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.DateAndTime;
 
     /// <summary>Cor de destaque em hexadecimal (#RRGGBB).</summary>
     public string AccentColor { get; init; } = "#30D158";

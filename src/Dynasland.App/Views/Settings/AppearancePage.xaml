@@ -80,6 +80,52 @@
                 </StackPanel>
             </Border>
 
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid Style="{StaticResource SettingRowGrid}">
+                    <StackPanel Margin="0,0,180,0">
+                        <TextBlock Text="Seguir a cor da música" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="Enquanto uma música ou vídeo toca, o fundo da ilha usa a cor da capa. Ao parar, volta ao tema escolhido."
+                                   Style="{StaticResource CardDescription}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding IslandThemeFollowsMedia}"
+                              AutomationProperties.Name="Seguir a cor da música" />
+                </Grid>
+            </Border>
+
+            <TextBlock Text="Ilha em repouso" Style="{StaticResource SettingsGroupHeader}" />
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Data e hora"
+                         IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=DateAndTime}">
+                <StackPanel>
+                    <TextBlock Text="Data e hora" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="O que a ilha mostra quando nenhum módulo tem algo a exibir." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Só a hora"
+                         IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=TimeOnly}">
+                <TextBlock Text="Só a hora" Style="{StaticResource CardTitle}" />
+            </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Clima e hora"
+                         IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=Weather}">
+                <StackPanel>
+                    <TextBlock Text="Clima e hora" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Temperatura e condição agora. Sem cidade escolhida ou sem previsão, mostra a data." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Próximo compromisso e hora"
+                         IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=NextEvent}">
+                <StackPanel>
+                    <TextBlock Text="Próximo compromisso e hora" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="O próximo item da agenda. Sem compromisso próximo, mostra a data." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Nada"
+                         IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=Nothing}">
+                <StackPanel>
+                    <TextBlock Text="Nada" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="A ilha fica vazia, só com o fundo do tema." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+            </RadioButton>
+
             <TextBlock Text="Ilha" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">

@@ -70,6 +70,7 @@ public static class DependencyInjection
         services.AddSingleton<IShellService, ShellService>();
         services.AddSingleton<IShortcutRegistry, ShortcutRegistry>();
         services.AddSingleton<IGlanceRegistry, GlanceRegistry>();
+        services.AddSingleton<IIslandTint, IslandTint>();
         services.AddSingleton<IGlobalShortcutRegistry, GlobalShortcutRegistry>();
         services.AddSingleton<IModuleOptions, ModuleOptionsService>();
         services.AddSingleton<IStartupRegistration, StartupRegistration>();

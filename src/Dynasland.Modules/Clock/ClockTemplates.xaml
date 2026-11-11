@@ -7,12 +7,33 @@
 
     <!-- Ilha em repouso (nenhum outro módulo com algo a mostrar): data e hora. -->
     <DataTemplate x:Key="Dynasland.Modules.Clock.ClockContent:Compact">
-        <Grid Margin="14,0">
-            <TextBlock Text="{Binding ShortDateText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                       Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding TimeText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+        <Grid x:Name="Idle" Margin="14,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <!-- Data, clima ou próximo compromisso (Aparência › Ilha em repouso). -->
+            <DockPanel x:Name="Info" VerticalAlignment="Center" Margin="0,0,10,0">
+                <TextBlock DockPanel.Dock="Left" Text="{Binding IdleGlyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="12" Margin="0,0,6,0"
+                           Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center"
+                           Visibility="{Binding HasIdleGlyph, Converter={StaticResource BoolToVisibility}}" />
+                <TextBlock Text="{Binding IdleText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+            <TextBlock x:Name="Time" Grid.Column="1" Text="{Binding TimeText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
                        Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
         </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsIdleTimeOnly}" Value="True">
+                <Setter TargetName="Info" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="Time" Property="Grid.Column" Value="0" />
+                <Setter TargetName="Time" Property="Grid.ColumnSpan" Value="2" />
+                <Setter TargetName="Time" Property="HorizontalAlignment" Value="Center" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsIdleVisible}" Value="False">
+                <Setter TargetName="Idle" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
     <DataTemplate x:Key="Dynasland.Modules.Clock.ClockContent:Interactive">
         <Grid Margin="16,10,16,12">

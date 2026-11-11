@@ -21,7 +21,8 @@ public sealed class MediaModule(
     IModuleOptions options,
     IIslandSettingsService settings,
     ISpotifyService? spotify = null,
-    IAudioVolumeService? volume = null) : IIslandModule
+    IAudioVolumeService? volume = null,
+    IIslandTint? tint = null) : IIslandModule
 {
     public const string QueueActivityId = "media.queue";
     private const int FullQueueSize = 20;
@@ -94,6 +95,7 @@ public sealed class MediaModule(
         _staleTimer?.Dispose();
         _staleTimer = null;
         await media.StopAsync();
+        tint?.Set(null);
 
         lock (_lock)
         {
@@ -211,6 +213,9 @@ public sealed class MediaModule(
                 {
                     state.ArtworkBytes = snapshot.Thumbnail;
                     state.Artwork = ImageDecoder.Decode(snapshot.Thumbnail, ArtworkDecodeWidth);
+                    state.ArtworkColor = AccentColorExtractor.FromImage(state.Artwork) is { } color
+                        ? $"#{color.R:X2}{color.G:X2}{color.B:X2}"
+                        : null;
                 }
 
                 var content = state.Content;
@@ -228,6 +233,10 @@ public sealed class MediaModule(
                     _ = RefreshQueueAsync(snapshot.Id);
                 }
             }
+
+            // Cor da capa do que está tocando (a sessão atual do Windows primeiro) para o fundo da ilha.
+            var lead = snapshots.Where(s => s.IsPlaying).OrderByDescending(s => s.Id == currentId).FirstOrDefault();
+            tint?.Set(lead is not null && _sessions.TryGetValue(lead.Id, out var playing) ? playing.ArtworkColor : null);
         }
     }
 
@@ -537,6 +546,9 @@ public sealed class MediaModule(
         public byte[]? ArtworkBytes { get; set; }
 
         public ImageSource? Artwork { get; set; }
+
+        /// <summary>Cor dominante da capa (#RRGGBB); <c>null</c> sem capa ou com capa sem cor.</summary>
+        public string? ArtworkColor { get; set; }
 
         public bool IsSpotify { get; set; }
 

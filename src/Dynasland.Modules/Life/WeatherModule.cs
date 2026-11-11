@@ -180,7 +180,8 @@ public sealed class WeatherModule(
             "",
             $"{WeatherText.Temperature(current.TemperatureC)} {WeatherText.ConditionName(current.Condition)} · {report.Location.Name}{stale}",
             Order: 0,
-            Invoke: OpenPanel));
+            Invoke: OpenPanel,
+            ShortText: $"{WeatherText.Temperature(current.TemperatureC)} {WeatherText.ConditionName(current.Condition)}"));
     }
 
     private void ShowNoLocation()

@@ -20,6 +20,8 @@ public static partial class IslandSettingsMapper
         public const string AnimationIntensity = "animations.intensity";
         public const string Theme = "appearance.theme";
         public const string IslandTheme = "appearance.islandTheme";
+        public const string IslandThemeFollowsMedia = "appearance.islandThemeFollowsMedia";
+        public const string IdleDisplay = "appearance.idleDisplay";
         public const string AccentColor = "appearance.accent";
         public const string IslandOpacity = "appearance.opacity";
         public const string ShadowIntensity = "appearance.shadow";
@@ -66,6 +68,10 @@ public static partial class IslandSettingsMapper
             IslandTheme = values.TryGetValue(Keys.IslandTheme, out var island) && Enum.TryParse<IslandTheme>(island, ignoreCase: true, out var islandTheme) && Enum.IsDefined(islandTheme)
                 ? islandTheme
                 : d.IslandTheme,
+            IslandThemeFollowsMedia = ReadBool(values, Keys.IslandThemeFollowsMedia, d.IslandThemeFollowsMedia),
+            IdleDisplay = values.TryGetValue(Keys.IdleDisplay, out var idle) && Enum.TryParse<IdleDisplay>(idle, ignoreCase: true, out var idleDisplay) && Enum.IsDefined(idleDisplay)
+                ? idleDisplay
+                : d.IdleDisplay,
             AccentColor = accent is not null && IsHexColor(accent) ? accent.ToUpperInvariant() : d.AccentColor,
             IslandOpacity = ReadDouble(values, Keys.IslandOpacity, d.IslandOpacity, 0.5, 1),
             ShadowIntensity = ReadDouble(values, Keys.ShadowIntensity, d.ShadowIntensity, 0, 1),
@@ -102,6 +108,8 @@ public static partial class IslandSettingsMapper
         [Keys.AnimationIntensity] = Format(s.AnimationIntensity),
         [Keys.Theme] = s.Theme.ToString(),
         [Keys.IslandTheme] = s.IslandTheme.ToString(),
+        [Keys.IslandThemeFollowsMedia] = Format(s.IslandThemeFollowsMedia),
+        [Keys.IdleDisplay] = s.IdleDisplay.ToString(),
         [Keys.AccentColor] = s.AccentColor,
         [Keys.IslandOpacity] = Format(s.IslandOpacity),
         [Keys.ShadowIntensity] = Format(s.ShadowIntensity),

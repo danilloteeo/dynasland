@@ -45,6 +45,12 @@ public static class IslandThemes
         _ => (System.Windows.Media.Colors.Black, System.Windows.Media.Colors.Black),
     };
 
+    /// <summary>Fundo a partir de uma cor qualquer (ex.: a capa da música): o mesmo tom escuro do tema "Cor de destaque".</summary>
+    public static (Color Top, Color Bottom) Tinted(Color color) => (Shade(color, 0.34), Shade(color, 0.11));
+
+    /// <summary>O degradê do tema corre da esquerda para a direita (os demais, de cima para baixo).</summary>
+    public static bool IsHorizontal(IslandTheme theme) => theme == IslandTheme.Dusk;
+
     /// <summary>Pincel do fundo da ilha com a opacidade escolhida em Aparência.</summary>
     public static Brush Background(IslandTheme theme, Color accent, double opacity)
     {
@@ -55,7 +61,7 @@ public static class IslandThemes
 
         Brush brush = top == bottom
             ? new SolidColorBrush(top)
-            : new LinearGradientBrush(top, bottom, new Point(0, 0), theme == IslandTheme.Dusk ? new Point(1, 0) : new Point(0, 1));
+            : new LinearGradientBrush(top, bottom, new Point(0, 0), IsHorizontal(theme) ? new Point(1, 0) : new Point(0, 1));
         brush.Freeze();
         return brush;
     }

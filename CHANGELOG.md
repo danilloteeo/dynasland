@@ -1,5 +1,16 @@
 # Notas da versão
 
+## 1.3.0 — 2026-11-11
+
+### Novidades
+- **Tema que segue a música**: com "Seguir a cor da música" ligado em Configurações › Aparência, o fundo
+  da ilha usa a cor da capa enquanto uma música ou vídeo toca e volta ao tema escolhido ao parar.
+- **Ilha em repouso**: escolha o que a ilha mostra sem nada acontecendo: data e hora, só a hora, clima e
+  hora, próximo compromisso e hora, ou nada.
+
+### Mudanças
+- A troca de tema da ilha agora é suave, em vez de instantânea.
+
 ## 1.2.0 — 2026-11-11
 
 ### Novidades

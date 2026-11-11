@@ -16,6 +16,8 @@ public class Phase5CoreTests
         {
             Theme = AppTheme.Light,
             IslandTheme = IslandTheme.Aurora,
+            IslandThemeFollowsMedia = true,
+            IdleDisplay = IdleDisplay.Weather,
             AccentColor = "#0A84FF",
             IslandOpacity = 0.8,
             ShadowIntensity = 0.2,
