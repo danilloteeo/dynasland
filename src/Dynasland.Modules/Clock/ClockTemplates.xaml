@@ -1,7 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common">
 
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <!-- Chave: "{NomeCompletoDoTipo}:{Estado}". Os pincéis/fontes vêm do tema da aplicação. -->
 
@@ -87,7 +89,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph}" Command="{Binding Command}"
+                        <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" Command="{Binding Command}"
                                 ToolTip="{Binding Label}" Background="{DynamicResource IslandSurfaceBrush}" Margin="4,3" FontSize="15" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

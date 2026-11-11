@@ -1,13 +1,14 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dynasland.Core.Activities;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Water;
 
 /// <summary>Aviso "Hora de beber água" com as ações Bebi e Adiar.</summary>
 public sealed partial class WaterReminderContent(Action drink, Action snooze, string message) : ObservableObject, IActivityContent
 {
-    public string Glyph => "💧";
+    public string Glyph => VectorIcons.Water;
 
     public string Title => "Hora de beber água";
 

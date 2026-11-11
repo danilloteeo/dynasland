@@ -1,9 +1,13 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common">
+
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <DataTemplate x:Key="Dynasland.Modules.Water.WaterReminderContent:Compact">
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock Text="{Binding Glyph}" FontSize="13" VerticalAlignment="Center" />
+            <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontSize="13" VerticalAlignment="Center"
+                            Foreground="{DynamicResource IslandPrimaryTextBrush}" Focusable="False" IsTabStop="False" />
             <TextBlock Text="Água" Margin="8,0,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
                        Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
         </StackPanel>
@@ -12,7 +16,8 @@
     <DataTemplate x:Key="Dynasland.Modules.Water.WaterReminderContent:Expanded">
         <Grid Margin="20,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Glyph}" FontSize="22" VerticalAlignment="Center" />
+                <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontSize="22" VerticalAlignment="Center"
+                            Foreground="{DynamicResource IslandPrimaryTextBrush}" Focusable="False" IsTabStop="False" />
                 <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
@@ -30,7 +35,8 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Glyph}" FontSize="26" VerticalAlignment="Top" />
+                <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontSize="26" VerticalAlignment="Top"
+                            Foreground="{DynamicResource IslandPrimaryTextBrush}" Focusable="False" IsTabStop="False" />
                 <StackPanel Margin="12,0,0,0" MaxWidth="320">
                     <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource IslandPrimaryTextBrush}" TextWrapping="Wrap" />

@@ -7,7 +7,8 @@
   **Bebi** e **Adiar 10 min**. Conta os copos do dia contra uma meta (8 por padrão) e, batida a meta,
   para os avisos até o dia seguinte. Intervalo, horário, meta e som ficam em Configurações › Módulos ›
   Água. O progresso aparece na tela inicial da ilha ("3/8 copos") e na nova página **Água** da Central.
-  `Ctrl+Alt+G` registra um copo sem abrir nada.
+  `Ctrl+Alt+G` registra um copo sem abrir nada. Um ícone próprio de gota, no estilo dos ícones do
+  Windows, marca o atalho na tela inicial da ilha, o aviso e o item **Água** da Central.
 - **Página Água animada**: uma garrafa que enche conforme você bebe, com ondas, respingos a cada copo
   e brilho ao bater a meta. Funciona também com o **Bebi** da ilha e o `Ctrl+Alt+G`.
 

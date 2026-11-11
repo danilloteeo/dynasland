@@ -11,7 +11,7 @@
     <FontFamily x:Key="IslandFont">Segoe UI Variable Display, Segoe UI</FontFamily>
     <FontFamily x:Key="IslandTextFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <!-- Segoe Fluent Icons no Windows 11; Segoe MDL2 Assets (mesmos códigos) no Windows 10. -->
-    <FontFamily x:Key="IslandIconFont">Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji</FontFamily>
+    <FontFamily x:Key="IslandIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#FF000000" />
     <SolidColorBrush x:Key="IslandEdgeBrush" Color="#1AFFFFFF" />

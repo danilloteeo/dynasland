@@ -1,7 +1,26 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common;assembly=Dynasland.Modules">
 
     <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+
+    <!--
+        Ícone vetorial próprio (chaves "vector:..." trocadas pelo GlyphContentConverter). Desenha como um glifo de fonte:
+        tamanho = FontSize herdado e traço na cor do texto herdada, então segue tema, hover e o tamanho de cada lugar.
+    -->
+    <DataTemplate DataType="{x:Type common:VectorIcon}">
+        <Viewbox Width="{Binding (TextElement.FontSize), RelativeSource={RelativeSource Self}}"
+                 Height="{Binding (TextElement.FontSize), RelativeSource={RelativeSource Self}}">
+            <Canvas Width="24" Height="24">
+                <Path Data="{Binding Outline}" Fill="{x:Null}" StrokeThickness="1.6"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
+                <Path Data="{Binding Detail}" Fill="{x:Null}" StrokeThickness="1.6"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
+            </Canvas>
+        </Viewbox>
+    </DataTemplate>
 
     <!-- Conteúdos da própria aplicação exibidos na ilha (mesma convenção de chave dos módulos). -->
     <!-- Título e detalhe da atualização (aviso, download, instalação ou falha), com a barra de download. -->

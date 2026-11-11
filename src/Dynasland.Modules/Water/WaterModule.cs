@@ -4,6 +4,7 @@ using Dynasland.Core.Interfaces;
 using Dynasland.Core.Modules;
 using Dynasland.Core.Session;
 using Dynasland.Core.Shortcuts;
+using Dynasland.Modules.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Dynasland.Modules.Water;
@@ -74,7 +75,7 @@ public sealed class WaterModule(
         _running = true;
         store.Changed += OnChanged;
         options.Changed += OnOptionChanged;
-        _registrations.Add(shortcuts.Register(new IslandShortcut("water.drink", ModuleId, "\U0001F4A7", "Bebi um copo", () => _ = DrinkAsync())));
+        _registrations.Add(shortcuts.Register(new IslandShortcut("water.drink", ModuleId, VectorIcons.Water, "Bebi um copo", () => _ = DrinkAsync())));
         _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
             "water.drink", "Registrar um copo de água", "Água",
             new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'G'), () => _ = DrinkAsync())));

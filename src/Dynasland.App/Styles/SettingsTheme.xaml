@@ -1,5 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common;assembly=Dynasland.Modules">
+
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <!--
         Tema da janela de configurações. Os valores abaixo são o tema escuro padrão; o ThemeService
@@ -88,8 +91,14 @@
                             <Border x:Name="Indicator" Width="3" Height="16" CornerRadius="2" HorizontalAlignment="Left"
                                     Margin="-8,0,0,0" Background="{DynamicResource SettingsAccentBrush}" Visibility="Collapsed" />
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource IslandIconFont}" FontSize="15"
-                                           VerticalAlignment="Center" Margin="2,0,12,0" />
+                                <!-- Glifo de fonte no TextBlock; um Tag "vector:..." deixa o texto vazio e desenha o ícone vetorial
+                                     (16 px, mas ocupando os 15 px de um glifo, para o texto alinhar com os outros itens). -->
+                                <Grid VerticalAlignment="Center" Margin="2,0,12,0">
+                                    <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GlyphContent}, ConverterParameter=glyph}"
+                                               FontFamily="{StaticResource IslandIconFont}" FontSize="15" VerticalAlignment="Center" />
+                                    <ContentPresenter Content="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GlyphContent}, ConverterParameter=vector}"
+                                                      TextElement.FontSize="16" Margin="-0.5,0" VerticalAlignment="Center" />
+                                </Grid>
                                 <ContentPresenter VerticalAlignment="Center" />
                             </StackPanel>
                         </Grid>

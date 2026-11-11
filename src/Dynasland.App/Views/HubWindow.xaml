@@ -63,7 +63,7 @@
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Focus}" />
                     <RadioButton Style="{StaticResource NavButton}" Tag="&#xE722;" Content="Capturas"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Captures}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE9CA;" Content="Água"
+                    <RadioButton Style="{StaticResource NavButton}" Tag="vector:water" Content="Água"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Water}" />
                 </StackPanel>
             </DockPanel>
