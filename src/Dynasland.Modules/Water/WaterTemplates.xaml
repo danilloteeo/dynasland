@@ -94,5 +94,58 @@
             </StackPanel>
         </Grid>
     </DataTemplate>
+    <!-- Painel do atalho Água: corpo que se enche de água conforme os copos do dia (WaterBodyMeter). -->
+    <DataTemplate x:Key="Dynasland.Modules.Water.WaterBodyPanelContent:Compact">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontSize="13" VerticalAlignment="Center"
+                            Foreground="{DynamicResource IslandPrimaryTextBrush}" Focusable="False" IsTabStop="False" />
+            <TextBlock Text="{Binding Count}" Margin="8,0,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Water.WaterBodyPanelContent:Expanded">
+        <Grid Margin="20,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <water:WaterBodyMeter Width="26" Height="48" VerticalAlignment="Center"
+                                      Progress="{Binding Progress}" Celebrate="{Binding GoalReached}"
+                                      Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ProgressText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Message}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="Dynasland.Modules.Water.WaterBodyPanelContent:Interactive">
+        <Grid Margin="24,18,22,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <water:WaterBodyMeter Width="102" Height="204" VerticalAlignment="Center"
+                                  Progress="{Binding Progress}" Celebrate="{Binding GoalReached}"
+                                  Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+            <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Água de hoje" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                <TextBlock Text="{Binding ProgressText}" Margin="0,2,0,0" FontFamily="{DynamicResource IslandFont}" FontSize="18" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding PercentText}" Margin="0,2,0,0" FontFamily="{DynamicResource IslandFont}" FontSize="34" FontWeight="SemiBold"
+                           Foreground="#FF5FB8FF" />
+                <TextBlock Text="{Binding Message}" Margin="0,2,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <!-- Principal: pílula com fundo azul translúcido e texto azul. -->
+                    <Button Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding DrinkLabel}" Command="{Binding DrinkCommand}"
+                            Background="#383AA7FF" Foreground="#FF8FCBFF" FontWeight="SemiBold" />
+                    <Button Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding UndoLabel}" Command="{Binding UndoCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
 
 </ResourceDictionary>
