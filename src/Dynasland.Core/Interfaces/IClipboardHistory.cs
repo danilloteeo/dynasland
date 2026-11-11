@@ -30,6 +30,7 @@ public enum HubPage
     Calendar,
     Focus,
     Captures,
+    Water,
 }
 
 /// <summary>Abre a Central (janela com históricos e agenda) numa página.</summary>
