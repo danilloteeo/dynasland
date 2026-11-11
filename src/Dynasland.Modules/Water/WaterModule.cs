@@ -1,6 +1,7 @@
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
 using Dynasland.Core.Session;
 using Dynasland.Core.Shortcuts;
@@ -11,16 +12,21 @@ namespace Dynasland.Modules.Water;
 
 /// <summary>
 /// Lembrete de água: avisa na ilha em horários fixos do dia ativo (Bebi soma um copo, Adiar repete em
-/// 10 min), conta os copos do dia contra a meta e mostra o progresso na tela inicial e na Central.
+/// 10 min), conta os copos do dia contra a meta e mostra o progresso na tela inicial e na Central. O atalho
+/// da tela inicial abre um painel com um corpo que se enche de água conforme os copos do dia.
 /// </summary>
 /// <remarks>
 /// Um único timer, reagendado quando a contagem ou as opções mudam e ao retomar da suspensão. Passada a
 /// meta, o próximo evento é a virada do dia. Avisos que venceram com o Dynasland fechado são descartados.
+/// O painel conta como aberto de <see cref="OpenPanel"/> até a ilha deixar de exibi-lo
+/// (<see cref="IActivityContent.OnPresentationChanged"/> com <c>null</c>) ou o usuário fechá-lo
+/// (<see cref="ActivityDismissedEvent"/>); enquanto aberto, registrar um copo não posta a confirmação por cima.
 /// </remarks>
 public sealed class WaterModule(
     IWaterStore store,
     IHubService hub,
     IEventBus bus,
+    IUiDispatcher ui,
     TimeProvider time,
     IShortcutRegistry shortcuts,
     IGlanceRegistry glances,
@@ -31,6 +37,7 @@ public sealed class WaterModule(
 {
     public const string ModuleId = "water";
     public const string GlanceId = "water.today";
+    public const string PanelActivityId = "water.panel";
 
     private const string ActivityId = "water.reminder";
     private const int DefaultStartHour = 8;
@@ -62,24 +69,39 @@ public sealed class WaterModule(
     private bool _running;
     private DateTimeOffset? _snoozeUntil;
     private DateTimeOffset _lastReminder = DateTimeOffset.MinValue;
+    private WaterBodyPanelContent? _panel;
+    private bool _panelOpen;
 
     public string Id => ModuleId;
 
     public string DisplayName => "Água";
 
-    public string Description => "Lembra de beber água e conta os copos do dia. Acompanhe na Central (Ctrl+Alt+G registra um copo).";
+    public string Description => "Lembra de beber água e conta os copos do dia. O botão Água da ilha mostra um corpo que se enche conforme você bebe (Ctrl+Alt+G registra um copo).";
 
     public IReadOnlyList<ModuleOption> Options => [Sound, Interval, StartHour, EndHour, Goal];
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _running = true;
+        lock (_lock)
+        {
+            _panel = new WaterBodyPanelContent(() => _ = DrinkAsync(), () => _ = UndoAsync(), OnPanelPresentationChanged);
+            _panelOpen = false;
+        }
+
         store.Changed += OnChanged;
         options.Changed += OnOptionChanged;
-        _registrations.Add(shortcuts.Register(new IslandShortcut("water.drink", ModuleId, VectorIcons.Water, "Bebi um copo", () => _ = DrinkAsync())));
+        _registrations.Add(shortcuts.Register(new IslandShortcut(PanelActivityId, ModuleId, VectorIcons.Water, "Água", OpenPanel)));
         _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
             "water.drink", "Registrar um copo de água", "Água",
             new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'G'), () => _ = DrinkAsync())));
+        _registrations.Add(bus.Subscribe<ActivityDismissedEvent>(e =>
+        {
+            if (e.Activity.Id == PanelActivityId)
+            {
+                SetPanelOpen(false);
+            }
+        }));
         _registrations.Add(bus.Subscribe<SessionChangedEvent>(e =>
         {
             if (e.Change == SessionChange.Resumed)
@@ -106,6 +128,8 @@ public sealed class WaterModule(
         {
             _timer?.Dispose();
             _timer = null;
+            _panel = null;
+            _panelOpen = false;
         }
 
         glances.Remove(GlanceId);
@@ -122,16 +146,50 @@ public sealed class WaterModule(
         }
     }
 
-    /// <summary>Registra um copo (botão Bebi, atalho da ilha e atalho global).</summary>
+    /// <summary>Abre na ilha o painel do corpo que se enche de água (atalho da tela inicial).</summary>
+    public void OpenPanel()
+    {
+        WaterBodyPanelContent? panel;
+        lock (_lock)
+        {
+            panel = _panel;
+            _panelOpen = panel is not null;
+        }
+
+        if (panel is not null)
+        {
+            bus.PostActivity(new IslandActivity(PanelActivityId, ModuleId, ActivityKind.Transient, panel) { OpenInteractive = true });
+        }
+    }
+
+    private void OnPanelPresentationChanged(IslandState? state) => SetPanelOpen(state is not null);
+
+    private void SetPanelOpen(bool open)
+    {
+        lock (_lock)
+        {
+            _panelOpen = open && _panel is not null;
+        }
+    }
+
+    /// <summary>Registra um copo (Bebi do aviso e do painel, atalho global).</summary>
     public async Task DrinkAsync()
     {
         try
         {
             var glasses = await store.AddAsync(DateOnly.FromDateTime(time.GetLocalNow().DateTime), 1);
             var goal = (int)options.Get(ModuleId, Goal);
+            bool panelOpen;
             lock (_lock)
             {
                 _snoozeUntil = null;
+                panelOpen = _panelOpen;
+            }
+
+            // Com o painel aberto, o próprio corpo mostra o copo novo: a confirmação ficaria por cima dele.
+            if (panelOpen)
+            {
+                return;
             }
 
             bus.PostActivity(new IslandActivity(ActivityId, ModuleId, ActivityKind.Transient, new WaterDrankContent(glasses, goal))
@@ -143,6 +201,19 @@ public sealed class WaterModule(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Falha ao registrar o copo de água.");
+        }
+    }
+
+    /// <summary>Desfaz o último copo do dia (botão Desfazer do painel).</summary>
+    private async Task UndoAsync()
+    {
+        try
+        {
+            await store.AddAsync(DateOnly.FromDateTime(time.GetLocalNow().DateTime), -1);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Falha ao desfazer o copo de água.");
         }
     }
 
@@ -182,6 +253,7 @@ public sealed class WaterModule(
             }
 
             glances.Set(new IslandGlance(GlanceId, "", $"{glasses}/{goal} copos", Order: 2, Invoke: () => hub.Open(HubPage.Water)));
+            UpdatePanel(glasses, goal);
 
             lock (_lock)
             {
@@ -225,6 +297,21 @@ public sealed class WaterModule(
         finally
         {
             _reschedule.Release();
+        }
+    }
+
+    /// <summary>O painel acompanha a contagem e a meta ao vivo (mesmo fechado, para abrir já no nível certo).</summary>
+    private void UpdatePanel(int glasses, int goal)
+    {
+        WaterBodyPanelContent? panel;
+        lock (_lock)
+        {
+            panel = _panel;
+        }
+
+        if (panel is not null)
+        {
+            ui.Post(() => panel.Apply(glasses, goal));
         }
     }
 

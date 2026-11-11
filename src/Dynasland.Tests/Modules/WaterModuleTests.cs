@@ -1,6 +1,7 @@
 using Dynasland.App.ViewModels.Hub;
 using Dynasland.Core.Activities;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
 using Dynasland.Core.Shortcuts;
 using Dynasland.Infrastructure.Repositories;
@@ -24,7 +25,7 @@ public class WaterModuleTests : IDisposable
         _db.Dispose();
     }
 
-    private sealed record Fixture(WaterModule Module, SqliteWaterStore Store, FakeTimeProvider Time, GlanceRegistry Glances, ModuleOptionsService Options);
+    private sealed record Fixture(WaterModule Module, SqliteWaterStore Store, FakeTimeProvider Time, GlanceRegistry Glances, ModuleOptionsService Options, ShortcutRegistry Shortcuts);
 
     private async Task<Fixture> StartAsync(DateTimeOffset now, Func<SqliteWaterStore, IWaterStore>? wrap = null)
     {
@@ -33,14 +34,120 @@ public class WaterModuleTests : IDisposable
         var time = new FakeTimeProvider(now);
         var glances = new GlanceRegistry();
         var options = TestOptions.Create();
-        var module = new WaterModule(wrap?.Invoke(store) ?? store, new NoHub(), _recorder.Bus, time, new ShortcutRegistry(), glances, new SilentSound(),
+        var shortcuts = new ShortcutRegistry();
+        var module = new WaterModule(wrap?.Invoke(store) ?? store, new NoHub(), _recorder.Bus, new InlineDispatcher(), time, shortcuts, glances, new SilentSound(),
             options, new GlobalShortcutRegistry(new InMemorySettingsStore()), NullLogger<WaterModule>.Instance);
         await module.StartAsync(CancellationToken.None);
         await module.RescheduleAsync();
-        return new Fixture(module, store, time, glances, options);
+        return new Fixture(module, store, time, glances, options, shortcuts);
     }
 
     private List<WaterReminderContent> Reminders => [.. _recorder.Posted.Select(a => a.Content).OfType<WaterReminderContent>()];
+
+    private List<WaterDrankContent> Confirmations => [.. _recorder.Posted.Select(a => a.Content).OfType<WaterDrankContent>()];
+
+    private static readonly DateOnly Today = new(2026, 11, 11);
+
+    [Fact]
+    public async Task Island_shortcut_opens_the_body_panel_without_counting_a_glass()
+    {
+        var f = await StartAsync(T0);
+        var shortcut = Assert.Single(f.Shortcuts.Shortcuts, s => s.ModuleId == WaterModule.ModuleId);
+        Assert.Equal(WaterModule.PanelActivityId, shortcut.Id);
+        Assert.Equal("Água", shortcut.Label);
+
+        shortcut.Invoke();
+
+        var posted = _recorder.Posted[^1];
+        Assert.Equal(WaterModule.PanelActivityId, posted.Id);
+        Assert.Equal(ActivityKind.Transient, posted.Kind);
+        Assert.True(posted.OpenInteractive);
+        var panel = Assert.IsType<WaterBodyPanelContent>(posted.Content);
+        Assert.Equal(0, panel.Glasses);
+        Assert.Equal(8, panel.Goal);
+        Assert.Empty(Confirmations);
+        await Task.Delay(50);
+        Assert.Equal(0, await f.Store.GetAsync(Today));
+        await f.Module.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Panel_follows_drinks_undo_and_goal_changes()
+    {
+        var f = await StartAsync(T0);
+        f.Module.OpenPanel();
+        var panel = Assert.IsType<WaterBodyPanelContent>(_recorder.Posted[^1].Content);
+        Assert.Equal("0 de 8 copos hoje", panel.ProgressText);
+        Assert.Equal("0%", panel.PercentText);
+        Assert.False(panel.UndoCommand.CanExecute(null));
+
+        await f.Module.DrinkAsync();
+        await f.Module.DrinkAsync();
+        panel.DrinkCommand.Execute(null);
+        await WaitUntil(() => panel.Glasses == 3);
+        Assert.Equal(3, await f.Store.GetAsync(Today));
+        Assert.Equal(8, panel.Goal);
+        Assert.Equal(0.375, panel.Progress, 3);
+        Assert.Equal("38%", panel.PercentText);
+        Assert.Equal("3 de 8 copos hoje", panel.ProgressText);
+        Assert.Equal("Faltam 5 copos para a meta.", panel.Message);
+        Assert.False(panel.GoalReached);
+        Assert.True(panel.UndoCommand.CanExecute(null));
+
+        panel.UndoCommand.Execute(null);
+        await WaitUntil(() => panel.Glasses == 2);
+        Assert.Equal(2, await f.Store.GetAsync(Today));
+        Assert.Equal(0.25, panel.Progress, 3);
+
+        await f.Options.SetAsync(WaterModule.ModuleId, WaterModule.Goal, 3);
+        await WaitUntil(() => panel.Goal == 3);
+        Assert.Equal("Falta 1 copo para a meta.", panel.Message);
+
+        await f.Options.SetAsync(WaterModule.ModuleId, WaterModule.Goal, 1);
+        await WaitUntil(() => panel.Goal == 1);
+        Assert.Equal(1, panel.Progress, 3);
+        Assert.Equal("100%", panel.PercentText);
+        Assert.Equal("2 de 1 copos hoje", panel.ProgressText);
+        Assert.Equal("Meta de hoje batida!", panel.Message);
+        Assert.True(panel.GoalReached);
+        await f.Module.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task With_the_panel_open_drinking_does_not_cover_it_with_the_confirmation()
+    {
+        var f = await StartAsync(T0);
+        f.Module.OpenPanel();
+        var panel = Assert.IsType<WaterBodyPanelContent>(_recorder.Posted[^1].Content);
+        panel.OnPresentationChanged(IslandState.Interactive);
+
+        await f.Module.DrinkAsync();
+        Assert.Equal(1, await f.Store.GetAsync(Today));
+        Assert.Empty(Confirmations);
+
+        // A ilha recolheu: o painel saiu de cena e a confirmação volta a aparecer.
+        panel.OnPresentationChanged(null);
+        await f.Module.DrinkAsync();
+        Assert.Single(Confirmations);
+        await f.Module.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Dismissing_the_panel_brings_back_the_confirmation()
+    {
+        var f = await StartAsync(T0);
+        f.Module.OpenPanel();
+        var activity = _recorder.Posted[^1];
+        await f.Module.DrinkAsync();
+        Assert.Empty(Confirmations);
+
+        _recorder.Bus.Publish(new ActivityDismissedEvent(activity));
+        await f.Module.DrinkAsync();
+
+        Assert.Single(Confirmations);
+        Assert.Equal(2, await f.Store.GetAsync(Today));
+        await f.Module.StopAsync(CancellationToken.None);
+    }
 
     [Fact]
     public async Task Reminds_at_the_next_slot_with_progress_and_shows_the_glance()
