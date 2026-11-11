@@ -24,14 +24,16 @@ armazenamento em SQLite.
 
 - **Central:** nova página "Água" (`HubPage.Water`) com copos de hoje contra a meta, botões **+1** e **−1**.
 - **Tela inicial da ilha:** glance "3/8 copos" (`IGlanceRegistry`).
-- **Atalho global:** registrar um copo sem abrir nada, `Ctrl+Alt+W` (verificar se está livre no
-  `IGlobalShortcutRegistry`; se não estiver, escolher outro e documentar).
+- **Atalho global:** registrar um copo sem abrir nada, `Ctrl+Alt+G` (`Ctrl+Alt+W` já é a captura de
+  janela do módulo Capture).
 
 ## Arquitetura
 
 - `WaterModule : IIslandModule` em `src/Dynasland.Modules/Water/`. Agenda o próximo aviso com um único
   `ITimer` (via `TimeProvider`), reagendado quando o contador ou as opções mudam e ao retomar da
   suspensão (`SessionChangedEvent`/`SessionChange.Resumed`).
+- O aviso usa `WaterReminderContent` (botões Bebi e Adiar) com templates próprios em
+  `WaterTemplates.xaml`, porque `StatusContent` só comporta uma ação.
 - `IWaterStore` em `Dynasland.Core/Interfaces` (mesmo molde de `ICalendarStore`): contagem do dia,
   incrementar/decrementar, evento `Changed`. Implementação SQLite em `SqliteHistoryStores.cs` ou arquivo
   próprio na mesma pasta.
