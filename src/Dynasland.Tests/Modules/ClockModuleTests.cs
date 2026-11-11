@@ -26,6 +26,7 @@ public class ClockModuleTests
 
         Assert.Equal("07:05", content.TimeText);
         Assert.Equal("Segunda-feira, 9 de novembro", content.DateText);
+        Assert.Equal("seg, 9 nov", content.ShortDateText);
     }
 
     [Fact]

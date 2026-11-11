@@ -28,6 +28,10 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
     [ObservableProperty]
     private string _dateText = string.Empty;
 
+    /// <summary>Data abreviada ("seg, 9 nov") para a ilha compacta em repouso.</summary>
+    [ObservableProperty]
+    private string _shortDateText = string.Empty;
+
     /// <summary>Atalhos por linha no painel (o restante quebra para a linha seguinte).</summary>
     public const int ShortcutsPerRow = 7;
 
@@ -55,6 +59,8 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
         TimeText = localNow.ToString("HH:mm", PtBr);
         var date = localNow.ToString("dddd, d 'de' MMMM", PtBr);
         DateText = char.ToUpper(date[0], PtBr) + date[1..];
+        // As abreviações do pt-BR vêm com ponto ("seg.", "nov.").
+        ShortDateText = localNow.ToString("ddd, d MMM", PtBr).Replace(".", string.Empty);
     }
 
     public void SetShortcuts(IEnumerable<IslandShortcut> shortcuts)

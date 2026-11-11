@@ -8,6 +8,28 @@ public enum AppTheme
     Light,
 }
 
+/// <summary>Fundo da ilha. Todos são escuros: o texto e os ícones continuam claros.</summary>
+public enum IslandTheme
+{
+    Black,
+    Graphite,
+    Midnight,
+    Aurora,
+    Sunset,
+    Forest,
+    Steel,
+    Wine,
+    Copper,
+    Ember,
+    Magenta,
+
+    /// <summary>Azul para magenta, na horizontal.</summary>
+    Dusk,
+
+    /// <summary>Tom escuro da cor de destaque escolhida.</summary>
+    Accent,
+}
+
 /// <summary>Preferências da aplicação. Imutável: alterações geram uma nova instância.</summary>
 /// <summary>Ação do duplo clique na ilha.</summary>
 public enum DoubleClickAction
@@ -56,8 +78,11 @@ public sealed record IslandSettings
 
     // Aparência
 
-    /// <summary>Tema da janela de configurações (a ilha é sempre preta).</summary>
+    /// <summary>Tema da janela de configurações (o fundo da ilha vem de <see cref="IslandTheme"/>).</summary>
     public AppTheme Theme { get; init; } = AppTheme.System;
+
+    /// <summary>Tema (fundo) da ilha.</summary>
+    public IslandTheme IslandTheme { get; init; } = IslandTheme.Black;
 
     /// <summary>Cor de destaque em hexadecimal (#RRGGBB).</summary>
     public string AccentColor { get; init; } = "#30D158";

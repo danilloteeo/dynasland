@@ -1,5 +1,14 @@
 # Notas da versão
 
+## 1.2.0 — 2026-11-11
+
+### Novidades
+- **Temas da ilha**: 13 fundos para a ilha em Configurações › Aparência › Tema da ilha (Preto, Grafite,
+  Meia-noite, Aurora, Pôr do sol, Floresta, Aço, Vinho, Cobre, Brasa, Magenta, Crepúsculo e um tom
+  escuro da cor de destaque). A troca vale na hora e respeita a opacidade escolhida.
+- **Hora na ilha em repouso**: sem nada para mostrar, a ilha compacta exibe a data abreviada e a hora
+  em vez de ficar vazia.
+
 ## 1.1.0 — 2026-11-10
 
 ### Novidades

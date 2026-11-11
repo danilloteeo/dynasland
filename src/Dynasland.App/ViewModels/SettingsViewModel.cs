@@ -135,6 +135,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<AccentOptionViewModel> AccentOptions { get; } = [];
 
+    public ObservableCollection<IslandThemeOptionViewModel> IslandThemeOptions { get; } = [];
+
     public ObservableCollection<NotificationAppViewModel> NotificationApps { get; } = [];
 
     public string DataPath { get; }
@@ -274,6 +276,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         CheckForUpdates = s.CheckForUpdates;
         RefreshMonitors(s);
         RefreshAccents(s);
+        RefreshIslandThemes(s);
     }
 
     private void RefreshModules()
@@ -316,6 +319,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         foreach (var (name, hex) in AccentPresets)
         {
             AccentOptions.Add(new AccentOptionViewModel(name, hex, string.Equals(hex, current.AccentColor, StringComparison.OrdinalIgnoreCase), SelectAccent));
+        }
+    }
+
+    private void RefreshIslandThemes(IslandSettings current)
+    {
+        var accent = (Color)ColorConverter.ConvertFromString(current.AccentColor);
+        IslandThemeOptions.Clear();
+        foreach (var (theme, name) in IslandThemes.All)
+        {
+            IslandThemeOptions.Add(new IslandThemeOptionViewModel(theme, name, IslandThemes.Background(theme, accent, 1),
+                theme == current.IslandTheme, SelectIslandTheme));
         }
     }
 
@@ -366,7 +380,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     private void SelectMonitor(string? deviceName) => Save(s => s with { MonitorDeviceName = deviceName });
 
-    private void SelectAccent(string hex) => Save(s => s with { AccentColor = hex });
+    private void SelectAccent(string hex)
+    {
+        Save(s => s with { AccentColor = hex });
+        // A amostra do tema "Cor de destaque" acompanha a cor escolhida.
+        RefreshIslandThemes(_settings.Current with { AccentColor = hex });
+    }
+
+    private void SelectIslandTheme(IslandTheme theme) => Save(s => s with { IslandTheme = theme });
 
     partial void OnStartWithWindowsChanged(bool value)
     {
@@ -703,6 +724,24 @@ public sealed partial class AccentOptionViewModel : ObservableObject
         if (value)
         {
             _select(Hex);
+        }
+    }
+}
+
+public sealed partial class IslandThemeOptionViewModel(IslandTheme theme, string name, Brush brush, bool isSelected, Action<IslandTheme> select) : ObservableObject
+{
+    public string Name { get; } = name;
+
+    public Brush Brush { get; } = brush;
+
+    [ObservableProperty]
+    private bool _isSelected = isSelected;
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            select(theme);
         }
     }
 }

@@ -4,6 +4,16 @@
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
     <!-- Chave: "{NomeCompletoDoTipo}:{Estado}". Os pincéis/fontes vêm do tema da aplicação. -->
+
+    <!-- Ilha em repouso (nenhum outro módulo com algo a mostrar): data e hora. -->
+    <DataTemplate x:Key="Dynasland.Modules.Clock.ClockContent:Compact">
+        <Grid Margin="14,0">
+            <TextBlock Text="{Binding ShortDateText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                       Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding TimeText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
     <DataTemplate x:Key="Dynasland.Modules.Clock.ClockContent:Interactive">
         <Grid Margin="16,10,16,12">
             <Grid.RowDefinitions>

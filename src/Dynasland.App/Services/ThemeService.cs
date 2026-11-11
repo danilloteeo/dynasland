@@ -86,8 +86,8 @@ public sealed class ThemeService(IIslandSettingsService settings) : IDisposable
         resources["SettingsAccentTextBrush"] = Brush(ContrastOn(accent));
         resources["IslandAccentBrush"] = Brush(accent);
 
-        // A ilha é sempre preta; a transparência só altera o alfa do fundo.
-        resources["IslandBackgroundBrush"] = Brush(Color.FromArgb((byte)Math.Round(255 * current.IslandOpacity), 0, 0, 0));
+        // O fundo vem do tema da ilha (sempre escuro); a transparência só altera o alfa.
+        resources["IslandBackgroundBrush"] = IslandThemes.Background(current.IslandTheme, accent, current.IslandOpacity);
         resources["IslandShadowOpacity"] = 0.7 * current.ShadowIntensity;
 
         ThemeChanged?.Invoke(this, EventArgs.Empty);

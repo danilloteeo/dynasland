@@ -204,6 +204,34 @@
         </Setter>
     </Style>
 
+    <!-- Amostra de tema da ilha: uma cápsula com o fundo do tema e o nome embaixo. -->
+    <Style x:Key="IslandThemeSwatch" TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,0,10,8" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <StackPanel Background="Transparent" Width="92">
+                        <Border x:Name="Ring" CornerRadius="17" BorderThickness="2" BorderBrush="Transparent" Padding="3">
+                            <Border Height="24" CornerRadius="12" Background="{TemplateBinding Background}"
+                                    BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" />
+                        </Border>
+                        <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource IslandTextFont}" FontSize="11.5" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource SettingsSecondaryTextBrush}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource SettingsAccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" Value="0.85" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="SettingsButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Foreground" Value="{DynamicResource SettingsTextBrush}" />

@@ -20,7 +20,7 @@
     <StackPanel>
 
             <TextBlock Text="Aparência" Style="{StaticResource SettingsTitle}" />
-            <TextBlock Text="Tema das janelas, cor de destaque e o visual da ilha. A ilha continua predominantemente preta em qualquer tema."
+            <TextBlock Text="Tema das janelas, cor de destaque e o visual da ilha."
                        Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
             <TextBlock Text="Tema" Style="{StaticResource SettingsGroupHeader}" />
@@ -54,6 +54,26 @@
                             <DataTemplate DataType="{x:Type vm:AccentOptionViewModel}">
                                 <RadioButton Style="{StaticResource AccentSwatch}" GroupName="Accent" Background="{Binding Brush}"
                                              IsChecked="{Binding IsSelected}" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Tema da ilha" Style="{StaticResource SettingsGroupHeader}" />
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="Fundo da ilha. Todos são escuros, para o texto continuar legível." Style="{StaticResource CardDescription}" Margin="0,0,0,10" />
+                    <ItemsControl ItemsSource="{Binding IslandThemeOptions}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:IslandThemeOptionViewModel}">
+                                <RadioButton Style="{StaticResource IslandThemeSwatch}" GroupName="IslandTheme" Background="{Binding Brush}"
+                                             Content="{Binding Name}" IsChecked="{Binding IsSelected}" AutomationProperties.Name="{Binding Name}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

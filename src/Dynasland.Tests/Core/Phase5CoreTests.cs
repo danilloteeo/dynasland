@@ -15,6 +15,7 @@ public class Phase5CoreTests
         var custom = IslandSettings.Default with
         {
             Theme = AppTheme.Light,
+            IslandTheme = IslandTheme.Aurora,
             AccentColor = "#0A84FF",
             IslandOpacity = 0.8,
             ShadowIntensity = 0.2,
@@ -39,6 +40,7 @@ public class Phase5CoreTests
         var values = new Dictionary<string, string>
         {
             [IslandSettingsMapper.Keys.Theme] = "Neon",
+            [IslandSettingsMapper.Keys.IslandTheme] = "Neon",
             [IslandSettingsMapper.Keys.AccentColor] = "verde",
             [IslandSettingsMapper.Keys.MaxWidth] = "9999",
         };
@@ -46,6 +48,7 @@ public class Phase5CoreTests
         var settings = IslandSettingsMapper.FromValues(values);
 
         Assert.Equal(AppTheme.System, settings.Theme);
+        Assert.Equal(IslandTheme.Black, settings.IslandTheme);
         Assert.Equal(IslandSettings.Default.AccentColor, settings.AccentColor);
         Assert.Equal(420, settings.MaxWidth);
     }
