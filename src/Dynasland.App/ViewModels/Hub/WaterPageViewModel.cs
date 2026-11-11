@@ -38,6 +38,19 @@ public sealed partial class WaterPageViewModel : ObservableObject, IHubPage
     [ObservableProperty]
     private string _message = string.Empty;
 
+    /// <summary>Copos de hoje (a página reage à mudança para animar, venha de onde vier).</summary>
+    [ObservableProperty]
+    private int _glasses;
+
+    [ObservableProperty]
+    private int _goal = 8;
+
+    /// <summary>
+    /// Falso até a primeira carga aplicar os valores (vira verdadeiro logo depois de <see cref="Glasses"/>):
+    /// a página usa isso para posicionar o nível sem animar ao abrir a aba.
+    /// </summary>
+    public bool HasLoaded { get; private set; }
+
     public async Task LoadAsync()
     {
         try
@@ -46,11 +59,15 @@ public sealed partial class WaterPageViewModel : ObservableObject, IHubPage
             var goal = (int)_options.Get(WaterModule.ModuleId, WaterModule.Goal);
             _ui.Post(() =>
             {
+                // Glasses por último: quando a página reage a ela, Progress e Goal já estão atualizados.
+                Goal = goal;
                 ProgressText = $"{glasses} de {goal} copos";
                 Progress = Math.Min(1, glasses / (double)goal);
                 Message = glasses >= goal
                     ? "Meta de hoje batida!"
                     : goal - glasses == 1 ? "Falta 1 copo para a meta." : $"Faltam {goal - glasses} copos para a meta.";
+                Glasses = glasses;
+                HasLoaded = true;
             });
         }
         catch (Exception ex)

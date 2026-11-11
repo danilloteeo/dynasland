@@ -8,6 +8,8 @@
   para os avisos até o dia seguinte. Intervalo, horário, meta e som ficam em Configurações › Módulos ›
   Água. O progresso aparece na tela inicial da ilha ("3/8 copos") e na nova página **Água** da Central.
   `Ctrl+Alt+G` registra um copo sem abrir nada.
+- **Página Água animada**: uma garrafa que enche conforme você bebe, com ondas, respingos a cada copo
+  e brilho ao bater a meta. Funciona também com o **Bebi** da ilha e o `Ctrl+Alt+G`.
 
 ## 1.4.0 — 2026-11-11
 

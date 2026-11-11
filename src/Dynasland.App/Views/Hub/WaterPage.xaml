@@ -6,20 +6,113 @@
              xmlns:hub="clr-namespace:Dynasland.App.ViewModels.Hub"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=hub:WaterPageViewModel}">
+    <UserControl.Resources>
+        <!--
+            Garrafa no Canvas de 160 x 300: tampa em cima, gargalo de x 62 a 98, ombro até o corpo de x 14 a 146,
+            fundo interno em y = 290. A mesma geometria desenha o vidro, o contorno e recorta a água.
+        -->
+        <PathGeometry x:Key="BottleShape"
+                      Figures="M 62,22 L 98,22 L 98,56 C 98,76 146,78 146,104 L 146,268 Q 146,290 124,290 L 36,290 Q 14,290 14,268 L 14,104 C 14,78 62,76 62,56 Z" />
+
+        <!--
+            Onda: senoide de período 80 px (curvas Q/T), 4 períodos (320 px), linha base em y = 12, amplitude 5.
+            A animação desloca exatamente um período (80 px), então o laço não salta.
+        -->
+        <PathGeometry x:Key="WaveShape"
+                      Figures="M 0,12 Q 20,2 40,12 T 80,12 T 120,12 T 160,12 T 200,12 T 240,12 T 280,12 T 320,12 L 320,40 L 0,40 Z" />
+    </UserControl.Resources>
+
     <StackPanel>
         <TextBlock Text="Água" Style="{StaticResource SettingsTitle}" />
         <TextBlock Text="Copos de hoje. Ajuste o intervalo, o horário e a meta em Configurações › Módulos › Água."
                    Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
-        <Border Style="{StaticResource SettingsCard}" Margin="0,18,0,0" Padding="20,16">
-            <StackPanel>
-                <TextBlock Text="{Binding ProgressText}" FontSize="26" FontWeight="SemiBold" />
-                <ProgressBar Maximum="1" Value="{Binding Progress, Mode=OneWay}" Height="10" Margin="0,12,0,0"
-                             Foreground="{DynamicResource SettingsAccentBrush}" AutomationProperties.Name="Progresso da meta de água" />
-                <TextBlock Text="{Binding Message}" Style="{StaticResource CardDescription}" Margin="0,10,0,0" />
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <Button Style="{StaticResource SettingsButton}" Content="Bebi um copo (+1)" Command="{Binding AddCommand}" />
-                    <Button Style="{StaticResource SettingsButton}" Content="Desfazer (−1)" Command="{Binding RemoveCommand}" Margin="8,0,0,0" />
+        <Border Style="{StaticResource SettingsCard}" Margin="0,18,0,0" Padding="20,24,20,20">
+            <StackPanel HorizontalAlignment="Center">
+                <!-- Garrafa: 30 px de folga de cada lado para o rótulo da meta. -->
+                <Grid Width="220" Height="300" HorizontalAlignment="Center"
+                      AutomationProperties.Name="Progresso da meta de água"
+                      AutomationProperties.HelpText="{Binding ProgressText}">
+                    <Canvas x:Name="Bottle" Width="160" Height="300" HorizontalAlignment="Center">
+                        <!-- Vidro (fundo do interior). -->
+                        <Path Data="{StaticResource BottleShape}" Fill="{DynamicResource SettingsBackgroundBrush}" />
+
+                        <!-- Água, recortada pelo formato da garrafa. -->
+                        <Canvas Width="160" Height="300" Clip="{StaticResource BottleShape}">
+                            <!-- O topo desta camada (y = 0) é a superfície; o code-behind move LevelTransform.Y. -->
+                            <Canvas x:Name="WaterLayer" Width="160" Height="300">
+                                <Canvas.RenderTransform>
+                                    <TranslateTransform x:Name="LevelTransform" Y="306" />
+                                </Canvas.RenderTransform>
+
+                                <Path x:Name="BackWave" Data="{StaticResource WaveShape}" Canvas.Left="-100" Canvas.Top="-15"
+                                      Fill="#FF7CC4FF" Opacity="0.35">
+                                    <Path.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform x:Name="BackWaveScale" CenterY="12" />
+                                            <TranslateTransform x:Name="BackWaveShift" />
+                                        </TransformGroup>
+                                    </Path.RenderTransform>
+                                </Path>
+
+                                <Rectangle Canvas.Top="1" Width="160" Height="320">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FF3AA7FF" Offset="0" />
+                                            <GradientStop Color="#FF1E6FD9" Offset="0.6" />
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+
+                                <Path x:Name="FrontWave" Data="{StaticResource WaveShape}" Canvas.Left="-60" Canvas.Top="-12"
+                                      Fill="#FF3AA7FF" Opacity="0.55">
+                                    <Path.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform x:Name="FrontWaveScale" CenterY="12" />
+                                            <TranslateTransform x:Name="FrontWaveShift" />
+                                        </TransformGroup>
+                                    </Path.RenderTransform>
+                                </Path>
+                            </Canvas>
+
+                            <!-- Reflexo do vidro. -->
+                            <Rectangle Canvas.Left="24" Canvas.Top="118" Width="7" Height="140" RadiusX="3.5" RadiusY="3.5"
+                                       Fill="White" Opacity="0.18" />
+                        </Canvas>
+
+                        <!-- Linha da meta (Progress = 1). -->
+                        <Line X1="20" X2="140" Y1="110" Y2="110" Stroke="{DynamicResource SettingsSecondaryTextBrush}"
+                              StrokeThickness="1.2" StrokeDashArray="4 3" Opacity="0.8" />
+                        <TextBlock Text="meta" Canvas.Left="152" Canvas.Top="102" FontSize="11"
+                                   FontFamily="{StaticResource IslandTextFont}" Foreground="{DynamicResource SettingsSecondaryTextBrush}" />
+
+                        <!-- Contorno (recebe o brilho ao bater a meta). -->
+                        <Path x:Name="BottleOutline" Data="{StaticResource BottleShape}" Stroke="{DynamicResource SettingsTextBrush}"
+                              StrokeThickness="3" StrokeLineJoin="Round" />
+
+                        <!-- Tampa. -->
+                        <Rectangle Canvas.Left="56" Canvas.Top="2" Width="48" Height="22" RadiusX="5" RadiusY="5"
+                                   Fill="{DynamicResource SettingsSecondaryTextBrush}" />
+                        <Rectangle Canvas.Left="60" Canvas.Top="22" Width="40" Height="5" RadiusX="1.5" RadiusY="1.5"
+                                   Fill="{DynamicResource SettingsTertiaryTextBrush}" />
+                    </Canvas>
+
+                    <!-- Gotas e respingos criados pelo code-behind (mesmas coordenadas da garrafa). -->
+                    <Canvas x:Name="EffectsCanvas" Width="160" Height="300" HorizontalAlignment="Center" IsHitTestVisible="False" />
+                </Grid>
+
+                <TextBlock x:Name="Counter" Text="{Binding ProgressText}" HorizontalAlignment="Center" Margin="0,18,0,0"
+                           FontFamily="{StaticResource IslandFont}" FontSize="26" FontWeight="SemiBold"
+                           Foreground="{DynamicResource SettingsTextBrush}" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <ScaleTransform x:Name="CounterScale" />
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+                <TextBlock Text="{Binding Message}" Style="{StaticResource CardDescription}" HorizontalAlignment="Center"
+                           TextAlignment="Center" Margin="0,6,0,0" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                    <Button Style="{StaticResource AccentButton}" Content="Bebi um copo" Command="{Binding AddCommand}" />
+                    <Button Style="{StaticResource SettingsButton}" Content="Desfazer" Command="{Binding RemoveCommand}" Margin="8,0,0,0" />
                 </StackPanel>
             </StackPanel>
         </Border>

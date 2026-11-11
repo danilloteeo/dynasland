@@ -206,9 +206,13 @@ public class WaterModuleTests : IDisposable
         var store = new SqliteWaterStore(_db.Factory);
         var viewModel = new WaterPageViewModel(store, TestOptions.Create(), new InlineDispatcher(), new FakeTimeProvider(T0), NullLogger<WaterPageViewModel>.Instance);
 
+        Assert.False(viewModel.HasLoaded);
         await viewModel.LoadAsync();
+        Assert.True(viewModel.HasLoaded);
         Assert.Equal("0 de 8 copos", viewModel.ProgressText);
         Assert.Equal(0, viewModel.Progress);
+        Assert.Equal(0, viewModel.Glasses);
+        Assert.Equal(8, viewModel.Goal);
 
         await viewModel.AddCommand.ExecuteAsync(null);
         await viewModel.AddCommand.ExecuteAsync(null);
@@ -216,6 +220,8 @@ public class WaterModuleTests : IDisposable
 
         Assert.Equal("1 de 8 copos", viewModel.ProgressText);
         Assert.Equal(1 / 8d, viewModel.Progress);
+        Assert.Equal(1, viewModel.Glasses);
+        Assert.Equal(8, viewModel.Goal);
         Assert.Equal("Faltam 7 copos para a meta.", viewModel.Message);
         viewModel.Dispose();
     }
