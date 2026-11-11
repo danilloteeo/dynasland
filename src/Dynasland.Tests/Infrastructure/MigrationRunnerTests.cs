@@ -13,7 +13,7 @@ public class MigrationRunnerTests
 
         var applied = await db.CreateRunner().MigrateAsync();
 
-        Assert.Equal(2, applied);
+        Assert.Equal(3, applied);
         await using var connection = await db.Factory.OpenAsync();
         Assert.True(await TableExistsAsync(connection, "settings"));
         Assert.True(await TableExistsAsync(connection, "modules"));

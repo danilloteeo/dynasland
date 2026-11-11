@@ -67,6 +67,20 @@ public interface ICalendarStore
     event EventHandler? Changed;
 }
 
+/// <summary>Copos de água bebidos por dia (data local).</summary>
+public interface IWaterStore
+{
+    /// <summary>Copos do dia; 0 se nada foi registrado.</summary>
+    Task<int> GetAsync(DateOnly day, CancellationToken cancellationToken = default);
+
+    /// <summary>Soma (ou subtrai) copos no dia, sem passar de 0 para baixo.</summary>
+    /// <returns>A contagem do dia depois da alteração.</returns>
+    Task<int> AddAsync(DateOnly day, int delta, CancellationToken cancellationToken = default);
+
+    /// <summary>Disparado (em qualquer thread) quando a contagem muda.</summary>
+    event EventHandler? Changed;
+}
+
 public interface ICaptureHistoryStore
 {
     Task<CaptureRecord> AddAsync(CaptureRecord record, CancellationToken cancellationToken = default);

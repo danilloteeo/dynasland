@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddSingleton<SqliteConnectionFactory>();
         services.AddSingleton<IMigration, M001_InitialSchema>();
         services.AddSingleton<IMigration, M002_Histories>();
+        services.AddSingleton<IMigration, M003_WaterLog>();
         services.AddSingleton<MigrationRunner>();
         services.AddSingleton<DatabaseRecovery>();
 
@@ -43,6 +44,7 @@ public static class DependencyInjection
         services.AddSingleton<INotificationHistoryStore, SqliteNotificationHistoryStore>();
         services.AddSingleton<IFocusSessionStore, SqliteFocusSessionStore>();
         services.AddSingleton<ICalendarStore, SqliteCalendarStore>();
+        services.AddSingleton<IWaterStore, SqliteWaterStore>();
         services.AddSingleton<ICaptureHistoryStore, SqliteCaptureHistoryStore>();
         services.AddSingleton<IWeatherCache, SqliteWeatherCache>();
         services.AddSingleton<IStorageMaintenance, StorageMaintenance>();
