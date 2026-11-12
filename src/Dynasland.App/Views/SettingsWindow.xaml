@@ -29,8 +29,8 @@
         <Border Background="{DynamicResource SettingsSidebarBrush}">
             <DockPanel Margin="14,18,14,10">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,18">
-                    <Border Width="34" Height="16" CornerRadius="8" Background="Black" BorderBrush="#33FFFFFF" BorderThickness="1" VerticalAlignment="Center" />
-                    <TextBlock Text="Dynasland" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    <Border Width="30" Height="14" CornerRadius="7" Background="Black" BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" VerticalAlignment="Center" />
+                    <TextBlock Text="Dynasland" FontSize="16" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ScrollViewer.Resources>

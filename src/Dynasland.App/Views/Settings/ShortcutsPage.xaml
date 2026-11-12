@@ -31,8 +31,8 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource CardTitle}">
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                <TextBlock Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis">
                                     <Run Text="{Binding Label, Mode=OneWay}" />
                                     <Run Text="{Binding Category, Mode=OneWay, StringFormat=  · {0}}" Foreground="{DynamicResource SettingsTertiaryTextBrush}" FontSize="12" />
                                 </TextBlock>

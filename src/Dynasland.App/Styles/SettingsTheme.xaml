@@ -243,7 +243,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <StackPanel Background="Transparent" Width="92">
+                    <StackPanel Background="Transparent" Width="104">
                         <Border x:Name="Ring" CornerRadius="17" BorderThickness="2" BorderBrush="Transparent" Padding="3">
                             <Border Height="24" CornerRadius="12" Background="{TemplateBinding Background}"
                                     BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" />
