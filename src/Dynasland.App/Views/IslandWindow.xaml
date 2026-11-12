@@ -86,8 +86,13 @@
             </Grid.RenderTransform>
 
             <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
-            <Border Background="{DynamicResource IslandBackgroundBrush}"
-                    CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
+            <Border Background="{DynamicResource IslandBackgroundBrush}">
+                <Border.CornerRadius>
+                    <MultiBinding Converter="{StaticResource IslandCornerRadius}">
+                        <Binding Path="CornerSize" ElementName="Root" />
+                        <Binding Path="Shape" ElementName="Root" />
+                    </MultiBinding>
+                </Border.CornerRadius>
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20"
                                       ShadowDepth="4"
@@ -100,8 +105,13 @@
 
             <Border Background="{DynamicResource IslandBackgroundBrush}"
                     BorderBrush="{StaticResource IslandEdgeBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
+                    BorderThickness="1">
+                <Border.CornerRadius>
+                    <MultiBinding Converter="{StaticResource IslandCornerRadius}">
+                        <Binding Path="CornerSize" ElementName="Root" />
+                        <Binding Path="Shape" ElementName="Root" />
+                    </MultiBinding>
+                </Border.CornerRadius>
                 <Grid x:Name="ContentGrid" ClipToBounds="True">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -187,8 +197,13 @@
                     BorderThickness="2"
                     Opacity="0"
                     IsHitTestVisible="False"
-                    RenderTransformOrigin="0.5,0.5"
-                    CornerRadius="{Binding CornerSize, ElementName=Root, Converter={StaticResource DoubleToCornerRadius}}">
+                    RenderTransformOrigin="0.5,0.5">
+                <Border.CornerRadius>
+                    <MultiBinding Converter="{StaticResource IslandCornerRadius}">
+                        <Binding Path="CornerSize" ElementName="Root" />
+                        <Binding Path="Shape" ElementName="Root" />
+                    </MultiBinding>
+                </Border.CornerRadius>
                 <Border.RenderTransform>
                     <ScaleTransform x:Name="AlertRingScale" />
                 </Border.RenderTransform>

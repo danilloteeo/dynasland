@@ -34,7 +34,8 @@
     <!-- Opacidade da sombra da ilha (ajustada em Aparência). -->
     <sys:Double x:Key="IslandShadowOpacity">0.35</sys:Double>
 
-    <converters:DoubleToCornerRadiusConverter x:Key="DoubleToCornerRadius" />
+    <!-- Raio da cápsula + formato (encaixada = cantos de cima retos). -->
+    <converters:IslandCornerRadiusConverter x:Key="IslandCornerRadius" />
 
     <!-- Movimento do Volum: entrada longa com desaceleração forte, saída curta, salto nos toques. -->
     <Duration x:Key="EnterDuration">0:0:0.3</Duration>

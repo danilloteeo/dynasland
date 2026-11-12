@@ -49,7 +49,28 @@ public enum IdleDisplay
     Nothing,
 }
 
-/// <summary>Preferências da aplicação. Imutável: alterações geram uma nova instância.</summary>
+/// <summary>Posição horizontal da ilha no topo do monitor.</summary>
+public enum IslandPosition
+{
+    Center,
+
+    /// <summary>Junto à borda esquerda; a ilha cresce para a direita.</summary>
+    Left,
+
+    /// <summary>Junto à borda direita; a ilha cresce para a esquerda.</summary>
+    Right,
+}
+
+/// <summary>Formato da ilha.</summary>
+public enum IslandShape
+{
+    /// <summary>Solta do topo (com a distância configurada) e com todos os cantos arredondados.</summary>
+    Float,
+
+    /// <summary>Encaixada na borda de cima da tela: cantos de cima retos, sem distância do topo.</summary>
+    Notch,
+}
+
 /// <summary>Ação do duplo clique na ilha.</summary>
 public enum DoubleClickAction
 {
@@ -59,6 +80,7 @@ public enum DoubleClickAction
     OpenSettings,
 }
 
+/// <summary>Preferências da aplicação. Imutável: alterações geram uma nova instância.</summary>
 public sealed record IslandSettings
 {
     public static IslandSettings Default { get; } = new();
@@ -70,6 +92,12 @@ public sealed record IslandSettings
 
     /// <summary>Distância do topo da área útil, em DIPs.</summary>
     public double TopMargin { get; init; } = 8;
+
+    /// <summary>Esquerda, centro ou direita do topo da área útil.</summary>
+    public IslandPosition Position { get; init; } = IslandPosition.Center;
+
+    /// <summary>Flutuante (padrão) ou encaixada na borda de cima (ignora <see cref="TopMargin"/>).</summary>
+    public IslandShape Shape { get; init; } = IslandShape.Float;
 
     public bool IsVisible { get; init; } = true;
 

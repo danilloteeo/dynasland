@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
+             xmlns:controls="clr-namespace:Dynasland.App.Controls"
              xmlns:converters="clr-namespace:Dynasland.App.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
@@ -19,9 +20,53 @@
 
     <StackPanel>
         <TextBlock Text="Monitores" Style="{StaticResource SettingsTitle}" />
-        <TextBlock Text="Em qual monitor a ilha aparece e a que distância do topo. A posição é recalculada sozinha ao mudar resolução, escala ou monitores." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
-        <TextBlock Text="Posição" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="Em qual monitor a ilha aparece, em que lado do topo e com qual formato. A posição é recalculada sozinha ao mudar resolução, escala ou monitores." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
+        <TextBlock Text="Posição da ilha" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Posição" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Nas laterais, cresce a partir da borda." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <controls:SegmentedControl Grid.Column="1" VerticalAlignment="Center">
+                    <UniformGrid Rows="1">
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandPosition" Content="Esquerda" AutomationProperties.Name="Esquerda"
+                                     IsChecked="{Binding Position, Converter={StaticResource EnumMatch}, ConverterParameter=Left}" />
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandPosition" Content="Centro" AutomationProperties.Name="Centro"
+                                     IsChecked="{Binding Position, Converter={StaticResource EnumMatch}, ConverterParameter=Center}" />
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandPosition" Content="Direita" AutomationProperties.Name="Direita"
+                                     IsChecked="{Binding Position, Converter={StaticResource EnumMatch}, ConverterParameter=Right}" />
+                    </UniformGrid>
+                </controls:SegmentedControl>
+            </Grid>
+        </Border>
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Formato" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Encaixada cola no topo, cantos de cima retos." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <controls:SegmentedControl Grid.Column="1" VerticalAlignment="Center">
+                    <UniformGrid Rows="1">
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandShape" Content="Flutuante" AutomationProperties.Name="Flutuante"
+                                     IsChecked="{Binding Shape, Converter={StaticResource EnumMatch}, ConverterParameter=Float}" />
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandShape" Content="Encaixada" AutomationProperties.Name="Encaixada"
+                                     IsChecked="{Binding Shape, Converter={StaticResource EnumMatch}, ConverterParameter=Notch}" />
+                    </UniformGrid>
+                </controls:SegmentedControl>
+            </Grid>
+        </Border>
+        <!-- A ilha encaixada não tem distância do topo. -->
+        <Border Style="{StaticResource SettingsCard}"
+                IsEnabled="{Binding Shape, Converter={StaticResource EnumMatch}, ConverterParameter=Float}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

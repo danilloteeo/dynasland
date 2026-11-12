@@ -11,6 +11,8 @@ public static partial class IslandSettingsMapper
     {
         public const string MonitorDeviceName = "island.monitor";
         public const string TopMargin = "island.topMargin";
+        public const string Position = "island.position";
+        public const string Shape = "island.shape";
         public const string IsVisible = "island.visible";
         public const string StartHidden = "island.startHidden";
         public const string HideInFullscreen = "island.hideInFullscreen";
@@ -55,6 +57,8 @@ public static partial class IslandSettingsMapper
         {
             MonitorDeviceName = string.IsNullOrWhiteSpace(monitor) ? null : monitor,
             TopMargin = ReadDouble(values, Keys.TopMargin, d.TopMargin, 0, 200),
+            Position = ReadEnum(values, Keys.Position, d.Position),
+            Shape = ReadEnum(values, Keys.Shape, d.Shape),
             IsVisible = ReadBool(values, Keys.IsVisible, d.IsVisible),
             StartHidden = ReadBool(values, Keys.StartHidden, d.StartHidden),
             HideInFullscreen = ReadBool(values, Keys.HideInFullscreen, d.HideInFullscreen),
@@ -99,6 +103,8 @@ public static partial class IslandSettingsMapper
     {
         [Keys.MonitorDeviceName] = s.MonitorDeviceName ?? string.Empty,
         [Keys.TopMargin] = Format(s.TopMargin),
+        [Keys.Position] = s.Position.ToString(),
+        [Keys.Shape] = s.Shape.ToString(),
         [Keys.IsVisible] = Format(s.IsVisible),
         [Keys.StartHidden] = Format(s.StartHidden),
         [Keys.HideInFullscreen] = Format(s.HideInFullscreen),
@@ -147,6 +153,12 @@ public static partial class IslandSettingsMapper
 
         return fallback;
     }
+
+    /// <summary>Nome do valor (sem diferenciar maiúsculas); número ou nome desconhecido volta ao padrão.</summary>
+    private static T ReadEnum<T>(IReadOnlyDictionary<string, string> values, string key, T fallback) where T : struct, Enum =>
+        values.TryGetValue(key, out var raw) && Enum.TryParse<T>(raw, ignoreCase: true, out var value) && Enum.IsDefined(value)
+            ? value
+            : fallback;
 
     private static bool ReadBool(IReadOnlyDictionary<string, string> values, string key, bool fallback) =>
         values.TryGetValue(key, out var raw) && bool.TryParse(raw, out var value) ? value : fallback;

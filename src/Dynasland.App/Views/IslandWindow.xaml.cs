@@ -27,6 +27,13 @@ public partial class IslandWindow : Window
         typeof(IslandWindow),
         new PropertyMetadata(IslandLayout.Compact.CornerRadius));
 
+    /// <summary>Formato da ilha: encaixada deixa os cantos de cima da cápsula retos (IslandCornerRadiusConverter).</summary>
+    public static readonly DependencyProperty ShapeProperty = DependencyProperty.Register(
+        nameof(Shape),
+        typeof(IslandShape),
+        typeof(IslandWindow),
+        new PropertyMetadata(IslandShape.Float));
+
     private const double ExpandMilliseconds = 460;
     private const double CollapseMilliseconds = 340;
     private const double FadeOutMilliseconds = 120;
@@ -83,6 +90,7 @@ public partial class IslandWindow : Window
         Resources["IslandBackgroundBrush"] = theme.IslandBrush;
         DataContext = viewModel;
 
+        ApplyPositionAndShape(settings.Current);
         ApplyLayers(viewModel.State, animate: false);
         viewModel.PropertyChanging += OnViewModelPropertyChanging;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -108,6 +116,12 @@ public partial class IslandWindow : Window
     {
         get => (double)GetValue(CornerSizeProperty);
         set => SetValue(CornerSizeProperty, value);
+    }
+
+    public IslandShape Shape
+    {
+        get => (IslandShape)GetValue(ShapeProperty);
+        set => SetValue(ShapeProperty, value);
     }
 
     /// <summary>Animações ligadas no Dynasland e na opção do Windows "Animar controles e elementos dentro das janelas".</summary>
@@ -206,9 +220,26 @@ public partial class IslandWindow : Window
         }
 
         UpdateVisibility();
+        ApplyPositionAndShape(settings);
         ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
         ApplyPressFeedback();
         RequestReposition();
+    }
+
+    /// <summary>
+    /// A janela tem largura fixa; a cápsula se alinha ao lado da posição escolhida (a <see cref="IslandPlacementCalculator.EdgeMargin"/>
+    /// da borda), então a borda ancorada fica parada enquanto a largura anima. O zoom do hover parte do mesmo canto.
+    /// </summary>
+    private void ApplyPositionAndShape(IslandSettings settings)
+    {
+        Shape = settings.Shape;
+        var edge = IslandPlacementCalculator.EdgeMargin;
+        (IslandHost.HorizontalAlignment, IslandHost.Margin, IslandHost.RenderTransformOrigin) = settings.Position switch
+        {
+            IslandPosition.Left => (HorizontalAlignment.Left, new Thickness(edge, 0, 0, 0), new Point(0, 0)),
+            IslandPosition.Right => (HorizontalAlignment.Right, new Thickness(0, 0, edge, 0), new Point(1, 0)),
+            _ => (HorizontalAlignment.Center, new Thickness(0), new Point(0.5, 0)),
+        };
     }
 
     /// <summary>A resposta ao toque dos botões (estilos da ilha) segue a mesma regra das demais animações.</summary>

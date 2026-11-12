@@ -177,6 +177,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private double _topMargin;
 
+    [ObservableProperty]
+    private IslandPosition _position;
+
+    [ObservableProperty]
+    private IslandShape _shape;
+
     // Aparência
     [ObservableProperty]
     private AppTheme _theme;
@@ -269,6 +275,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IsIslandVisible = s.IsVisible;
         HideInFullscreen = s.HideInFullscreen;
         TopMargin = s.TopMargin;
+        Position = s.Position;
+        Shape = s.Shape;
         Theme = s.Theme;
         IslandThemeFollowsMedia = s.IslandThemeFollowsMedia;
         IdleDisplay = s.IdleDisplay;
@@ -413,6 +421,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnHideInFullscreenChanged(bool value) => Save(s => s with { HideInFullscreen = value });
 
     partial void OnTopMarginChanged(double value) => Save(s => s with { TopMargin = Math.Round(value) });
+
+    partial void OnPositionChanged(IslandPosition value) => Save(s => s with { Position = value });
+
+    partial void OnShapeChanged(IslandShape value) => Save(s => s with { Shape = value });
 
     partial void OnThemeChanged(AppTheme value) => Save(s => s with { Theme = value });
 
