@@ -47,42 +47,30 @@
             <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
         </Style>
 
-        <!-- Aba de página: clicável. Ponto (a atual vira pílula clara 14x6, as demais 6x6) ou, com Tag=True, o ícone do módulo. -->
-        <Style x:Key="PageDotButton" TargetType="Button">
+        <!-- Ícone da dock: botão redondo; o do módulo em foco vira pílula branca (como a atividade ativa do Volum). -->
+        <Style x:Key="DockItemButton" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Width" Value="20" />
-            <Setter Property="Height" Value="20" />
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="FontFamily" Value="{StaticResource IslandIconFont}" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid Background="Transparent">
-                            <Border x:Name="Dot" Width="6" Height="6" CornerRadius="3" Background="{StaticResource IslandTertiaryTextBrush}" />
-                            <Grid x:Name="Icon" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <TextBlock x:Name="IconGlyph" FontFamily="{StaticResource IslandIconFont}" FontSize="14"
-                                           Foreground="{StaticResource IslandTertiaryTextBrush}"
-                                           Text="{Binding Glyph, Converter={StaticResource GlyphContent}, ConverterParameter=glyph}" />
-                                <ContentPresenter x:Name="IconVector" TextElement.Foreground="{StaticResource IslandTertiaryTextBrush}"
-                                                  TextElement.FontSize="14"
-                                                  Content="{Binding Glyph, Converter={StaticResource GlyphContent}, ConverterParameter=vector}" />
-                            </Grid>
-                        </Grid>
+                        <Border x:Name="Pill" Background="Transparent" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Dot" Property="Background" Value="{StaticResource IslandSecondaryTextBrush}" />
-                                <Setter TargetName="IconGlyph" Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
-                                <Setter TargetName="IconVector" Property="TextElement.Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource IslandSurfaceBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource IslandPrimaryTextBrush}" />
                             </Trigger>
-                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                                <Setter TargetName="Dot" Property="Width" Value="14" />
-                                <Setter TargetName="Dot" Property="Background" Value="{StaticResource IslandFillBrush}" />
-                                <Setter TargetName="IconGlyph" Property="Foreground" Value="{StaticResource IslandFillBrush}" />
-                                <Setter TargetName="IconVector" Property="TextElement.Foreground" Value="{StaticResource IslandFillBrush}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding ShowIcon}" Value="True">
-                                <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
-                                <Setter TargetName="Icon" Property="Visibility" Value="Visible" />
-                                <Setter Property="Width" Value="40" />
+                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{StaticResource IslandFillBrush}" />
+                                <Setter Property="Foreground" Value="#FF090909" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -112,7 +100,7 @@
             </Grid.RenderTransform>
 
             <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
-            <Border Background="{DynamicResource IslandBackgroundBrush}">
+            <Border x:Name="ShadowBorder" Background="{DynamicResource IslandBackgroundBrush}">
                 <Border.CornerRadius>
                     <MultiBinding Converter="{StaticResource IslandCornerRadius}">
                         <Binding Path="CornerSize" ElementName="Root" />
@@ -140,19 +128,12 @@
                 </Border.CornerRadius>
                 <Grid x:Name="ContentGrid" ClipToBounds="True">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <!-- Rodapé do estado interativo; altura 0 nos demais estados. -->
-                        <RowDefinition x:Name="FooterRow" Height="0" />
+                        <!-- Conteúdo do módulo (expandido/interativo); altura 0 no compacto. -->
+                        <RowDefinition x:Name="ContentRowDefinition" Height="*" />
+                        <!-- A dock: sempre visível. -->
+                        <RowDefinition x:Name="FooterRow" Height="48" />
                     </Grid.RowDefinitions>
 
-                    <ContentPresenter x:Name="CompactLayer"
-                                      Style="{StaticResource LayerStyle}"
-                                      Content="{Binding CompactContent}"
-                                      ContentTemplateSelector="{StaticResource CompactTemplates}">
-                        <ContentPresenter.RenderTransform>
-                            <TranslateTransform />
-                        </ContentPresenter.RenderTransform>
-                    </ContentPresenter>
                     <ContentPresenter x:Name="ExpandedLayer"
                                       Style="{StaticResource LayerStyle}"
                                       Content="{Binding ExpandedContent}"
@@ -198,43 +179,44 @@
                                    Foreground="{StaticResource IslandSecondaryTextBrush}" />
                     </Border>
 
-                    <!-- Fixar/fechar, navegação entre abas e configurações, sempre visíveis no interativo. -->
-                    <Grid x:Name="Footer" Grid.Row="1" Margin="12,0,12,6" Opacity="0" IsHitTestVisible="False">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <!-- Dock: um ícone por módulo, o texto compacto da atividade ao lado e, no interativo, as ferramentas. -->
+                    <DockPanel x:Name="DockBar" Grid.Row="1" Margin="10,0">
+                        <StackPanel x:Name="Footer" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                                    Opacity="0" IsHitTestVisible="False">
                             <Button Style="{StaticResource FooterButton}" Content="{Binding PinGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding TogglePinCommand}"
                                     ToolTip="{Binding PinToolTip}"
                                     Visibility="{Binding CanPinFocused, Converter={StaticResource BoolToVisibility}}" />
                             <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Close}, Converter={StaticResource GlyphContent}}" Command="{Binding DismissCommand}"
                                     ToolTip="Fechar esta atividade"
                                     Visibility="{Binding CanDismissFocused, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Gear}, Converter={StaticResource GlyphContent}}" Command="{Binding OpenSettingsCommand}"
+                                    ToolTip="Configurações" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
-                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.ChevronLeft}, Converter={StaticResource GlyphContent}}" Command="{Binding PreviousPageCommand}" ToolTip="Aba anterior" />
-                            <!-- Barra translúcida com os pontos de página, como o seletor do Volum. -->
-                            <Border Margin="4,0" Padding="2,0" CornerRadius="10" VerticalAlignment="Center"
-                                    Background="{DynamicResource IslandSurfaceBrush}">
-                                <ItemsControl ItemsSource="{Binding Pages}" Focusable="False" VerticalAlignment="Center">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="{Binding AccessibleName}"
-                                                    ToolTip="{Binding AccessibleName}"
-                                                    Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
-                                                    CommandParameter="{Binding Index}" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Border>
-                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.ChevronRight}, Converter={StaticResource GlyphContent}}" Command="{Binding NextPageCommand}" ToolTip="Próxima aba" />
-                        </StackPanel>
-                        <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Gear}, Converter={StaticResource GlyphContent}}" Command="{Binding OpenSettingsCommand}"
-                                HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Configurações" />
-                    </Grid>
+                        <ItemsControl ItemsSource="{Binding Dock}" Focusable="False" DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource DockItemButton}"
+                                            Content="{Binding Glyph, Converter={StaticResource GlyphContent}}"
+                                            ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}"
+                                            Command="{Binding DataContext.OpenDockItemCommand, ElementName=Root}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <ContentPresenter x:Name="CompactLayer"
+                                          Style="{StaticResource LayerStyle}"
+                                          Content="{Binding CompactContent}"
+                                          ContentTemplateSelector="{StaticResource CompactTemplates}">
+                            <ContentPresenter.RenderTransform>
+                                <TranslateTransform />
+                            </ContentPresenter.RenderTransform>
+                        </ContentPresenter>
+                    </DockPanel>
                 </Grid>
             </Border>
 

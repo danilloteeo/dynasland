@@ -58,9 +58,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     private IActivityContent? _interactiveContent;
 
     [ObservableProperty]
-    private int _pageIndex = -1;
-
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasGroupBadge))]
     private string _groupBadge = string.Empty;
 
@@ -131,15 +128,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Abas do rodapé; vazio quando há apenas uma.</summary>
-    public ObservableCollection<PageTab> Pages { get; } = [];
-
-    /// <summary>Abas como ícones do módulo (cabem e todas têm ícone); senão, pontos.</summary>
-    [ObservableProperty]
-    private bool _showTabIcons;
-
-    public bool HasPages => Pages.Count > 1;
-
     public bool HasGroupBadge => GroupBadge.Length > 0;
 
     public string PinGlyph => IsFocusedPinned ? VectorIcons.PinOff : VectorIcons.Pin;
@@ -164,15 +152,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void ToggleInteractive() => _controller.ToggleInteractive();
-
-    [RelayCommand]
-    private void PreviousPage() => _controller.Cycle(-1);
-
-    [RelayCommand]
-    private void NextPage() => _controller.Cycle(1);
-
-    [RelayCommand]
-    private void SelectPage(int index) => _controller.SelectPage(index);
 
     [RelayCommand]
     private void OpenSettings() => _settingsWindow.Show();
@@ -265,7 +244,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
             InteractiveContent = snapshot.Focused?.Content;
         }
 
-        UpdatePages(snapshot);
         _lastSnapshot = snapshot;
         RebuildDock();
         var focused = snapshot.Focused;
@@ -277,31 +255,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         Dimensions = snapshot.Dimensions;
 
         NotifyPresentation(snapshot.State == IslandState.Compact ? snapshot.Indicator?.Content : snapshot.Focused?.Content, snapshot.State);
-    }
-
-    private void UpdatePages(IslandSnapshot snapshot)
-    {
-        if (snapshot.State != IslandState.Interactive)
-        {
-            return;
-        }
-
-        var tabs = PageTabBar.PagesFor(snapshot);
-        if (tabs.SequenceEqual(Pages.Select(p => p with { ShowIcon = false })))
-        {
-            return;
-        }
-
-        var showIcons = PageTabBar.ShowsIcons(tabs, snapshot.Dimensions.Width);
-        Pages.Clear();
-        foreach (var tab in tabs)
-        {
-            Pages.Add(tab with { ShowIcon = showIcons });
-        }
-
-        ShowTabIcons = showIcons;
-        PageIndex = snapshot.PageIndex;
-        OnPropertyChanged(nameof(HasPages));
     }
 
     /// <summary>Avisa o conteúdo que ficou visível (e o que deixou de estar), para pausar trabalho invisível.</summary>

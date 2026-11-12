@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Dynasland.App.Controls;
 using Dynasland.App.Services;
@@ -41,6 +42,9 @@ public partial class IslandWindow : Window
     private const double SwapMilliseconds = 240;
     private const double HoverMilliseconds = 160;
     private const double HoverScale = 1.05;
+
+    /// <summary>Largura das ferramentas da dock no interativo (fixar, fechar, configurações).</summary>
+    private const double DockToolsWidth = 80;
     private const double EnterMilliseconds = 300;
     private const double LeaveMilliseconds = 120;
     private const double EnterScale = 0.965;
@@ -58,7 +62,6 @@ public partial class IslandWindow : Window
     private static readonly TimeSpan PulseRepeatWindow = TimeSpan.FromSeconds(2);
 
     /// <summary>Altura do rodapé (abas e configurações), somada à do conteúdo no estado interativo.</summary>
-    private const double FooterHeight = 28;
 
     // Overshoot na expansão (sensação de mola, ajustável em Animações) e desaceleração suave no recolhimento.
     private const double BaseSpringAmplitude = 0.22;
@@ -103,6 +106,7 @@ public partial class IslandWindow : Window
         DataContext = viewModel;
 
         ApplyPositionAndShape(settings.Current);
+        ApplyEdge(settings.Current.Edge);
         ApplyLayers(viewModel.State, animate: false);
         ApplyPrivacyDot(MicrophoneDot, viewModel.ShowMicrophoneDot, animate: false);
         ApplyPrivacyDot(CameraDot, viewModel.ShowCameraDot, animate: false);
@@ -235,6 +239,7 @@ public partial class IslandWindow : Window
 
         UpdateVisibility();
         ApplyPositionAndShape(settings);
+        ApplyEdge(settings.Edge);
         ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
         ApplyPressFeedback();
         RequestReposition();
@@ -255,6 +260,36 @@ public partial class IslandWindow : Window
             _ => (HorizontalAlignment.Center, new Thickness(0), new Point(0.5, 0)),
         };
     }
+
+    /// <summary>
+    /// Borda de baixo: a cápsula cola embaixo da janela e cresce para cima, com a dock na base.
+    /// Borda de cima: cola em cima e cresce para baixo, com a dock no topo.
+    /// </summary>
+    private void ApplyEdge(IslandEdge edge)
+    {
+        var bottom = edge == IslandEdge.Bottom;
+        _viewModel.Edge = edge;
+        IslandHost.VerticalAlignment = bottom ? VerticalAlignment.Bottom : VerticalAlignment.Top;
+        Stage.RenderTransformOrigin = new Point(0.5, bottom ? 1 : 0);
+        IslandHost.RenderTransformOrigin = new Point(IslandHost.RenderTransformOrigin.X, bottom ? 1 : 0);
+
+        ContentGrid.RowDefinitions.Clear();
+        ContentGrid.RowDefinitions.Add(bottom ? ContentRowDefinition : FooterRow);
+        ContentGrid.RowDefinitions.Add(bottom ? FooterRow : ContentRowDefinition);
+        foreach (var layer in new[] { ExpandedLayer, InteractiveLayer })
+        {
+            Grid.SetRow(layer, bottom ? 0 : 1);
+        }
+
+        Grid.SetRow(DockBar, bottom ? 1 : 0);
+        if (ShadowBorder.Effect is DropShadowEffect shadow)
+        {
+            shadow.Direction = bottom ? 90 : 270;
+        }
+    }
+
+    /// <summary>Sinal do deslocamento de entrada/saída: a ilha vem do lado da borda onde está ancorada.</summary>
+    private double Rise(double distance) => _viewModel.Edge == IslandEdge.Bottom ? distance : -distance;
 
     /// <summary>A resposta ao toque dos botões (estilos da ilha) segue a mesma regra das demais animações.</summary>
     private void ApplyPressFeedback() => IslandPressFeedback.SetIsEnabled(this, AnimationsAllowed);
@@ -293,7 +328,7 @@ public partial class IslandWindow : Window
         _wantsVisible = visible;
         if (visible && !IsVisible)
         {
-            SetStage(0, EnterScale, EnterRise);
+            SetStage(0, EnterScale, Rise(EnterRise));
             Show();
             _placement.Place(this);
             PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
@@ -305,7 +340,7 @@ public partial class IslandWindow : Window
         }
         else if (IsVisible && ShouldAnimate)
         {
-            PlayStage(0, LeaveScale, LeaveRise, Scaled(LeaveMilliseconds), LeaveEase, () =>
+            PlayStage(0, LeaveScale, Rise(LeaveRise), Scaled(LeaveMilliseconds), LeaveEase, () =>
             {
                 if (!_wantsVisible && IsVisible)
                 {
@@ -380,6 +415,7 @@ public partial class IslandWindow : Window
                 break;
 
             case nameof(IslandViewModel.Dimensions):
+            case nameof(IslandViewModel.DockWidth):
                 ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
                 break;
 
@@ -524,12 +560,18 @@ public partial class IslandWindow : Window
     private void ApplyDimensions(IslandDimensions requested, bool animate)
     {
         var target = IslandAppearance.Adjust(requested, _viewModel.State, _settings.Current);
-        var height = target.Height + (_viewModel.State == IslandState.Interactive ? FooterHeight : 0);
+        var compact = _viewModel.State == IslandState.Compact;
+        var interactive = _viewModel.State == IslandState.Interactive;
+        // A dock é sempre a última linha; o conteúdo do módulo só existe fora do compacto.
+        var height = (compact ? 0 : target.Height) + DockMetrics.Height;
+        var dockWidth = Math.Max(_viewModel.DockWidth, DockMetrics.MinimumWidth) + (interactive ? DockToolsWidth : 0);
+        var width = compact ? dockWidth : Math.Max(target.Width, dockWidth);
+        var radius = Math.Min(target.CornerRadius, height / 2);
         if (!animate)
         {
-            SetImmediate(IslandHost, WidthProperty, target.Width);
+            SetImmediate(IslandHost, WidthProperty, width);
             SetImmediate(IslandHost, HeightProperty, height);
-            SetImmediate(this, CornerSizeProperty, target.CornerRadius);
+            SetImmediate(this, CornerSizeProperty, radius);
             return;
         }
 
@@ -537,9 +579,9 @@ public partial class IslandWindow : Window
         var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
         var easing = growing ? ExpandEasing() : CollapseEasing;
 
-        Animate(IslandHost, WidthProperty, target.Width, duration, easing);
+        Animate(IslandHost, WidthProperty, width, duration, easing);
         Animate(IslandHost, HeightProperty, height, duration, easing);
-        Animate(this, CornerSizeProperty, target.CornerRadius, duration, easing);
+        Animate(this, CornerSizeProperty, radius, duration, easing);
     }
 
     private void ApplyLayers(IslandState state, bool animate)
@@ -568,7 +610,6 @@ public partial class IslandWindow : Window
         }
 
         var interactive = state == IslandState.Interactive;
-        FooterRow.Height = new GridLength(interactive ? FooterHeight : 0);
         Footer.IsHitTestVisible = interactive;
         if (!animate)
         {
