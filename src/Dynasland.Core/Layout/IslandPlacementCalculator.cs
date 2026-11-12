@@ -36,6 +36,20 @@ public static class IslandPlacementCalculator
         return new PixelPoint(x, y);
     }
 
+    /// <summary>
+    /// Posição da janela ancorada na borda de baixo (acima da barra de tarefas, pela área útil) ou na de cima.
+    /// A margem é a distância até a borda escolhida. Valores em pixels físicos.
+    /// </summary>
+    public static PixelPoint PlaceOnEdge(PixelRect workArea, int windowWidth, int windowHeight, IslandPosition position, IslandEdge edge, double margin)
+    {
+        var x = Place(workArea, windowWidth, position, 0).X;
+        var offset = (int)Math.Round(Math.Max(0, margin));
+        var y = edge == IslandEdge.Top
+            ? workArea.Top + offset
+            : workArea.Bottom - windowHeight - offset;
+        return new PixelPoint(x, y);
+    }
+
     /// <summary>Distância do topo (DIPs): a ilha encaixada fica colada na borda de cima.</summary>
     public static double Top(IslandShape shape, double topMargin) =>
         shape == IslandShape.Notch ? 0 : topMargin;
