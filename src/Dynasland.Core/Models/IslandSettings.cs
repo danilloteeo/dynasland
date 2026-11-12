@@ -62,6 +62,16 @@ public enum IslandPosition
 }
 
 /// <summary>Formato da ilha.</summary>
+/// <summary>Borda da tela onde a ilha fica ancorada; o conteúdo cresce para longe dela.</summary>
+public enum IslandEdge
+{
+    /// <summary>Embaixo, acima da barra de tarefas (padrão).</summary>
+    Bottom,
+
+    /// <summary>Em cima.</summary>
+    Top,
+}
+
 public enum IslandShape
 {
     /// <summary>Solta do topo (com a distância configurada) e com todos os cantos arredondados.</summary>
@@ -98,6 +108,9 @@ public sealed record IslandSettings
 
     /// <summary>Flutuante (padrão) ou encaixada na borda de cima (ignora <see cref="TopMargin"/>).</summary>
     public IslandShape Shape { get; init; } = IslandShape.Float;
+
+    /// <summary>Borda da tela (embaixo, padrão, ou em cima).</summary>
+    public IslandEdge Edge { get; init; } = IslandEdge.Bottom;
 
     public bool IsVisible { get; init; } = true;
 
