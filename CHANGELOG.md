@@ -6,6 +6,9 @@
 - **Interface renovada**, inspirada no Volum: fundo preto puro, destaque branco, fonte Sora, bordas finas e
   componentes novos (interruptor, slider, segmentado com pílula deslizante, barra lateral em pílula).
   Vale para Configurações, Central e ilha. O azul fica só para a água.
+- **Ilha em formato de dock**: um ícone por módulo na base da tela, com vidro translúcido; clicar num ícone abre o
+  painel daquele módulo acima da dock. Esc ou clique fora fecham. Nova opção **Borda da tela** (embaixo ou em
+  cima), além de monitor, posição, formato e distância. O padrão agora é embaixo, acima da barra de tarefas.
 - **Ícones de contorno** (traço fino, pontas arredondadas) em toda a interface, no lugar dos glifos do Windows.
 - **Abas da ilha com o ícone de cada módulo**; volta aos pontos se algum módulo não tiver ícone ou se não couberem.
 - **Som animado** no volume (7 barras que oscilam; mudo vira uma linha), entrada e saída suaves da ilha e

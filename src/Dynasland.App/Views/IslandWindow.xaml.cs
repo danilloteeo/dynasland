@@ -539,7 +539,7 @@ public partial class IslandWindow : Window
     {
         if (_viewModel.State == IslandState.Interactive && _settings.Current.CollapseOnClickOutside && IsVisible)
         {
-            _outsideClicks.Start(IsOverIsland, _viewModel.CollapseInteractive);
+            _outsideClicks.Start(IsOverIsland, _viewModel.CollapseInteractive, _viewModel.CollapseInteractive);
         }
         else
         {
