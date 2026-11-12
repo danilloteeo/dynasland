@@ -22,7 +22,7 @@
             <TextBlock Text="Sobre" Style="{StaticResource SettingsTitle}" />
             <TextBlock Text="Versão, atualizações e restauração das configurações." Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
-            <TextBlock Text="Atualizações" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="ATUALIZAÇÕES" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                     <Grid>
@@ -51,7 +51,7 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="Restaurar" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="RESTAURAR" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid>
                     <StackPanel Margin="0,0,200,0">
@@ -64,7 +64,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="Informações" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="INFORMAÇÕES" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                     <TextBlock Text="{Binding Version, StringFormat=Dynasland {0}}" Style="{StaticResource CardTitle}" />

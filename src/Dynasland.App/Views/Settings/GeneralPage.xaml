@@ -22,7 +22,7 @@
             <TextBlock Text="Geral" Style="{StaticResource SettingsTitle}" />
             <TextBlock Text="Inicialização e visibilidade da ilha." Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
-            <TextBlock Text="Inicialização" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="INICIALIZAÇÃO" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">
                     <StackPanel Margin="0,0,180,0">
@@ -42,7 +42,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="Ilha" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="ILHA" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">
                     <StackPanel Margin="0,0,180,0">
@@ -53,7 +53,7 @@
                 </Grid>
             </Border>
 
-        <TextBlock Text="Clima" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="CLIMA" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <StackPanel>
                 <Grid>
@@ -82,7 +82,7 @@
             </StackPanel>
         </Border>
 
-        <TextBlock Text="Spotify" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="SPOTIFY" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <StackPanel>
                 <Grid>

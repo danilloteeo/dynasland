@@ -43,6 +43,7 @@ public static partial class IslandSettingsMapper
         public const string ShowPrivacyIndicators = "privacy.indicators";
         public const string WeatherLocation = "weather.location";
         public const string SpotifyClientId = "spotify.clientId";
+        public const string LastSeenVersion = "app.lastSeenVersion";
     }
 
     public static IslandSettings FromValues(IReadOnlyDictionary<string, string> values)
@@ -53,6 +54,7 @@ public static partial class IslandSettingsMapper
         values.TryGetValue(Keys.PinnedModuleId, out var pinned);
         values.TryGetValue(Keys.WeatherLocation, out var weather);
         values.TryGetValue(Keys.SpotifyClientId, out var spotify);
+        values.TryGetValue(Keys.LastSeenVersion, out var lastSeen);
 
         return new IslandSettings
         {
@@ -98,6 +100,7 @@ public static partial class IslandSettingsMapper
             ShowPrivacyIndicators = ReadBool(values, Keys.ShowPrivacyIndicators, d.ShowPrivacyIndicators),
             WeatherLocation = string.IsNullOrWhiteSpace(weather) ? null : weather,
             SpotifyClientId = string.IsNullOrWhiteSpace(spotify) ? null : spotify.Trim(),
+            LastSeenVersion = string.IsNullOrWhiteSpace(lastSeen) ? null : lastSeen.Trim(),
         };
     }
 
@@ -137,6 +140,7 @@ public static partial class IslandSettingsMapper
         [Keys.ShowPrivacyIndicators] = Format(s.ShowPrivacyIndicators),
         [Keys.WeatherLocation] = s.WeatherLocation ?? string.Empty,
         [Keys.SpotifyClientId] = s.SpotifyClientId ?? string.Empty,
+        [Keys.LastSeenVersion] = s.LastSeenVersion ?? string.Empty,
     };
 
     public static bool IsHexColor(string value) => HexColor().IsMatch(value);

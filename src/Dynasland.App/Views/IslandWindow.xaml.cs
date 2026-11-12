@@ -7,6 +7,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Dynasland.App.Controls;
 using Dynasland.App.Services;
 using Dynasland.App.ViewModels;
 using Dynasland.Core.Activities;
@@ -585,10 +586,56 @@ public partial class IslandWindow : Window
         // O rodapé muda a altura total mesmo quando o conteúdo mantém o mesmo tamanho.
         ApplyDimensions(_viewModel.Dimensions, animate);
 
+        if (interactive && animate)
+        {
+            CascadeRows(InteractiveLayer, resizeDuration * 0.4);
+        }
+
         if (state != IslandState.Compact)
         {
             AnimateHover(false);
         }
+    }
+
+    /// <summary>
+    /// Entrada em cascata das linhas do painel interativo (como a lista do Volum): depois do layout, cada filho
+    /// direto do painel raiz do modelo surge em ordem de leitura, 30 ms depois do anterior.
+    /// </summary>
+    private void CascadeRows(ContentPresenter layer, TimeSpan extraDelay)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (FindRootPanel(layer) is not { } panel)
+            {
+                return;
+            }
+
+            var rows = panel.Children.OfType<FrameworkElement>()
+                .Select((element, order) => (element, order))
+                .OrderBy(r => panel is Grid ? Grid.GetRow(r.element) : 0)
+                .ThenBy(r => panel is Grid ? Grid.GetColumn(r.element) : 0)
+                .ThenBy(r => r.order)
+                .Select(r => r.element)
+                .ToList();
+            for (var i = 0; i < rows.Count; i++)
+            {
+                RowCascade.Play(rows[i], i, extraDelay);
+            }
+        }, DispatcherPriority.Loaded);
+    }
+
+    private static Panel? FindRootPanel(DependencyObject parent)
+    {
+        for (var depth = 0; depth < 6 && VisualTreeHelper.GetChildrenCount(parent) > 0; depth++)
+        {
+            parent = VisualTreeHelper.GetChild(parent, 0);
+            if (parent is Panel panel && panel.Children.Count > 1)
+            {
+                return panel;
+            }
+        }
+
+        return null;
     }
 
     private void PlaySwap(ContentPresenter layer)
@@ -600,6 +647,11 @@ public partial class IslandWindow : Window
         }
 
         var duration = Scaled(SwapMilliseconds);
+        if (layer == InteractiveLayer)
+        {
+            CascadeRows(layer, TimeSpan.Zero);
+        }
+
         layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
         if (layer.RenderTransform is TranslateTransform translate)
         {

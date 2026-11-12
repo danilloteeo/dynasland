@@ -20,7 +20,7 @@
     <StackPanel>
         <TextBlock Text="Comportamento" Style="{StaticResource SettingsTitle}" />
         <TextBlock Text="Como a ilha responde a cliques, a programas em tela cheia e ao módulo fixado." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
-        <TextBlock Text="Cliques" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="CLIQUES" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <StackPanel Margin="0,0,180,0">
@@ -30,7 +30,7 @@
                 <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding Behavior.CollapseOnClickOutside}" />
             </Grid>
         </Border>
-        <TextBlock Text="Duplo clique na ilha" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="DUPLO CLIQUE NA ILHA" Style="{StaticResource SettingsGroupHeader}" />
         <RadioButton Style="{StaticResource OptionRow}" GroupName="DoubleClick" AutomationProperties.Name="Nenhuma ação"
                      IsChecked="{Binding Behavior.DoubleClickAction, Converter={StaticResource EnumMatch}, ConverterParameter=None}">
             <StackPanel>
@@ -52,7 +52,7 @@
                 <TextBlock Text="O clique simples passa a esperar um instante." Style="{StaticResource CardDescription}" />
             </StackPanel>
         </RadioButton>
-        <TextBlock Text="Tela cheia" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="TELA CHEIA" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <StackPanel Margin="0,0,180,0">
@@ -63,7 +63,7 @@
             </Grid>
         </Border>
 
-        <TextBlock Text="Módulo fixado" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="MÓDULO FIXADO" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid>
                 <StackPanel Margin="0,0,180,0">

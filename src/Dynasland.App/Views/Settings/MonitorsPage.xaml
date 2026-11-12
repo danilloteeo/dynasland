@@ -21,7 +21,7 @@
     <StackPanel>
         <TextBlock Text="Monitores" Style="{StaticResource SettingsTitle}" />
         <TextBlock Text="Em qual monitor a ilha aparece, em que lado do topo e com qual formato. A posição é recalculada sozinha ao mudar resolução, escala ou monitores." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
-        <TextBlock Text="Posição da ilha" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="POSIÇÃO DA ILHA" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <Grid.ColumnDefinitions>
@@ -81,7 +81,7 @@
             </Grid>
         </Border>
 
-        <TextBlock Text="Exibir no monitor" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="EXIBIR NO MONITOR" Style="{StaticResource SettingsGroupHeader}" />
         <ItemsControl ItemsSource="{Binding MonitorOptions}" Focusable="False">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:MonitorOptionViewModel}">

@@ -1,4 +1,5 @@
-<UserControl x:Class="Dynasland.App.Views.Hub.FocusPage"
+<UserControl
+             xmlns:controls="clr-namespace:Dynasland.App.Controls" x:Class="Dynasland.App.Views.Hub.FocusPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -65,7 +66,7 @@
         <!-- Minutos de foco por dia -->
         <Border Grid.Row="2" Style="{StaticResource SettingsCard}" Margin="0,8,0,0" Padding="16,12">
             <StackPanel>
-                <TextBlock Text="Foco por dia" Style="{StaticResource SettingsGroupHeader}" Margin="0,0,0,10" />
+                <TextBlock Text="FOCO POR DIA" Style="{StaticResource SettingsGroupHeader}" Margin="0,0,0,10" />
                 <ItemsControl ItemsSource="{Binding Days}" Height="110" Focusable="False">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -124,9 +125,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <TextBlock Text="Nenhuma sessão nos últimos 7 dias. Comece um Pomodoro pela ilha ou com Ctrl+Alt+P."
-                       Style="{StaticResource CardDescription}" Margin="4,6,0,0"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+            <controls:EmptyState Text="Nenhuma sessão nos últimos 7 dias. Comece um Pomodoro pela ilha ou com Ctrl+Alt+P." Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Top" />
         </Grid>
 
         <Button Grid.Row="4" HorizontalAlignment="Right" Margin="0,10,0,0" Style="{StaticResource SettingsButton}"

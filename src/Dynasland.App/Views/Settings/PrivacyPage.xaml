@@ -20,7 +20,7 @@
     <StackPanel>
         <TextBlock Text="Privacidade" Style="{StaticResource SettingsTitle}" />
         <TextBlock Text="Tudo fica neste computador. Nada é enviado a servidores, exceto a consulta de versão ao GitHub (se ligada em Sobre) e a previsão do tempo (se você escolher uma cidade)." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
-        <TextBlock Text="Indicadores" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="INDICADORES" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <StackPanel Margin="0,0,180,0">
@@ -31,7 +31,7 @@
                           AutomationProperties.Name="Mostrar quando câmera ou microfone estão em uso" />
             </Grid>
         </Border>
-        <TextBlock Text="Área de transferência" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="ÁREA DE TRANSFERÊNCIA" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <StackPanel Margin="0,0,180,0">
@@ -59,7 +59,7 @@
                 <Button Style="{StaticResource SettingsButton}" Content="Apagar…" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Privacy.ClearClipboardCommand}" />
             </Grid>
         </Border>
-        <TextBlock Text="Notificações" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="NOTIFICAÇÕES" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <StackPanel Margin="0,0,180,0">
@@ -78,7 +78,7 @@
                 <Button Style="{StaticResource SettingsButton}" Content="Apagar…" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Privacy.ClearNotificationsCommand}" />
             </Grid>
         </Border>
-        <TextBlock Text="Foco" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="FOCO" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid>
                 <StackPanel Margin="0,0,200,0">

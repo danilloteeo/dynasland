@@ -23,7 +23,7 @@
             <TextBlock Text="Quais aplicativos aparecem na ilha e como. O Windows continua exibindo as notificações normalmente."
                        Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
-            <TextBlock Text="Aplicativos permitidos" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="APLICATIVOS PERMITIDOS" Style="{StaticResource SettingsGroupHeader}" />
             <RadioButton Style="{StaticResource OptionRow}" GroupName="NotificationMode" AutomationProperties.Name="Todos, exceto os bloqueados"
                          IsChecked="{Binding NotificationMode, Converter={StaticResource EnumMatch}, ConverterParameter=AllExceptBlocked}">
                 <StackPanel>
@@ -39,7 +39,7 @@
                 </StackPanel>
             </RadioButton>
 
-            <TextBlock Text="Exibição" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="EXIBIÇÃO" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">
                     <Grid.ColumnDefinitions>
@@ -64,7 +64,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="Aplicativos" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="APLICATIVOS" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}" Visibility="{Binding HasNotificationApps, Converter={StaticResource InvertedBoolToVisibility}}">
                 <TextBlock Text="Os aplicativos aparecem aqui depois de enviarem a primeira notificação." Style="{StaticResource CardDescription}" />
             </Border>

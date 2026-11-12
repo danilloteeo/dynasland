@@ -28,6 +28,21 @@ public static class RowCascade
     /// <summary>Atraso de entrada da linha de posição <paramref name="index"/>: 30 ms por linha, até 10 linhas.</summary>
     public static TimeSpan DelayFor(int index) => TimeSpan.FromTicks(Stagger.Ticks * Math.Clamp(index, 0, MaxStaggeredRows));
 
+    /// <summary>
+    /// Toca a entrada de um elemento que não é item de lista (as linhas do painel da ilha), na posição
+    /// <paramref name="index"/> da cascata e depois de <paramref name="extraDelay"/>. Uma vez por elemento.
+    /// </summary>
+    public static void Play(FrameworkElement element, int index, TimeSpan extraDelay)
+    {
+        if ((bool)element.GetValue(PlayedProperty)) return;
+        element.SetValue(PlayedProperty, true);
+        if (!SystemParameters.ClientAreaAnimation) return;
+
+        var delay = DelayFor(index) + extraDelay;
+        Fade(element, delay);
+        Slide(element, delay);
+    }
+
     private static void OnEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not FrameworkElement element) return;

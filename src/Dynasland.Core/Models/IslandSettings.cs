@@ -191,6 +191,9 @@ public sealed record IslandSettings
     /// <summary>Local da previsão do tempo (formato de <c>WeatherLocation.Serialize</c>); <c>null</c> = clima desligado.</summary>
     public string? WeatherLocation { get; init; }
 
+    /// <summary>Última versão cujas novidades o usuário já viu; <c>null</c> = nenhuma.</summary>
+    public string? LastSeenVersion { get; init; }
+
     /// <summary>Client ID do app do Spotify criado pelo usuário (para ler a fila); <c>null</c> = desligado.</summary>
     public string? SpotifyClientId { get; init; }
 

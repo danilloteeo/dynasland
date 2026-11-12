@@ -1,4 +1,5 @@
-<UserControl x:Class="Dynasland.App.Views.Hub.CalendarPage"
+<UserControl
+             xmlns:controls="clr-namespace:Dynasland.App.Controls" x:Class="Dynasland.App.Views.Hub.CalendarPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -102,7 +103,7 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="Próximos 14 dias" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="PRÓXIMOS 14 DIAS" Style="{StaticResource SettingsGroupHeader}" />
             <ItemsControl ItemsSource="{Binding Upcoming}" Focusable="False">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type hub:CalendarEventItemViewModel}">
@@ -122,8 +123,7 @@
                     <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="Novo compromisso" Command="{Binding NewCommand}" />
                     <TextBlock Text="{Binding SelectedDateTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0" />
                 </DockPanel>
-                <TextBlock Text="Nenhum compromisso neste dia." Style="{StaticResource CardDescription}" Margin="0,14,0,0"
-                           Visibility="{Binding HasDayEvents, Converter={StaticResource InvertedBoolToVisibility}}" />
+                <controls:EmptyState Text="Nenhum compromisso neste dia." Visibility="{Binding HasDayEvents, Converter={StaticResource InvertedBoolToVisibility}}" VerticalAlignment="Top" />
                 <ItemsControl ItemsSource="{Binding DayEvents}" Focusable="False" Margin="0,12,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type hub:CalendarEventItemViewModel}">

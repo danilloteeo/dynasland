@@ -1,4 +1,5 @@
-<UserControl x:Class="Dynasland.App.Views.Hub.CapturesPage"
+<UserControl
+             xmlns:controls="clr-namespace:Dynasland.App.Controls" x:Class="Dynasland.App.Views.Hub.CapturesPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -63,8 +64,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <TextBlock Text="Nenhuma captura ainda." Style="{StaticResource CardDescription}" Margin="4,6,0,0"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+            <controls:EmptyState Text="Nenhuma captura ainda." Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Top" />
         </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">

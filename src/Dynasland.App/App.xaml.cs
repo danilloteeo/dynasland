@@ -17,6 +17,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Dynasland.Modules.Common;
+using Dynasland.Infrastructure.Updates;
+using Dynasland.Core.Services;
 
 namespace Dynasland.App;
 
@@ -90,6 +92,8 @@ public partial class App : Application
             tray.ExitRequested += (_, _) => Shutdown();
             tray.Initialize();
 
+            ShowWhatsNewIfNeeded(settings, e.Args);
+
             HandleArguments(e.Args, isActivation: false);
             _singleInstance.ActivationRequested += (_, args) => Dispatcher.BeginInvoke(() => HandleArguments(args, isActivation: true));
 
@@ -119,6 +123,34 @@ public partial class App : Application
                 MessageBoxImage.Error);
             Shutdown(1);
         }
+    }
+
+    /// <summary>
+    /// Depois de atualizar, mostra as novidades da versão uma vez e registra que foram vistas.
+    /// <c>--novidades</c> mostra de novo (sem depender do registro e sem gravar), para conferir a janela.
+    /// </summary>
+    private void ShowWhatsNewIfNeeded(IIslandSettingsService settings, IReadOnlyList<string> args)
+    {
+        var current = GitHubUpdateChecker.CurrentVersion.ToString(3);
+        var forced = args.Any(a => a.Equals("--novidades", StringComparison.OrdinalIgnoreCase));
+        if (!forced && !WhatsNew.ShouldShow(settings.Current.LastSeenVersion, current))
+        {
+            return;
+        }
+
+        var pages = WhatsNew.For(current);
+        if (pages.Count == 0)
+        {
+            return;
+        }
+
+        var window = new WhatsNewWindow(pages);
+        if (!forced)
+        {
+            window.Closed += (_, _) => _ = settings.UpdateAsync(s => s with { LastSeenVersion = current });
+        }
+
+        window.Show();
     }
 
     /// <summary>

@@ -22,7 +22,7 @@
             <TextBlock Text="Animações" Style="{StaticResource SettingsTitle}" />
             <TextBlock Text="Como a ilha se move ao expandir, recolher e trocar de conteúdo." Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
-            <TextBlock Text="Movimento" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="MOVIMENTO" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">
                     <StackPanel Margin="0,0,180,0">
@@ -61,7 +61,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="Tempo" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="TEMPO" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">
                     <Grid.ColumnDefinitions>

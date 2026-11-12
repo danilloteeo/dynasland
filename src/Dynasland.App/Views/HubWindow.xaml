@@ -1,4 +1,5 @@
-<Window x:Class="Dynasland.App.Views.HubWindow"
+<Window
+             xmlns:controls="clr-namespace:Dynasland.App.Controls" x:Class="Dynasland.App.Views.HubWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -49,7 +50,7 @@
         <Border Background="{DynamicResource SettingsSidebarBrush}">
             <DockPanel Margin="14,18">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Height="52" Margin="8,0,0,6">
-                    <Border Width="30" Height="14" CornerRadius="7" Background="Black" BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" VerticalAlignment="Center" />
+                    <controls:PixelMascot Width="28" Height="14" VerticalAlignment="Center" TextElement.Foreground="{DynamicResource SettingsTextBrush}" />
                     <TextBlock Text="Central" FontSize="14" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel>

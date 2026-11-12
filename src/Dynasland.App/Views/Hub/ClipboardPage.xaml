@@ -86,14 +86,13 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <TextBlock Text="{Binding EmptyText}" Style="{StaticResource CardDescription}" TextWrapping="Wrap" Margin="4,10,20,0"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+            <controls:EmptyState Text="{Binding EmptyText}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Top" />
 
             <!-- Pré-visualização do item selecionado -->
             <Border Grid.Column="1" Style="{StaticResource SettingsCard}" Margin="14,0,0,4" Padding="14"
                     Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Pré-visualização" Style="{StaticResource SettingsGroupHeader}" Margin="0,0,0,8" />
+                    <TextBlock DockPanel.Dock="Top" Text="PRÉ-VISUALIZAÇÃO" Style="{StaticResource SettingsGroupHeader}" Margin="0,0,0,8" />
                     <Button DockPanel.Dock="Bottom" Style="{StaticResource AccentButton}" Content="Copiar" Margin="0,10,0,0"
                             HorizontalAlignment="Stretch" Command="{Binding CopyCommand}" />
                     <TextBlock DockPanel.Dock="Bottom" Text="{Binding CopiedMessage}" Style="{StaticResource CardDescription}" Margin="0,8,0,0" />

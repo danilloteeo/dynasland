@@ -33,8 +33,15 @@
 
             <!-- Volume por aplicativo (misturador do Windows): só quem está fazendo som. -->
             <StackPanel Grid.Row="4" Margin="0,10,0,0" Visibility="{Binding HasApps, Converter={StaticResource VolumeBoolToVisibility}}">
-                <TextBlock Text="Aplicativos" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
-                           Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="6,0,0,2" />
+                <StackPanel Orientation="Horizontal" Margin="6,0,0,2">
+                    <TextBlock Text="APLICATIVOS" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandTertiaryTextBrush}" VerticalAlignment="Center" />
+                    <!-- Selo de contagem, como o do Volum: pílula de 99px. -->
+                    <Border CornerRadius="99" Padding="6,1" Margin="8,0,0,0" Background="{DynamicResource IslandSurfaceBrush}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Apps.Count}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
+                                   Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                    </Border>
+                </StackPanel>
                 <ItemsControl ItemsSource="{Binding Apps}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -45,8 +52,9 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="40" />
                                 </Grid.ColumnDefinitions>
-                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" FontSize="13" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}"
-                                        Command="{Binding ToggleMuteCommand}" ToolTip="Silenciar este aplicativo" />
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" Command="{Binding ToggleMuteCommand}" ToolTip="Silenciar este aplicativo">
+                                    <common:WaveIcon IsMuted="{Binding IsMuted}" Level="{Binding Level}" />
+                                </Button>
                                 <TextBlock Grid.Column="1" Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Margin="6,0,0,0"
                                            Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                            ToolTip="{Binding Name}" />
@@ -71,7 +79,9 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo" />
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo">
+                    <common:WaveIcon IsMuted="{Binding IsMuted}" Level="{Binding Level}" />
+                </Button>
                 <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
                         Value="{Binding Level, Mode=TwoWay}" />
             </Grid>

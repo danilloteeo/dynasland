@@ -24,7 +24,7 @@
             <TextBlock Text="Tema das janelas, cor de destaque e o visual da ilha."
                        Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
-            <TextBlock Text="Tema" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="TEMA" Style="{StaticResource SettingsGroupHeader}" />
             <controls:SegmentedControl Width="330" HorizontalAlignment="Left" Margin="0,0,0,6">
                 <UniformGrid Rows="1">
                     <RadioButton Style="{StaticResource SegmentItem}" GroupName="Theme" Content="Automático" AutomationProperties.Name="Automático"
@@ -37,7 +37,7 @@
             </controls:SegmentedControl>
             <TextBlock Text="Automático segue o modo de cor dos aplicativos do Windows." Style="{StaticResource CardDescription}" />
 
-            <TextBlock Text="Cor de destaque" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="COR DE DESTAQUE" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                     <TextBlock Text="Usada no equalizador, carregamento, botões e controles." Style="{StaticResource CardDescription}" Margin="0,0,0,10" />
@@ -57,7 +57,7 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="Tema da ilha" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="TEMA DA ILHA" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                     <TextBlock Text="Fundo da ilha. Todos são escuros, para o texto continuar legível." Style="{StaticResource CardDescription}" Margin="0,0,0,10" />
@@ -89,7 +89,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="Ilha em repouso" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="ILHA EM REPOUSO" Style="{StaticResource SettingsGroupHeader}" />
             <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Data e hora"
                          IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=DateAndTime}">
                 <StackPanel>
@@ -130,7 +130,7 @@
                 </StackPanel>
             </RadioButton>
 
-            <TextBlock Text="Ilha" Style="{StaticResource SettingsGroupHeader}" />
+            <TextBlock Text="ILHA" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
                 <Grid Style="{StaticResource SettingRowGrid}">
                     <Grid.ColumnDefinitions>

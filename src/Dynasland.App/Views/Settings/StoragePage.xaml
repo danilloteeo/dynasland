@@ -20,7 +20,7 @@
     <StackPanel>
         <TextBlock Text="Armazenamento" Style="{StaticResource SettingsTitle}" />
         <TextBlock Text="Quanto o Dynasland guarda, cópia de segurança das configurações e pastas de dados." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
-        <TextBlock Text="Banco de dados" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="BANCO DE DADOS" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid>
                 <StackPanel Margin="0,0,200,0">
@@ -31,7 +31,7 @@
                         Command="{Binding Storage.CompactCommand}" ToolTip="Aplica os limites abaixo e recupera o espaço de itens apagados" />
             </Grid>
         </Border>
-        <TextBlock Text="Retenção dos históricos" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="RETENÇÃO DOS HISTÓRICOS" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <Grid.ColumnDefinitions>
@@ -60,7 +60,7 @@
                         VerticalAlignment="Center" Value="{Binding Storage.NotificationHistoryDays, Delay=300}" />
             </Grid>
         </Border>
-        <TextBlock Text="Cópia de segurança" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="CÓPIA DE SEGURANÇA" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid>
                 <StackPanel Margin="0,0,200,0">
@@ -79,7 +79,7 @@
                 <Button Style="{StaticResource SettingsButton}" Content="Importar…" HorizontalAlignment="Right" VerticalAlignment="Center" Click="OnImportClick" />
             </Grid>
         </Border>
-        <TextBlock Text="Pastas" Style="{StaticResource SettingsGroupHeader}" />
+        <TextBlock Text="PASTAS" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid>
                 <StackPanel Margin="0,0,200,0">
