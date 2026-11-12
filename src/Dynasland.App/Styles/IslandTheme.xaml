@@ -24,7 +24,8 @@
     <SolidColorBrush x:Key="IslandPressedBrush" Color="#38FFFFFF" />
     <SolidColorBrush x:Key="IslandTrackBrush" Color="#33FFFFFF" />
     <SolidColorBrush x:Key="IslandFillBrush" Color="#FFF5F5F7" />
-    <SolidColorBrush x:Key="IslandAccentBrush" Color="#FF30D158" />
+    <SolidColorBrush x:Key="IslandAccentBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="IslandWaterBrush" Color="#FF0084FF" />
     <SolidColorBrush x:Key="IslandWarningBrush" Color="#FFFF9F0A" />
     <SolidColorBrush x:Key="IslandCriticalBrush" Color="#FFFF453A" />
 
@@ -32,6 +33,12 @@
     <sys:Double x:Key="IslandShadowOpacity">0.35</sys:Double>
 
     <converters:DoubleToCornerRadiusConverter x:Key="DoubleToCornerRadius" />
+
+    <!-- Movimento do Volum: entrada longa com desaceleração forte, saída curta, salto nos toques. -->
+    <Duration x:Key="EnterDuration">0:0:0.3</Duration>
+    <Duration x:Key="ExitDuration">0:0:0.12</Duration>
+    <ExponentialEase x:Key="SpringEase" Exponent="6" EasingMode="EaseOut" />
+    <BackEase x:Key="BounceEase" Amplitude="0.45" EasingMode="EaseOut" />
 
     <!--
         Resposta ao toque dos botões da ilha: encolhe a 0,9 ao pressionar e volta com um leve rebote ao soltar.
