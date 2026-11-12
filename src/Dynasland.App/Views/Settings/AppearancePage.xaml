@@ -94,7 +94,7 @@
                          IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=DateAndTime}">
                 <StackPanel>
                     <TextBlock Text="Data e hora" Style="{StaticResource CardTitle}" />
-                    <TextBlock Text="O que a ilha mostra quando nenhum módulo tem algo a exibir." Style="{StaticResource CardDescription}" />
+                    <TextBlock Text="O texto ao lado dos ícones da dock quando nenhum módulo tem algo a exibir." Style="{StaticResource CardDescription}" />
                 </StackPanel>
             </RadioButton>
             <RadioButton Style="{StaticResource OptionRow}" GroupName="IdleDisplay" AutomationProperties.Name="Só a hora"
@@ -126,7 +126,7 @@
                          IsChecked="{Binding IdleDisplay, Converter={StaticResource EnumMatch}, ConverterParameter=Nothing}">
                 <StackPanel>
                     <TextBlock Text="Nada" Style="{StaticResource CardTitle}" />
-                    <TextBlock Text="A ilha fica vazia, só com o fundo do tema." Style="{StaticResource CardDescription}" />
+                    <TextBlock Text="A dock fica só com os ícones, sem texto ao lado." Style="{StaticResource CardDescription}" />
                 </StackPanel>
             </RadioButton>
 

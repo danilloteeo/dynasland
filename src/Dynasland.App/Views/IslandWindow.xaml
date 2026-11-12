@@ -11,7 +11,7 @@
         d:DataContext="{d:DesignInstance Type=vm:IslandViewModel}"
         x:Name="Root"
         Title="Dynasland"
-        Width="480"
+        Width="600"
         Height="460"
         WindowStyle="None"
         AllowsTransparency="True"

@@ -87,6 +87,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         _shortcuts = shortcuts;
         controller.Changed += OnSnapshotChanged;
         shortcuts.Changed += OnShortcutsChanged;
+        settings.Changed += OnSettingsChanged;
         privacy.Changed += OnPrivacyChanged;
         Apply(controller.Snapshot);
         ApplyPrivacy(privacy.Current);
@@ -109,9 +110,13 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Skip() => _controller.SkipCurrent();
 
-    /// <summary>Largura da dock no estado compacto.</summary>
+    /// <summary>Largura da dock no estado compacto: ícones mais o texto de repouso ou da atividade.</summary>
     [ObservableProperty]
     private double _dockWidth = DockMetrics.MinimumWidth;
+
+    /// <summary>Largura só dos ícones, sem o texto ao lado (estados expandido e interativo).</summary>
+    [ObservableProperty]
+    private double _dockIconsWidth = DockMetrics.MinimumWidth;
 
     /// <summary>Borda da tela: decide para que lado a cápsula cresce (definida pela janela).</summary>
     [ObservableProperty]
@@ -188,6 +193,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     private void OnSnapshotChanged(object? sender, IslandSnapshot snapshot) => Apply(snapshot);
 
+    private void OnSettingsChanged(object? sender, IslandSettings settings) => _ui.Post(RebuildDock);
+
     // O registro avisa de qualquer thread.
     private void OnShortcutsChanged(object? sender, EventArgs e) => _ui.Post(RebuildDock);
 
@@ -224,7 +231,12 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
             }
         }
 
-        DockWidth = DockMetrics.Width(Dock.Count, hasActivePill: snapshot.Indicator is not null);
+        // No repouso o indicador é o relógio: o texto dele depende da opção "Ilha em repouso".
+        var extra = snapshot.Indicator is null ? 0
+            : snapshot.Indicator.ModuleId == "clock" ? DockMetrics.IdleExtra(_settings.Current.IdleDisplay)
+            : DockMetrics.ActivePillExtra;
+        DockIconsWidth = DockMetrics.Width(Dock.Count, 0);
+        DockWidth = DockMetrics.Width(Dock.Count, extra);
     }
 
     // O serviço avisa de uma thread do pool.
@@ -290,5 +302,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         _controller.Changed -= OnSnapshotChanged;
         _privacy.Changed -= OnPrivacyChanged;
         _shortcuts.Changed -= OnShortcutsChanged;
+        _settings.Changed -= OnSettingsChanged;
     }
 }
