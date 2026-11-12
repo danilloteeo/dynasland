@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
+             xmlns:controls="clr-namespace:Dynasland.App.Controls"
              xmlns:converters="clr-namespace:Dynasland.App.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
@@ -24,21 +25,17 @@
                        Style="{StaticResource SettingsSubtitle}" Margin="0,6,0,0" />
 
             <TextBlock Text="Tema" Style="{StaticResource SettingsGroupHeader}" />
-            <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Automático"
-                         IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=System}">
-                <StackPanel>
-                    <TextBlock Text="Automático" Style="{StaticResource CardTitle}" />
-                    <TextBlock Text="Segue o modo de cor dos aplicativos do Windows." Style="{StaticResource CardDescription}" />
-                </StackPanel>
-            </RadioButton>
-            <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Escuro"
-                         IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Dark}">
-                <TextBlock Text="Escuro" Style="{StaticResource CardTitle}" />
-            </RadioButton>
-            <RadioButton Style="{StaticResource OptionRow}" GroupName="Theme" AutomationProperties.Name="Claro"
-                         IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Light}">
-                <TextBlock Text="Claro" Style="{StaticResource CardTitle}" />
-            </RadioButton>
+            <controls:SegmentedControl Width="330" HorizontalAlignment="Left" Margin="0,0,0,6">
+                <UniformGrid Rows="1">
+                    <RadioButton Style="{StaticResource SegmentItem}" GroupName="Theme" Content="Automático" AutomationProperties.Name="Automático"
+                                 IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=System}" />
+                    <RadioButton Style="{StaticResource SegmentItem}" GroupName="Theme" Content="Escuro" AutomationProperties.Name="Escuro"
+                                 IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Dark}" />
+                    <RadioButton Style="{StaticResource SegmentItem}" GroupName="Theme" Content="Claro" AutomationProperties.Name="Claro"
+                                 IsChecked="{Binding Theme, Converter={StaticResource EnumMatch}, ConverterParameter=Light}" />
+                </UniformGrid>
+            </controls:SegmentedControl>
+            <TextBlock Text="Automático segue o modo de cor dos aplicativos do Windows." Style="{StaticResource CardDescription}" />
 
             <TextBlock Text="Cor de destaque" Style="{StaticResource SettingsGroupHeader}" />
             <Border Style="{StaticResource SettingsCard}">
