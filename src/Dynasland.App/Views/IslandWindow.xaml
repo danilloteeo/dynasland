@@ -43,7 +43,7 @@
         <Style x:Key="FooterButton" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
             <Setter Property="Width" Value="24" />
             <Setter Property="Height" Value="24" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontSize" Value="15" />
             <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
         </Style>
 
@@ -79,11 +79,11 @@
                                 <Setter TargetName="IconGlyph" Property="Foreground" Value="{StaticResource IslandFillBrush}" />
                                 <Setter TargetName="IconVector" Property="TextElement.Foreground" Value="{StaticResource IslandFillBrush}" />
                             </DataTrigger>
-                            <Trigger Property="Tag" Value="True">
+                            <DataTrigger Binding="{Binding ShowIcon}" Value="True">
                                 <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
                                 <Setter TargetName="Icon" Property="Visibility" Value="Visible" />
                                 <Setter Property="Width" Value="40" />
-                            </Trigger>
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -91,7 +91,14 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <!-- Palco: entrada e saída da ilha inteira (opacidade, escala e subida), como a abertura do cartão do Volum. -->
+    <Grid x:Name="Stage" RenderTransformOrigin="0.5,0">
+        <Grid.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform x:Name="StageScale" />
+                <TranslateTransform x:Name="StageShift" />
+            </TransformGroup>
+        </Grid.RenderTransform>
         <Grid x:Name="IslandHost"
               HorizontalAlignment="Center"
               VerticalAlignment="Top"
@@ -197,13 +204,13 @@
                             <Button Style="{StaticResource FooterButton}" Content="{Binding PinGlyph}" Command="{Binding TogglePinCommand}"
                                     ToolTip="{Binding PinToolTip}"
                                     Visibility="{Binding CanPinFocused, Converter={StaticResource BoolToVisibility}}" />
-                            <Button Style="{StaticResource FooterButton}" Content="&#xE711;" Command="{Binding DismissCommand}"
+                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Close}, Converter={StaticResource GlyphContent}}" Command="{Binding DismissCommand}"
                                     ToolTip="Fechar esta atividade"
                                     Visibility="{Binding CanDismissFocused, Converter={StaticResource BoolToVisibility}}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
-                            <Button Style="{StaticResource FooterButton}" Content="&#xE76B;" Command="{Binding PreviousPageCommand}" ToolTip="Aba anterior" />
+                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.ChevronLeft}, Converter={StaticResource GlyphContent}}" Command="{Binding PreviousPageCommand}" ToolTip="Aba anterior" />
                             <!-- Barra translúcida com os pontos de página, como o seletor do Volum. -->
                             <Border Margin="4,0" Padding="2,0" CornerRadius="10" VerticalAlignment="Center"
                                     Background="{DynamicResource IslandSurfaceBrush}">
@@ -217,16 +224,15 @@
                                         <DataTemplate>
                                             <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="{Binding AccessibleName}"
                                                     ToolTip="{Binding AccessibleName}"
-                                                    Tag="{Binding DataContext.ShowTabIcons, ElementName=Root}"
                                                     Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
                                                     CommandParameter="{Binding Index}" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </Border>
-                            <Button Style="{StaticResource FooterButton}" Content="&#xE76C;" Command="{Binding NextPageCommand}" ToolTip="Próxima aba" />
+                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.ChevronRight}, Converter={StaticResource GlyphContent}}" Command="{Binding NextPageCommand}" ToolTip="Próxima aba" />
                         </StackPanel>
-                        <Button Style="{StaticResource FooterButton}" Content="&#xE713;" Command="{Binding OpenSettingsCommand}"
+                        <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Gear}, Converter={StaticResource GlyphContent}}" Command="{Binding OpenSettingsCommand}"
                                 HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Configurações" />
                     </Grid>
                 </Grid>

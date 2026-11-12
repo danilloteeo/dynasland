@@ -248,7 +248,7 @@
                 <ControlTemplate TargetType="RepeatButton">
                     <!-- Área de clique alta e trilho fino desenhado no centro. -->
                     <Grid Background="Transparent">
-                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" />
+                        <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -278,10 +278,38 @@
                                           Command="Slider.IncreaseLarge" />
                         </Track.IncreaseRepeatButton>
                         <Track.Thumb>
-                            <Thumb Focusable="False" Width="14" Height="14">
+<Thumb Focusable="False" Width="20" Height="20">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="Thumb">
-                                        <Ellipse Fill="{StaticResource IslandFillBrush}" />
+                                        <!-- Bolinha branca de 10px com sombra; cresce no hover (1,15) e ao arrastar (1,25, com halo), como no Volum. -->
+                                        <Grid x:Name="Knob" Background="Transparent" RenderTransformOrigin="0.5,0.5">
+                                            <Grid.RenderTransform>
+                                                <ScaleTransform />
+                                            </Grid.RenderTransform>
+                                            <Ellipse x:Name="Halo" Width="20" Height="20" Fill="{StaticResource IslandTrackBrush}" Opacity="0" />
+                                            <Ellipse Width="10" Height="10" Fill="#FFFFFFFF">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="#000000" Opacity="0.6" />
+                                                </Ellipse.Effect>
+                                            </Ellipse>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Knob" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="1.15" ScaleY="1.15" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <Trigger Property="IsDragging" Value="True">
+                                                <Setter TargetName="Knob" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="1.25" ScaleY="1.25" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter TargetName="Halo" Property="Opacity" Value="1" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Thumb.Template>
                             </Thumb>

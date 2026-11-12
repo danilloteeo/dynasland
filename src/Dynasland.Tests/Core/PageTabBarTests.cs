@@ -23,7 +23,7 @@ public class PageTabBarTests
 
         Assert.Equal([0, 1, 2], pages.Select(p => p.Index));
         Assert.Equal([false, true, false], pages.Select(p => p.IsCurrent));
-        Assert.Equal(Glyphs.MusicNote, pages[0].Glyph);
+        Assert.Equal(VectorIcons.Music, pages[0].Glyph);
         Assert.Equal(VectorIcons.Water, pages[1].Glyph);
         Assert.True(pages.All(p => p.HasGlyph));
         Assert.Equal("Ir para Água", pages[1].AccessibleName);

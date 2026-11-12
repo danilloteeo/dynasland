@@ -49,18 +49,18 @@
 
     <Style x:Key="SettingsGroupHeader" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource IslandTextFont}" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="11" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource SettingsTertiaryTextBrush}" />
-        <Setter Property="Margin" Value="2,22,0,8" />
+        <Setter Property="Margin" Value="4,22,0,8" />
     </Style>
 
     <Style x:Key="SettingsCard" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource SettingsCardBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SettingsBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="20,12" />
         <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
 
@@ -370,7 +370,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
                     <Grid Background="Transparent">
-                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" />
+                        <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -392,15 +392,21 @@
                             <RepeatButton Style="{StaticResource SettingsSliderRepeat}" Background="{DynamicResource SettingsTrackBrush}" Command="Slider.IncreaseLarge" />
                         </Track.IncreaseRepeatButton>
                         <Track.Thumb>
-                            <Thumb Width="16" Height="16">
+                            <Thumb Width="20" Height="20">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="Thumb">
-                                        <Ellipse x:Name="Knob" Fill="{DynamicResource SettingsAccentBrush}" Stroke="{DynamicResource SettingsCardBrush}"
-                                                 StrokeThickness="2" RenderTransformOrigin="0.5,0.5">
-                                            <Ellipse.RenderTransform>
-                                                <ScaleTransform ScaleX="1" ScaleY="1" />
-                                            </Ellipse.RenderTransform>
-                                        </Ellipse>
+                                        <!-- Bolinha branca de 10px com sombra; cresce no hover (1,15) e ao arrastar (1,25, com halo), como no Volum. -->
+                                        <Grid x:Name="Knob" Background="Transparent" RenderTransformOrigin="0.5,0.5">
+                                            <Grid.RenderTransform>
+                                                <ScaleTransform />
+                                            </Grid.RenderTransform>
+                                            <Ellipse x:Name="Halo" Width="20" Height="20" Fill="{DynamicResource SettingsTrackBrush}" Opacity="0" />
+                                            <Ellipse Width="10" Height="10" Fill="#FFFFFFFF">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="#000000" Opacity="0.6" />
+                                                </Ellipse.Effect>
+                                            </Ellipse>
+                                        </Grid>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter TargetName="Knob" Property="RenderTransform">
@@ -408,6 +414,14 @@
                                                         <ScaleTransform ScaleX="1.15" ScaleY="1.15" />
                                                     </Setter.Value>
                                                 </Setter>
+                                            </Trigger>
+                                            <Trigger Property="IsDragging" Value="True">
+                                                <Setter TargetName="Knob" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="1.25" ScaleY="1.25" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter TargetName="Halo" Property="Opacity" Value="1" />
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -524,8 +538,8 @@
 
     <!-- Botão de ícone pequeno nas linhas da Central. -->
     <Style x:Key="HubIconButton" TargetType="Button">
-        <Setter Property="Width" Value="30" />
-        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontFamily" Value="{StaticResource IslandIconFont}" />
         <Setter Property="FontSize" Value="13" />
@@ -534,7 +548,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Back" Background="Transparent" CornerRadius="10">
+                    <Border x:Name="Back" Background="Transparent" CornerRadius="8">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>

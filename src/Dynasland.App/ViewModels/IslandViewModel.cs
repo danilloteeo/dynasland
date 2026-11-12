@@ -209,18 +209,19 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         }
 
         var tabs = PageTabBar.PagesFor(snapshot);
-        if (tabs.SequenceEqual(Pages))
+        if (tabs.SequenceEqual(Pages.Select(p => p with { ShowIcon = false })))
         {
             return;
         }
 
+        var showIcons = PageTabBar.ShowsIcons(tabs, snapshot.Dimensions.Width);
         Pages.Clear();
         foreach (var tab in tabs)
         {
-            Pages.Add(tab);
+            Pages.Add(tab with { ShowIcon = showIcons });
         }
 
-        ShowTabIcons = PageTabBar.ShowsIcons(tabs, snapshot.Dimensions.Width);
+        ShowTabIcons = showIcons;
         PageIndex = snapshot.PageIndex;
         OnPropertyChanged(nameof(HasPages));
     }

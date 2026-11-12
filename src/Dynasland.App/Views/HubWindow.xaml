@@ -48,20 +48,20 @@
 
         <Border Background="{DynamicResource SettingsSidebarBrush}">
             <DockPanel Margin="14,18">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Height="52" Margin="8,0,0,6">
                     <Border Width="30" Height="14" CornerRadius="7" Background="Black" BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" VerticalAlignment="Center" />
-                    <TextBlock Text="Central" FontSize="16" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Central" FontSize="14" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel>
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE77F;" Content="Área de transferência"
+                    <RadioButton Style="{StaticResource NavButton}" Tag="vector:clipboard" Content="Área de transferência"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Clipboard}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7E7;" Content="Notificações"
+                    <RadioButton Style="{StaticResource NavButton}" Tag="vector:bell" Content="Notificações"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Notifications}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE787;" Content="Agenda"
+                    <RadioButton Style="{StaticResource NavButton}" Tag="vector:calendar" Content="Agenda"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Calendar}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7C1;" Content="Foco"
+                    <RadioButton Style="{StaticResource NavButton}" Tag="vector:focus" Content="Foco"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Focus}" />
-                    <RadioButton Style="{StaticResource NavButton}" Tag="&#xE722;" Content="Capturas"
+                    <RadioButton Style="{StaticResource NavButton}" Tag="vector:capture" Content="Capturas"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Captures}" />
                     <RadioButton Style="{StaticResource NavButton}" Tag="vector:water" Content="Água"
                                  IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Water}" />

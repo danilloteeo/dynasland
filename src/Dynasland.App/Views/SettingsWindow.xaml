@@ -28,36 +28,36 @@
         <!-- Navegação: cada categoria tem sua própria página (Views/Settings). -->
         <Border Background="{DynamicResource SettingsSidebarBrush}">
             <DockPanel Margin="14,18,14,10">
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,18">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Height="52" Margin="8,0,0,6">
                     <Border Width="30" Height="14" CornerRadius="7" Background="Black" BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" VerticalAlignment="Center" />
-                    <TextBlock Text="Dynasland" FontSize="16" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Dynasland" FontSize="14" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ScrollViewer.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource SettingsScrollBar}" />
                     </ScrollViewer.Resources>
                     <StackPanel>
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE80F;" Content="Geral"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:home" Content="Geral"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=General}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE790;" Content="Aparência"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:palette" Content="Aparência"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Appearance}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE916;" Content="Animações"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:sparkles" Content="Animações"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Animations}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE8B0;" Content="Comportamento"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:sliders" Content="Comportamento"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Behavior}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7F4;" Content="Monitores"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:monitor" Content="Monitores"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Monitors}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE74C;" Content="Módulos"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:modules" Content="Módulos"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Modules}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE7E7;" Content="Notificações"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:bell" Content="Notificações"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Notifications}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE72E;" Content="Privacidade"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:lock" Content="Privacidade"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Privacy}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE765;" Content="Atalhos"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:keyboard" Content="Atalhos"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Shortcuts}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xEDA2;" Content="Armazenamento"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:storage" Content="Armazenamento"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=Storage}" />
-                        <RadioButton Style="{StaticResource NavButton}" Tag="&#xE946;" Content="Sobre"
+                        <RadioButton Style="{StaticResource NavButton}" Tag="vector:info" Content="Sobre"
                                      IsChecked="{Binding Section, Converter={StaticResource EnumMatch}, ConverterParameter=About}" />
                     </StackPanel>
                 </ScrollViewer>

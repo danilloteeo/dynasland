@@ -40,6 +40,12 @@ public partial class IslandWindow : Window
     private const double SwapMilliseconds = 240;
     private const double HoverMilliseconds = 160;
     private const double HoverScale = 1.05;
+    private const double EnterMilliseconds = 300;
+    private const double LeaveMilliseconds = 120;
+    private const double EnterScale = 0.965;
+    private const double EnterRise = 10;
+    private const double LeaveScale = 0.98;
+    private const double LeaveRise = 4;
     private const double SwapOffset = 6;
     private const double GhostRise = -4;
     private const double PrivacyDotFadeMs = 150;
@@ -57,6 +63,9 @@ public partial class IslandWindow : Window
     private const double BaseSpringAmplitude = 0.22;
     private static readonly IEasingFunction NoSpringEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
     private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseInOut });
+    // Mola do Volum: cubic-bezier(.16, 1, .3, 1) na entrada; saída curta que acelera.
+    private static readonly IEasingFunction SpringOut = Frozen(new ExponentialEase { Exponent = 6, EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction LeaveEase = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseIn });
     private static readonly IEasingFunction SoftEasing = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseOut });
 
     private readonly IslandViewModel _viewModel;
@@ -74,6 +83,7 @@ public partial class IslandWindow : Window
     private string? _lastPulseId;
     private long _lastPulseTicks;
     private bool _repositionPending;
+    private bool _wantsVisible;
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
 
@@ -279,17 +289,69 @@ public partial class IslandWindow : Window
 
     private void ApplyVisibility(bool visible)
     {
+        _wantsVisible = visible;
         if (visible && !IsVisible)
         {
+            SetStage(0, EnterScale, EnterRise);
             Show();
             _placement.Place(this);
+            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
         }
-        else if (!visible && IsVisible)
+        else if (visible)
+        {
+            // Voltou a aparecer no meio da saída: retoma a entrada de onde estava.
+            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
+        }
+        else if (IsVisible && ShouldAnimate)
+        {
+            PlayStage(0, LeaveScale, LeaveRise, Scaled(LeaveMilliseconds), LeaveEase, () =>
+            {
+                if (!_wantsVisible && IsVisible)
+                {
+                    Hide();
+                }
+            });
+        }
+        else if (IsVisible)
         {
             Hide();
         }
 
         _viewModel.SetWindowVisible(visible);
+    }
+
+    private void SetStage(double opacity, double scale, double rise)
+    {
+        SetImmediate(Stage, OpacityProperty, opacity);
+        SetImmediate(StageScale, ScaleTransform.ScaleXProperty, scale);
+        SetImmediate(StageScale, ScaleTransform.ScaleYProperty, scale);
+        SetImmediate(StageShift, TranslateTransform.YProperty, rise);
+    }
+
+    /// <summary>Anima o palco até o estado dado; sem animação, vai direto. <paramref name="done"/> roda ao fim.</summary>
+    private void PlayStage(double opacity, double scale, double rise, TimeSpan duration, IEasingFunction easing, Action? done = null)
+    {
+        if (!ShouldAnimate)
+        {
+            SetStage(opacity, scale, rise);
+            done?.Invoke();
+            return;
+        }
+
+        Animate(Stage, OpacityProperty, opacity, duration, easing);
+        Animate(StageScale, ScaleTransform.ScaleXProperty, scale, duration, easing);
+        Animate(StageScale, ScaleTransform.ScaleYProperty, scale, duration, easing);
+        var shift = new DoubleAnimation(rise, new Duration(duration)) { EasingFunction = easing };
+        if (done is not null)
+        {
+            shift.Completed += (_, _) => done();
+        }
+        else
+        {
+            shift.Freeze();
+        }
+
+        StageShift.BeginAnimation(TranslateTransform.YProperty, shift);
     }
 
     /// <summary>Antes de trocar o conteúdo no mesmo estado, guarda uma imagem do atual para o cross-fade.</summary>

@@ -58,13 +58,22 @@ public class PageIconsTests
     public void Unknown_module_has_no_icon_so_the_bar_falls_back_to_dots(string? moduleId) => Assert.Null(PageIcons.For(moduleId));
 
     [Fact]
-    public void Reuses_the_glyphs_the_modules_already_use()
+    public void Every_icon_resolves_to_a_drawable_vector()
     {
-        Assert.Equal(Glyphs.MusicNote, PageIcons.For(MediaModule.ModuleId)?.Glyph);
-        Assert.Equal(Glyphs.VolumeHigh, PageIcons.For(VolumeModule.ModuleId)?.Glyph);
-        Assert.Equal(Glyphs.Timer, PageIcons.For(TimerModule.ModuleId)?.Glyph);
-        Assert.Equal(Glyphs.Camera, PageIcons.For(CaptureModule.ModuleId)?.Glyph);
-        Assert.Equal(Glyphs.Game, PageIcons.For(GamingModule.ModuleId)?.Glyph);
+        foreach (var row in KnownModules)
+        {
+            Assert.NotNull(VectorIcons.Get(PageIcons.For(row)?.Glyph));
+        }
+    }
+
+    [Fact]
+    public void Uses_outline_vector_icons()
+    {
+        Assert.Equal(VectorIcons.Music, PageIcons.For(MediaModule.ModuleId)?.Glyph);
+        Assert.Equal(VectorIcons.Volume, PageIcons.For(VolumeModule.ModuleId)?.Glyph);
+        Assert.Equal(VectorIcons.Timer, PageIcons.For(TimerModule.ModuleId)?.Glyph);
+        Assert.Equal(VectorIcons.Camera, PageIcons.For(CaptureModule.ModuleId)?.Glyph);
+        Assert.Equal(VectorIcons.Game, PageIcons.For(GamingModule.ModuleId)?.Glyph);
     }
 
     [Fact]

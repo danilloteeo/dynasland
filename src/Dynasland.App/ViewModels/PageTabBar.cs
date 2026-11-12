@@ -8,6 +8,9 @@ namespace Dynasland.App.ViewModels;
 /// <param name="Glyph">Glifo de fonte ou chave "vector:..." do módulo; <c>null</c> se o módulo não tem ícone.</param>
 public sealed record PageTab(int Index, bool IsCurrent, string? Glyph, string AccessibleName)
 {
+    /// <summary>Desenha o ícone do módulo no lugar do ponto (definido pela barra ao decidir que cabem).</summary>
+    public bool ShowIcon { get; init; }
+
     public bool HasGlyph => Glyph is not null;
 }
 
