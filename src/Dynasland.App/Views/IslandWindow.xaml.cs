@@ -42,6 +42,7 @@ public partial class IslandWindow : Window
     private const double HoverScale = 1.05;
     private const double SwapOffset = 6;
     private const double GhostRise = -4;
+    private const double PrivacyDotFadeMs = 150;
     private const double PulseMilliseconds = 600;
     private const double PulseOpacity = 0.6;
     private const double PulseScale = 1.04;
@@ -92,6 +93,8 @@ public partial class IslandWindow : Window
 
         ApplyPositionAndShape(settings.Current);
         ApplyLayers(viewModel.State, animate: false);
+        ApplyPrivacyDot(MicrophoneDot, viewModel.ShowMicrophoneDot, animate: false);
+        ApplyPrivacyDot(CameraDot, viewModel.ShowCameraDot, animate: false);
         viewModel.PropertyChanging += OnViewModelPropertyChanging;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
@@ -317,6 +320,14 @@ public partial class IslandWindow : Window
                 ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
                 break;
 
+            case nameof(IslandViewModel.ShowMicrophoneDot):
+                ApplyPrivacyDot(MicrophoneDot, _viewModel.ShowMicrophoneDot, ShouldAnimate);
+                break;
+
+            case nameof(IslandViewModel.ShowCameraDot):
+                ApplyPrivacyDot(CameraDot, _viewModel.ShowCameraDot, ShouldAnimate);
+                break;
+
             // Troca de conteúdo sem mudar de estado (outra notificação, alternância entre atividades).
             case nameof(IslandViewModel.ExpandedContent) when _viewModel.State == IslandState.Expanded:
                 PlaySwap(ExpandedLayer);
@@ -326,6 +337,41 @@ public partial class IslandWindow : Window
                 PlaySwap(InteractiveLayer);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Mostra ou oculta um indicador de privacidade com um fade curto. Oculto, sai do layout ao fim do fade,
+    /// para o outro ponto ficar centralizado sozinho.
+    /// </summary>
+    private void ApplyPrivacyDot(UIElement dot, bool show, bool animate)
+    {
+        var target = show ? 1.0 : 0.0;
+        if (show)
+        {
+            dot.Visibility = Visibility.Visible;
+        }
+
+        if (!animate)
+        {
+            dot.BeginAnimation(OpacityProperty, null);
+            dot.Opacity = target;
+            dot.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            return;
+        }
+
+        var fade = new DoubleAnimation(target, TimeSpan.FromMilliseconds(PrivacyDotFadeMs / Speed));
+        if (!show)
+        {
+            fade.Completed += (_, _) =>
+            {
+                if (dot.Opacity == 0)
+                {
+                    dot.Visibility = Visibility.Collapsed;
+                }
+            };
+        }
+
+        dot.BeginAnimation(OpacityProperty, fade);
     }
 
     private void OnIslandMouseEnter(object sender, MouseEventArgs e)

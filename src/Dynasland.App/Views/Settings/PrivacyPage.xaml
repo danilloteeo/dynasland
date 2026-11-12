@@ -20,6 +20,17 @@
     <StackPanel>
         <TextBlock Text="Privacidade" Style="{StaticResource SettingsTitle}" />
         <TextBlock Text="Tudo fica neste computador. Nada é enviado a servidores, exceto a consulta de versão ao GitHub (se ligada em Sobre) e a previsão do tempo (se você escolher uma cidade)." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
+        <TextBlock Text="Indicadores" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <StackPanel Margin="0,0,180,0">
+                    <TextBlock Text="Mostrar quando câmera ou microfone estão em uso" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Um ponto laranja (microfone) ou verde (câmera) aparece na ilha enquanto algum aplicativo os usa." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <CheckBox Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding Privacy.ShowPrivacyIndicators}"
+                          AutomationProperties.Name="Mostrar quando câmera ou microfone estão em uso" />
+            </Grid>
+        </Border>
         <TextBlock Text="Área de transferência" Style="{StaticResource SettingsGroupHeader}" />
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">

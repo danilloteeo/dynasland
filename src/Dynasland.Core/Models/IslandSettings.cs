@@ -183,6 +183,9 @@ public sealed record IslandSettings
     /// <summary>Dias que as notificações ficam no histórico.</summary>
     public int NotificationHistoryDays { get; init; } = 7;
 
+    /// <summary>Pontos na ilha compacta enquanto algum aplicativo usa o microfone (laranja) ou a câmera (verde).</summary>
+    public bool ShowPrivacyIndicators { get; init; } = true;
+
     // Life Center
 
     /// <summary>Local da previsão do tempo (formato de <c>WeatherLocation.Serialize</c>); <c>null</c> = clima desligado.</summary>

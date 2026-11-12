@@ -17,13 +17,32 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     private readonly IslandController _controller;
     private readonly SettingsWindowService _settingsWindow;
     private readonly IIslandSettingsService _settings;
+    private readonly IPrivacyIndicatorService _privacy;
+    private readonly IUiDispatcher _ui;
     private IActivityContent? _presented;
     private IslandState _presentedState;
     private bool _presentedVisible;
     private bool _windowVisible = true;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowMicrophoneDot), nameof(ShowCameraDot))]
     private IslandState _state;
+
+    /// <summary>Algum aplicativo usa o microfone agora (indicador de privacidade).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowMicrophoneDot))]
+    private bool _microphoneInUse;
+
+    /// <summary>Algum aplicativo usa a câmera agora (indicador de privacidade).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowCameraDot))]
+    private bool _cameraInUse;
+
+    [ObservableProperty]
+    private string _microphoneToolTip = string.Empty;
+
+    [ObservableProperty]
+    private string _cameraToolTip = string.Empty;
 
     [ObservableProperty]
     private IslandDimensions _dimensions = IslandLayout.Compact;
@@ -54,14 +73,29 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(PinGlyph), nameof(PinToolTip))]
     private bool _isFocusedPinned;
 
-    public IslandViewModel(IslandController controller, SettingsWindowService settingsWindow, IIslandSettingsService settings)
+    public IslandViewModel(
+        IslandController controller,
+        SettingsWindowService settingsWindow,
+        IIslandSettingsService settings,
+        IPrivacyIndicatorService privacy,
+        IUiDispatcher ui)
     {
         _controller = controller;
         _settingsWindow = settingsWindow;
         _settings = settings;
+        _privacy = privacy;
+        _ui = ui;
         controller.Changed += OnSnapshotChanged;
+        privacy.Changed += OnPrivacyChanged;
         Apply(controller.Snapshot);
+        ApplyPrivacy(privacy.Current);
     }
+
+    /// <summary>Ponto laranja: só no compacto, na borda direita da cápsula.</summary>
+    public bool ShowMicrophoneDot => MicrophoneInUse && State == IslandState.Compact;
+
+    /// <summary>Ponto verde: só no compacto, na borda direita da cápsula.</summary>
+    public bool ShowCameraDot => CameraInUse && State == IslandState.Compact;
 
     /// <summary>Pontos das abas; vazio quando há apenas uma.</summary>
     public ObservableCollection<PageDot> Pages { get; } = [];
@@ -129,6 +163,17 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     private void OnSnapshotChanged(object? sender, IslandSnapshot snapshot) => Apply(snapshot);
 
+    // O serviço avisa de uma thread do pool.
+    private void OnPrivacyChanged(object? sender, PrivacyUsage usage) => _ui.Post(() => ApplyPrivacy(usage));
+
+    private void ApplyPrivacy(PrivacyUsage usage)
+    {
+        MicrophoneToolTip = usage.Microphone ? "Microfone em uso: " + string.Join(", ", usage.MicrophoneApps) : string.Empty;
+        CameraToolTip = usage.Camera ? "Câmera em uso: " + string.Join(", ", usage.CameraApps) : string.Empty;
+        MicrophoneInUse = usage.Microphone;
+        CameraInUse = usage.Camera;
+    }
+
     private void Apply(IslandSnapshot snapshot)
     {
         // Conteúdo antes do estado, para a view animar a transição já com o conteúdo certo.
@@ -192,5 +237,9 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         content?.OnPresentationChanged(_windowVisible ? state : null);
     }
 
-    public void Dispose() => _controller.Changed -= OnSnapshotChanged;
+    public void Dispose()
+    {
+        _controller.Changed -= OnSnapshotChanged;
+        _privacy.Changed -= OnPrivacyChanged;
+    }
 }

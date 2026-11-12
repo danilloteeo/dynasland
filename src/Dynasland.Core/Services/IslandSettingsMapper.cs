@@ -40,6 +40,7 @@ public static partial class IslandSettingsMapper
         public const string ClipboardMaxItems = "storage.clipboardMaxItems";
         public const string NotificationHistoryEnabled = "privacy.notificationHistory";
         public const string NotificationHistoryDays = "storage.notificationHistoryDays";
+        public const string ShowPrivacyIndicators = "privacy.indicators";
         public const string WeatherLocation = "weather.location";
         public const string SpotifyClientId = "spotify.clientId";
     }
@@ -94,6 +95,7 @@ public static partial class IslandSettingsMapper
             ClipboardMaxItems = (int)ReadDouble(values, Keys.ClipboardMaxItems, d.ClipboardMaxItems, 20, 2000),
             NotificationHistoryEnabled = ReadBool(values, Keys.NotificationHistoryEnabled, d.NotificationHistoryEnabled),
             NotificationHistoryDays = (int)ReadDouble(values, Keys.NotificationHistoryDays, d.NotificationHistoryDays, 1, 90),
+            ShowPrivacyIndicators = ReadBool(values, Keys.ShowPrivacyIndicators, d.ShowPrivacyIndicators),
             WeatherLocation = string.IsNullOrWhiteSpace(weather) ? null : weather,
             SpotifyClientId = string.IsNullOrWhiteSpace(spotify) ? null : spotify.Trim(),
         };
@@ -132,6 +134,7 @@ public static partial class IslandSettingsMapper
         [Keys.ClipboardMaxItems] = Format(s.ClipboardMaxItems),
         [Keys.NotificationHistoryEnabled] = Format(s.NotificationHistoryEnabled),
         [Keys.NotificationHistoryDays] = Format(s.NotificationHistoryDays),
+        [Keys.ShowPrivacyIndicators] = Format(s.ShowPrivacyIndicators),
         [Keys.WeatherLocation] = s.WeatherLocation ?? string.Empty,
         [Keys.SpotifyClientId] = s.SpotifyClientId ?? string.Empty,
     };

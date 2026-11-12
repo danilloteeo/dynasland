@@ -149,6 +149,18 @@ public interface IAppVolumeService
     Task SetMutedAsync(string id, bool muted);
 }
 
+/// <summary>
+/// Indicadores de privacidade: microfone ou câmera em uso agora por algum aplicativo. Só consulta o
+/// Windows enquanto a opção <see cref="IslandSettings.ShowPrivacyIndicators"/> está ligada; desligada, fica em <see cref="PrivacyUsage.None"/>.
+/// </summary>
+public interface IPrivacyIndicatorService
+{
+    PrivacyUsage Current { get; }
+
+    /// <summary>O uso mudou (qualquer thread).</summary>
+    event EventHandler<PrivacyUsage>? Changed;
+}
+
 /// <summary>Brilho de um monitor externo (DDC/CI), em porcentagem.</summary>
 public sealed record ExternalDisplayBrightness(string Id, string Name, int Percent);
 

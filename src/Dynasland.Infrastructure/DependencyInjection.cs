@@ -22,6 +22,7 @@ using Dynasland.Infrastructure.Windows.Metrics;
 using Dynasland.Infrastructure.Windows.Media;
 using Dynasland.Infrastructure.Windows.Notifications;
 using Dynasland.Infrastructure.Windows.Power;
+using Dynasland.Infrastructure.Windows.Privacy;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dynasland.Infrastructure;
@@ -68,6 +69,7 @@ public static class DependencyInjection
         services.AddSingleton<IAudioDeviceService, CoreAudioDeviceService>();
         services.AddSingleton<IAppVolumeService, CoreAudioAppVolumeService>();
         services.AddSingleton<IBluetoothService, WinRtBluetoothService>();
+        services.AddSingleton<IPrivacyIndicatorService, RegistryPrivacyIndicatorService>();
         services.AddSingleton<ILyricsService>(sp => new LrcLibLyricsService(
             new HttpClient { Timeout = TimeSpan.FromSeconds(12), DefaultRequestHeaders = { { "User-Agent", "Dynasland (https://github.com/danilloteeo/dynasland)" } } },
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<LrcLibLyricsService>>()));

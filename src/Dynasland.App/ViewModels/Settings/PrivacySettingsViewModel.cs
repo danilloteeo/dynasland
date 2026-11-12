@@ -48,7 +48,12 @@ public sealed partial class PrivacySettingsViewModel : ObservableObject, IDispos
     private bool _notificationHistoryEnabled;
 
     [ObservableProperty]
+    private bool _showPrivacyIndicators;
+
+    [ObservableProperty]
     private string? _lastAction;
+
+    partial void OnShowPrivacyIndicatorsChanged(bool value) => Save(s => s with { ShowPrivacyIndicators = value });
 
     partial void OnClipboardHistoryEnabledChanged(bool value) => Save(s => s with { ClipboardHistoryEnabled = value });
 
@@ -104,6 +109,7 @@ public sealed partial class PrivacySettingsViewModel : ObservableObject, IDispos
             ClipboardHistoryEnabled = s.ClipboardHistoryEnabled;
             ClipboardStoreImages = s.ClipboardStoreImages;
             NotificationHistoryEnabled = s.NotificationHistoryEnabled;
+            ShowPrivacyIndicators = s.ShowPrivacyIndicators;
         }
         finally
         {

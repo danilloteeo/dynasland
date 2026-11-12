@@ -30,6 +30,10 @@
     <SolidColorBrush x:Key="IslandWaterBrush" Color="#FF0084FF" />
     <SolidColorBrush x:Key="IslandWarningBrush" Color="#FFFF9F0A" />
     <SolidColorBrush x:Key="IslandCriticalBrush" Color="#FFFF453A" />
+    <!-- Indicadores de privacidade (cores de estado, iguais às do iOS): microfone e câmera em uso. -->
+    <SolidColorBrush x:Key="IslandMicBrush" Color="#FFFF9F0A" />
+    <SolidColorBrush x:Key="IslandCameraBrush" Color="#FF30D158" />
+    <SolidColorBrush x:Key="IslandPrivacyDotRingBrush" Color="#99000000" />
 
     <!-- Opacidade da sombra da ilha (ajustada em Aparência). -->
     <sys:Double x:Key="IslandShadowOpacity">0.35</sys:Double>
