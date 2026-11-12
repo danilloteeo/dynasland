@@ -14,6 +14,7 @@ public static partial class IslandSettingsMapper
         public const string Position = "island.position";
         public const string Shape = "island.shape";
         public const string Edge = "island.edge";
+        public const string DockHiddenModules = "dock.hidden";
         public const string IsVisible = "island.visible";
         public const string StartHidden = "island.startHidden";
         public const string HideInFullscreen = "island.hideInFullscreen";
@@ -64,6 +65,7 @@ public static partial class IslandSettingsMapper
             Position = ReadEnum(values, Keys.Position, d.Position),
             Shape = ReadEnum(values, Keys.Shape, d.Shape),
             Edge = ReadEnum(values, Keys.Edge, d.Edge),
+            DockHiddenModules = values.TryGetValue(Keys.DockHiddenModules, out var hidden) ? hidden.Trim() : d.DockHiddenModules,
             IsVisible = ReadBool(values, Keys.IsVisible, d.IsVisible),
             StartHidden = ReadBool(values, Keys.StartHidden, d.StartHidden),
             HideInFullscreen = ReadBool(values, Keys.HideInFullscreen, d.HideInFullscreen),
@@ -113,6 +115,7 @@ public static partial class IslandSettingsMapper
         [Keys.Position] = s.Position.ToString(),
         [Keys.Shape] = s.Shape.ToString(),
         [Keys.Edge] = s.Edge.ToString(),
+        [Keys.DockHiddenModules] = s.DockHiddenModules,
         [Keys.IsVisible] = Format(s.IsVisible),
         [Keys.StartHidden] = Format(s.StartHidden),
         [Keys.HideInFullscreen] = Format(s.HideInFullscreen),

@@ -19,6 +19,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     private readonly IPrivacyIndicatorService _privacy;
     private readonly IUiDispatcher _ui;
     private readonly IShortcutRegistry _shortcuts;
+    private readonly IDockBadges _badges;
     private IslandSnapshot _lastSnapshot = IslandSnapshot.Empty;
     private IActivityContent? _presented;
     private IslandState _presentedState;
@@ -77,7 +78,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         IIslandSettingsService settings,
         IPrivacyIndicatorService privacy,
         IUiDispatcher ui,
-        IShortcutRegistry shortcuts)
+        IShortcutRegistry shortcuts,
+        IDockBadges badges)
     {
         _controller = controller;
         _settingsWindow = settingsWindow;
@@ -85,6 +87,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         _privacy = privacy;
         _ui = ui;
         _shortcuts = shortcuts;
+        _badges = badges;
+        badges.Changed += OnShortcutsChanged;
         controller.Changed += OnSnapshotChanged;
         shortcuts.Changed += OnShortcutsChanged;
         settings.Changed += OnSettingsChanged;
@@ -131,6 +135,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // Abrir o módulo é "ver": o ponto de aviso some.
+        _badges.Clear(item.ModuleId);
         if (item is { Kind: DockItemKind.Activity, ActivityId: { } activityId })
         {
             _controller.OpenActivity(activityId);
@@ -220,8 +226,9 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
             }
         }
 
-        var focusedModule = snapshot.State == IslandState.Compact ? snapshot.Indicator?.ModuleId : snapshot.Focused?.ModuleId;
-        var items = DockItems.Build(_shortcuts.Shortcuts, activities, focusedModule);
+        var focusedModule = DockItems.FocusedModule(snapshot.State, snapshot.Indicator?.ModuleId, snapshot.Focused?.ModuleId);
+        var items = DockItems.Build(
+            _shortcuts.Shortcuts, activities, focusedModule, DockVisibility.Parse(_settings.Current.DockHiddenModules), _badges.Badges);
         if (!items.SequenceEqual(Dock))
         {
             Dock.Clear();
@@ -302,6 +309,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         _controller.Changed -= OnSnapshotChanged;
         _privacy.Changed -= OnPrivacyChanged;
         _shortcuts.Changed -= OnShortcutsChanged;
+        _badges.Changed -= OnShortcutsChanged;
         _settings.Changed -= OnSettingsChanged;
     }
 }

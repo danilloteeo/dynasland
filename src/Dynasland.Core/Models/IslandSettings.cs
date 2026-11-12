@@ -112,6 +112,9 @@ public sealed record IslandSettings
     /// <summary>Borda da tela (embaixo, padrão, ou em cima).</summary>
     public IslandEdge Edge { get; init; } = IslandEdge.Bottom;
 
+    /// <summary>Módulos escondidos da dock (ids separados por vírgula; ver <c>DockVisibility</c>).</summary>
+    public string DockHiddenModules { get; init; } = string.Empty;
+
     public bool IsVisible { get; init; } = true;
 
     /// <summary>Ao abrir o Dynasland, deixa a ilha oculta (só o ícone da bandeja).</summary>

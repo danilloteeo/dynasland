@@ -80,6 +80,7 @@ public static class DependencyInjection
         services.AddSingleton<IClipboardService, WindowsClipboardService>();
         services.AddSingleton<IShellService, ShellService>();
         services.AddSingleton<IShortcutRegistry, ShortcutRegistry>();
+        services.AddSingleton<IDockBadges, DockBadgeRegistry>();
         services.AddSingleton<IGlanceRegistry, GlanceRegistry>();
         services.AddSingleton<IIslandTint, IslandTint>();
         services.AddSingleton<IGlobalShortcutRegistry, GlobalShortcutRegistry>();
