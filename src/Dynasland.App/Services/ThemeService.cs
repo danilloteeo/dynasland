@@ -18,24 +18,33 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
 
     private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
 
-    private static readonly Dictionary<string, (string Dark, string Light)> Palette = new()
+    internal static readonly IReadOnlyDictionary<string, (string Dark, string Light)> Palette = new Dictionary<string, (string Dark, string Light)>
     {
-        ["SettingsBackgroundBrush"] = ("#202020", "#F3F3F3"),
-        ["SettingsSidebarBrush"] = ("#1B1B1B", "#EBEBEB"),
-        ["SettingsCardBrush"] = ("#2B2B2B", "#FFFFFF"),
-        ["SettingsCardHoverBrush"] = ("#323232", "#F7F7F7"),
-        ["SettingsBorderBrush"] = ("#3A3A3A", "#E2E2E2"),
-        ["SettingsTextBrush"] = ("#F3F3F3", "#1B1B1B"),
-        ["SettingsSecondaryTextBrush"] = ("#B8B8B8", "#5D5D5D"),
-        ["SettingsTertiaryTextBrush"] = ("#8A8A8A", "#8A8A8A"),
-        ["SettingsNavHoverBrush"] = ("#2D2D2D", "#E0E0E0"),
-        ["SettingsButtonBrush"] = ("#373737", "#FBFBFB"),
-        ["SettingsButtonHoverBrush"] = ("#404040", "#F0F0F0"),
-        ["SettingsButtonBorderBrush"] = ("#444444", "#D5D5D5"),
-        ["SettingsChipBrush"] = ("#333333", "#EFEFEF"),
-        ["SettingsTrackBrush"] = ("#555555", "#C8C8C8"),
-        ["SettingsScrollThumbBrush"] = ("#5A5A5A", "#BDBDBD"),
+        ["SettingsBackgroundBrush"] = ("#090909", "#FFFFFF"),
+        ["SettingsSidebarBrush"] = ("#0D0D0D", "#F6F6F6"),
+        ["SettingsCardBrush"] = ("#101010", "#F6F6F6"),
+        ["SettingsCardHoverBrush"] = ("#161616", "#EFEFEF"),
+        ["SettingsBorderBrush"] = ("#1C1C1C", "#E4E4E4"),
+        ["SettingsTextBrush"] = ("#FFFFFF", "#111111"),
+        ["SettingsSecondaryTextBrush"] = ("#B8B8B8", "#5C5C5C"),
+        ["SettingsTertiaryTextBrush"] = ("#757575", "#8A8A8A"),
+        ["SettingsNavHoverBrush"] = ("#161616", "#EDEDED"),
+        ["SettingsButtonBrush"] = ("#161616", "#FFFFFF"),
+        ["SettingsButtonHoverBrush"] = ("#1E1E1E", "#F0F0F0"),
+        ["SettingsButtonBorderBrush"] = ("#262626", "#DADADA"),
+        ["SettingsChipBrush"] = ("#161616", "#EFEFEF"),
+        ["SettingsTrackBrush"] = ("#2A2A2A", "#D0D0D0"),
+        ["SettingsScrollThumbBrush"] = ("#333333", "#C4C4C4"),
     };
+
+    /// <summary>
+    /// Cor de destaque efetiva: no tema claro um destaque quase branco (o padrão) viraria texto invisível
+    /// sobre fundo branco, então usa o quase preto do Volum.
+    /// </summary>
+    public static Color AccentFor(Color accent, bool dark) =>
+        !dark && (0.2126 * accent.R + 0.7152 * accent.G + 0.0722 * accent.B) / 255 > 0.9
+            ? Color.FromRgb(0x11, 0x11, 0x11)
+            : accent;
 
     private Application? _application;
 
@@ -92,7 +101,7 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
             resources[key] = Brush(Parse(IsDark ? dark : light));
         }
 
-        var accent = Parse(current.AccentColor);
+        var accent = AccentFor(Parse(current.AccentColor), IsDark);
         resources["SettingsAccentBrush"] = Brush(accent);
         resources["SettingsAccentTextBrush"] = Brush(ContrastOn(accent));
         resources["IslandAccentBrush"] = Brush(accent);

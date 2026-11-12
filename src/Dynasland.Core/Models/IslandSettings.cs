@@ -109,7 +109,7 @@ public sealed record IslandSettings
     public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.DateAndTime;
 
     /// <summary>Cor de destaque em hexadecimal (#RRGGBB).</summary>
-    public string AccentColor { get; init; } = "#30D158";
+    public string AccentColor { get; init; } = "#FFFFFF";
 
     /// <summary>Opacidade do fundo da ilha (0,5 a 1).</summary>
     public double IslandOpacity { get; init; } = 1.0;

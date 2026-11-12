@@ -44,6 +44,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
     public static readonly IReadOnlyList<(string Name, string Hex)> AccentPresets =
     [
+        ("Branco", "#FFFFFF"),
         ("Verde", "#30D158"),
         ("Azul", "#0A84FF"),
         ("Ciano", "#64D2FF"),
