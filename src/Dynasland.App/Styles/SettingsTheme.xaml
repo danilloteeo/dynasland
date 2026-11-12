@@ -128,7 +128,7 @@
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" Background="Transparent">
                         <TextBlock x:Name="Label" Text="Desligado" Foreground="{DynamicResource SettingsTertiaryTextBrush}" VerticalAlignment="Center"
-                                   Width="70" TextAlignment="Right" Margin="0,0,10,0" />
+                                   Width="84" TextAlignment="Right" Margin="0,0,10,0" />
                         <Border x:Name="Track" Width="36" Height="20" CornerRadius="10" BorderThickness="1"
                                 BorderBrush="{DynamicResource SettingsBorderBrush}" Background="{DynamicResource SettingsTrackBrush}">
                             <Ellipse x:Name="Thumb" Width="14" Height="14" Fill="{DynamicResource SettingsSecondaryTextBrush}"

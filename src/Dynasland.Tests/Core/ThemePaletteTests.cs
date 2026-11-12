@@ -55,6 +55,17 @@ public class ThemePaletteTests
         Assert.Equal(Hex("#0A84FF"), ThemeService.AccentFor(Hex("#0A84FF"), dark: false));
     }
 
+    [Theory]
+    [InlineData("#FFFFFF", "#1B1B1B")]
+    [InlineData("#8E8E93", "#1B1B1B")]
+    [InlineData("#000000", "#FFFFFF")]
+    [InlineData("#BF5AF2", "#1B1B1B")]
+    [InlineData("#2A2A2A", "#FFFFFF")]
+    public void Text_on_the_accent_is_the_color_with_more_contrast(string accent, string expected)
+    {
+        Assert.Equal(Hex(expected), ThemeService.ContrastOn(Hex(accent)));
+    }
+
     [Fact]
     public void Default_accent_is_white_and_listed_as_a_preset()
     {

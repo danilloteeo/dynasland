@@ -74,11 +74,25 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
         return key?.GetValue("AppsUseLightTheme") is int value && value == 1;
     }
 
-    /// <summary>Cor do texto sobre a cor de destaque: escura em cores claras, branca nas escuras.</summary>
+    /// <summary>Cor do texto sobre a cor de destaque: a (escura ou branca) de maior contraste, o que cobre também os cinzas médios.</summary>
     public static Color ContrastOn(Color color)
     {
-        var luminance = (0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B) / 255;
-        return luminance > 0.6 ? Color.FromRgb(0x1B, 0x1B, 0x1B) : Colors.White;
+        var dark = Color.FromRgb(0x1B, 0x1B, 0x1B);
+        var background = RelativeLuminance(color) + 0.05;
+        var onDark = background / (RelativeLuminance(dark) + 0.05);
+        var onWhite = 1.05 / background;
+        return onDark >= onWhite ? dark : Colors.White;
+    }
+
+    private static double RelativeLuminance(Color color)
+    {
+        static double Linear(byte channel)
+        {
+            var s = channel / 255.0;
+            return s <= 0.03928 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
+        }
+
+        return 0.2126 * Linear(color.R) + 0.7152 * Linear(color.G) + 0.0722 * Linear(color.B);
     }
 
     private void Apply(IslandSettings current)
