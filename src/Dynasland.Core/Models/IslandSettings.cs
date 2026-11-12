@@ -153,7 +153,7 @@ public sealed record IslandSettings
     public string AccentColor { get; init; } = "#FFFFFF";
 
     /// <summary>Opacidade do fundo da ilha (0,5 a 1).</summary>
-    public double IslandOpacity { get; init; } = 1.0;
+    public double IslandOpacity { get; init; } = 0.78;
 
     /// <summary>Intensidade da sombra da ilha (0 a 1).</summary>
     public double ShadowIntensity { get; init; } = 0.5;

@@ -134,6 +134,18 @@
                         <RowDefinition x:Name="FooterRow" Height="48" />
                     </Grid.RowDefinitions>
 
+                    <!-- Vidro: brilho suave no topo e linha fina entre o conteúdo e a dock. -->
+                    <Border Grid.RowSpan="2" IsHitTestVisible="False">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#1CFFFFFF" Offset="0" />
+                                <GradientStop Color="#00FFFFFF" Offset="0.55" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Border x:Name="DockDivider" Grid.Row="1" Height="1" Margin="14,0" Background="#26FFFFFF"
+                            VerticalAlignment="Top" IsHitTestVisible="False" Opacity="0" />
+
                     <ContentPresenter x:Name="ExpandedLayer"
                                       Style="{StaticResource LayerStyle}"
                                       Content="{Binding ExpandedContent}"

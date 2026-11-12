@@ -15,7 +15,7 @@
     <FontFamily x:Key="IslandIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="IslandEdgeBrush" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="IslandEdgeBrush" Color="#33FFFFFF" />
     <SolidColorBrush x:Key="IslandPrimaryTextBrush" Color="#FFF5F5F7" />
     <SolidColorBrush x:Key="IslandSecondaryTextBrush" Color="#99F5F5F7" />
     <SolidColorBrush x:Key="IslandTertiaryTextBrush" Color="#66F5F5F7" />

@@ -282,6 +282,8 @@ public partial class IslandWindow : Window
         }
 
         Grid.SetRow(DockBar, bottom ? 1 : 0);
+        Grid.SetRow(DockDivider, bottom ? 1 : 0);
+        DockDivider.VerticalAlignment = bottom ? VerticalAlignment.Top : VerticalAlignment.Bottom;
         if (ShadowBorder.Effect is DropShadowEffect shadow)
         {
             shadow.Direction = bottom ? 90 : 270;
@@ -611,6 +613,8 @@ public partial class IslandWindow : Window
 
         var interactive = state == IslandState.Interactive;
         Footer.IsHitTestVisible = interactive;
+        // A linha entre o conteúdo e a dock só existe quando há conteúdo.
+        DockDivider.Opacity = state == IslandState.Compact ? 0 : 1;
         if (!animate)
         {
             SetImmediate(Footer, OpacityProperty, interactive ? 1 : 0);
