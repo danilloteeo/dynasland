@@ -33,7 +33,8 @@ public sealed class WaterModule(
     IAlertSound sound,
     IModuleOptions options,
     IGlobalShortcutRegistry globalShortcuts,
-    ILogger<WaterModule> logger) : IIslandModule
+    ILogger<WaterModule> logger,
+    IDockBadges? badges = null) : IIslandModule
 {
     public const string ModuleId = "water";
     public const string GlanceId = "water.today";
@@ -133,6 +134,7 @@ public sealed class WaterModule(
         }
 
         glances.Remove(GlanceId);
+        badges?.Clear(ModuleId);
         return Task.CompletedTask;
     }
 
@@ -253,6 +255,8 @@ public sealed class WaterModule(
             }
 
             glances.Set(new IslandGlance(GlanceId, "", $"{glasses}/{goal} copos", Order: 2, Invoke: () => hub.Open(HubPage.Water)));
+            // Anel de progresso do dia em volta do ícone da água na dock.
+            badges?.Set(ModuleId, new DockBadge(DockBadgeKind.Ring, goal > 0 ? glasses / (double)goal : 0));
             UpdatePanel(glasses, goal);
 
             lock (_lock)

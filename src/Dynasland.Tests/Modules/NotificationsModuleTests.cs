@@ -23,6 +23,36 @@ public class NotificationsModuleTests : IDisposable
 
     public void Dispose() => _recorder.Dispose();
 
+    private NotificationsModule ModuleWith(IDockBadges badges) =>
+        new(_service, _preferences, _history, new FakeIslandSettings(), TestOptions.Create(), _recorder.Bus, NullLogger<NotificationsModule>.Instance, badges);
+
+    [Fact]
+    public async Task A_shown_notification_puts_a_dot_on_the_dock_icon_until_it_is_opened()
+    {
+        var badges = new DockBadgeRegistry();
+        await ModuleWith(badges).StartAsync(CancellationToken.None);
+
+        _service.Receive(FakeNotificationService.Message(7));
+
+        Assert.Equal(new DockBadge(DockBadgeKind.Dot), badges.Badges[NotificationsModule.ModuleId]);
+        var content = (NotificationContent)Assert.Single(_recorder.Posted).Content;
+        content.OpenCommand.Execute(null);
+        Assert.Empty(badges.Badges);
+    }
+
+    [Fact]
+    public async Task Stopping_the_module_clears_its_dock_badge()
+    {
+        var badges = new DockBadgeRegistry();
+        var module = ModuleWith(badges);
+        await module.StartAsync(CancellationToken.None);
+        _service.Receive(FakeNotificationService.Message(7));
+
+        await module.StopAsync(CancellationToken.None);
+
+        Assert.Empty(badges.Badges);
+    }
+
     [Fact]
     public async Task Received_notification_becomes_transient_activity()
     {

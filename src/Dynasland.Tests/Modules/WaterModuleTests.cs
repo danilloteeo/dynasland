@@ -27,7 +27,7 @@ public class WaterModuleTests : IDisposable
 
     private sealed record Fixture(WaterModule Module, SqliteWaterStore Store, FakeTimeProvider Time, GlanceRegistry Glances, ModuleOptionsService Options, ShortcutRegistry Shortcuts);
 
-    private async Task<Fixture> StartAsync(DateTimeOffset now, Func<SqliteWaterStore, IWaterStore>? wrap = null)
+    private async Task<Fixture> StartAsync(DateTimeOffset now, Func<SqliteWaterStore, IWaterStore>? wrap = null, IDockBadges? badges = null)
     {
         await _db.CreateRunner().MigrateAsync();
         var store = new SqliteWaterStore(_db.Factory);
@@ -36,7 +36,7 @@ public class WaterModuleTests : IDisposable
         var options = TestOptions.Create();
         var shortcuts = new ShortcutRegistry();
         var module = new WaterModule(wrap?.Invoke(store) ?? store, new NoHub(), _recorder.Bus, new InlineDispatcher(), time, shortcuts, glances, new SilentSound(),
-            options, new GlobalShortcutRegistry(new InMemorySettingsStore()), NullLogger<WaterModule>.Instance);
+            options, new GlobalShortcutRegistry(new InMemorySettingsStore()), NullLogger<WaterModule>.Instance, badges);
         await module.StartAsync(CancellationToken.None);
         await module.RescheduleAsync();
         return new Fixture(module, store, time, glances, options, shortcuts);
@@ -47,6 +47,25 @@ public class WaterModuleTests : IDisposable
     private List<WaterDrankContent> Confirmations => [.. _recorder.Posted.Select(a => a.Content).OfType<WaterDrankContent>()];
 
     private static readonly DateOnly Today = new(2026, 11, 11);
+
+    [Fact]
+    public async Task The_dock_icon_gets_a_progress_ring_that_follows_the_glasses_of_the_day()
+    {
+        var badges = new DockBadgeRegistry();
+        var f = await StartAsync(T0, badges: badges);
+        var goal = (int)f.Options.Get(WaterModule.ModuleId, WaterModule.Goal);
+        Assert.Equal(new DockBadge(DockBadgeKind.Ring, 0), badges.Badges[WaterModule.ModuleId]);
+
+        await f.Module.DrinkAsync();
+        await f.Module.RescheduleAsync();
+
+        var ring = badges.Badges[WaterModule.ModuleId];
+        Assert.Equal(DockBadgeKind.Ring, ring.Kind);
+        Assert.Equal(1.0 / goal, ring.Progress, precision: 6);
+
+        await f.Module.StopAsync(CancellationToken.None);
+        Assert.Empty(badges.Badges);
+    }
 
     [Fact]
     public async Task Island_shortcut_opens_the_body_panel_without_counting_a_glass()

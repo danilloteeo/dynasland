@@ -22,7 +22,8 @@ public sealed class NotificationsModule(
     IIslandSettingsService settings,
     IModuleOptions options,
     IEventBus bus,
-    ILogger<NotificationsModule> logger) : IIslandModule
+    ILogger<NotificationsModule> logger,
+    IDockBadges? badges = null) : IIslandModule
 {
     public const string ModuleId = "notifications";
     // Folga para o recorte da margem transparente: o desenho costuma ocupar só parte do ícone.
@@ -70,6 +71,7 @@ public sealed class NotificationsModule(
     {
         notifications.Received -= OnReceived;
         notifications.Removed -= OnRemoved;
+        badges?.Clear(ModuleId);
         _gamingSubscription?.Dispose();
         _muteForGame = false;
         await notifications.StopAsync();
@@ -91,6 +93,9 @@ public sealed class NotificationsModule(
         {
             return;
         }
+
+        // Ponto de aviso no ícone da dock até o usuário abrir o módulo (ou o aviso).
+        badges?.Set(ModuleId, new DockBadge(DockBadgeKind.Dot));
 
         var decoded = ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth);
         var logo = ImageDecoder.TrimTransparentMargin(decoded);
@@ -153,12 +158,14 @@ public sealed class NotificationsModule(
     private void Open(NotificationInfo info)
     {
         notifications.TryOpenApp(info.AppId);
+        badges?.Clear(ModuleId);
         bus.RemoveActivity(ActivityIdFor(info.Id));
     }
 
     private void Dismiss(NotificationInfo info)
     {
         notifications.Dismiss(info.Id);
+        badges?.Clear(ModuleId);
         bus.RemoveActivity(ActivityIdFor(info.Id));
     }
 
