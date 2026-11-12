@@ -8,12 +8,17 @@
     <!-- Capa arredondada; sem capa, mostra uma nota musical. -->
     <DataTemplate x:Key="MediaArtwork">
         <Grid>
-            <Border CornerRadius="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}"
-                    Background="{DynamicResource IslandSurfaceBrush}">
+            <Border CornerRadius="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF7C4DFF" Offset="0" />
+                        <GradientStop Color="#FF3A2A9C" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
                 <ContentControl Content="{Binding MusicGlyph, Converter={StaticResource GlyphContent}}"
                            FontFamily="{DynamicResource IslandIconFont}"
-                           FontSize="14"
-                           Foreground="{DynamicResource IslandSecondaryTextBrush}"
+                           FontSize="16"
+                           Foreground="#FFFFFFFF"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
             </Border>
@@ -142,7 +147,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Dynasland.Modules.Media.MediaContent:Interactive">
-        <Grid Margin="18,16,18,10">
+        <Grid Margin="16,14,16,6">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -157,36 +162,35 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ContentControl Width="56" Height="56" Tag="12" Content="{Binding}" ContentTemplate="{StaticResource MediaArtwork}" Focusable="False" />
+                <ContentControl Width="48" Height="48" Tag="9" Content="{Binding}" ContentTemplate="{StaticResource MediaArtwork}" Focusable="False" />
                 <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="15" FontWeight="SemiBold"
+                    <TextBlock Text="{Binding Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
                                Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Subtitle}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                    <TextBlock Text="{Binding Subtitle}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
                                Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
-                    <TextBlock Text="{Binding AppName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
-                               Foreground="{DynamicResource IslandTertiaryTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
                 </StackPanel>
             </Grid>
 
-            <Grid Grid.Row="1" Margin="0,12,0,0" Visibility="{Binding HasTimeline, Converter={StaticResource BoolToVisibility}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="40" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="40" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding PositionText}" FontSize="11" Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" />
-                <ProgressBar Grid.Column="1" Style="{DynamicResource IslandProgressBarStyle}" Maximum="1" Value="{Binding Progress, Mode=OneWay}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding DurationText}" FontSize="11" Foreground="{DynamicResource IslandSecondaryTextBrush}"
-                           HorizontalAlignment="Right" VerticalAlignment="Center" />
-            </Grid>
+            <!-- Barra de 3px com os tempos embaixo, como no Volum. -->
+            <StackPanel Grid.Row="1" Margin="0,10,0,0" Visibility="{Binding HasTimeline, Converter={StaticResource BoolToVisibility}}">
+                <!-- Só mostra a posição (barra com bolinha, como no modelo); não responde ao clique. -->
+                <Slider Style="{DynamicResource IslandSliderStyle}" Height="12" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
+                        IsHitTestVisible="False" Focusable="False" Margin="0,2,0,2" />
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding DurationText}" FontSize="9.5" Typography.NumeralAlignment="Tabular"
+                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                    <TextBlock Text="{Binding PositionText}" FontSize="9.5" Typography.NumeralAlignment="Tabular"
+                               Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </DockPanel>
+            </StackPanel>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,8,0,0">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,4,0,0">
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PreviousGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding PreviousCommand}"
-                        IsEnabled="{Binding CanSkipPrevious}" ToolTip="Anterior" />
+                        IsEnabled="{Binding CanSkipPrevious}" Width="26" Height="26" FontSize="13" ToolTip="Anterior" />
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PlayPauseGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding PlayPauseCommand}"
-                        IsEnabled="{Binding CanPlayPause}" Width="44" Height="44" FontSize="20" Margin="14,0" ToolTip="Reproduzir/pausar" />
+                        IsEnabled="{Binding CanPlayPause}" Width="26" Height="26" FontSize="13" Margin="12,0" ToolTip="Reproduzir/pausar" />
                 <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding NextGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding NextCommand}"
-                        IsEnabled="{Binding CanSkipNext}" ToolTip="Próxima" />
+                        IsEnabled="{Binding CanSkipNext}" Width="26" Height="26" FontSize="13" ToolTip="Próxima" />
             </StackPanel>
 
             <!-- Volume do sistema, sem sair do painel de mídia. -->

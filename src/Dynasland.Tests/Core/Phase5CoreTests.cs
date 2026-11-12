@@ -17,14 +17,9 @@ public class Phase5CoreTests
             Theme = AppTheme.Light,
             IslandTheme = IslandTheme.Aurora,
             IslandThemeFollowsMedia = true,
-            IdleDisplay = IdleDisplay.Weather,
             AccentColor = "#0A84FF",
             IslandOpacity = 0.8,
             ShadowIntensity = 0.2,
-            Roundness = 0.6,
-            CompactWidth = 220,
-            CompactHeight = 38,
-            MaxWidth = 380,
             AnimationIntensity = 1.5,
             StartHidden = true,
             HideInFullscreen = false,
@@ -52,7 +47,7 @@ public class Phase5CoreTests
         Assert.Equal(AppTheme.System, settings.Theme);
         Assert.Equal(IslandTheme.Black, settings.IslandTheme);
         Assert.Equal(IslandSettings.Default.AccentColor, settings.AccentColor);
-        Assert.Equal(420, settings.MaxWidth);
+        Assert.Equal(440, settings.MaxWidth);
     }
 
     [Fact]
@@ -68,7 +63,7 @@ public class Phase5CoreTests
     [Fact]
     public void Appearance_keeps_extra_width_requested_by_indicators()
     {
-        var mediaIndicator = new IslandDimensions(232, 34, 17);
+        var mediaIndicator = new IslandDimensions(292, 32, 16);
 
         var compact = IslandAppearance.Adjust(mediaIndicator, IslandState.Compact, IslandSettings.Default with { CompactWidth = 200 });
 

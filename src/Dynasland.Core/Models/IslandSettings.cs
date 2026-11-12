@@ -107,10 +107,10 @@ public sealed record IslandSettings
     public IslandPosition Position { get; init; } = IslandPosition.Center;
 
     /// <summary>Flutuante (padrão) ou encaixada na borda de cima (ignora <see cref="TopMargin"/>).</summary>
-    public IslandShape Shape { get; init; } = IslandShape.Float;
+    public IslandShape Shape { get; init; } = IslandShape.Notch;
 
     /// <summary>Borda da tela (embaixo, padrão, ou em cima).</summary>
-    public IslandEdge Edge { get; init; } = IslandEdge.Bottom;
+    public IslandEdge Edge { get; init; } = IslandEdge.Top;
 
     /// <summary>Módulos escondidos da dock (ids separados por vírgula; ver <c>DockVisibility</c>).</summary>
     public string DockHiddenModules { get; init; } = string.Empty;
@@ -150,13 +150,13 @@ public sealed record IslandSettings
     /// <summary>Enquanto uma mídia toca, o fundo da ilha usa a cor da capa em vez do tema.</summary>
     public bool IslandThemeFollowsMedia { get; init; }
 
-    public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.DateAndTime;
+    public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.TimeOnly;
 
     /// <summary>Cor de destaque em hexadecimal (#RRGGBB).</summary>
     public string AccentColor { get; init; } = "#FFFFFF";
 
     /// <summary>Opacidade do fundo da ilha (0,5 a 1).</summary>
-    public double IslandOpacity { get; init; } = 0.78;
+    public double IslandOpacity { get; init; } = 1.0;
 
     /// <summary>Intensidade da sombra da ilha (0 a 1).</summary>
     public double ShadowIntensity { get; init; } = 0.5;
@@ -165,13 +165,13 @@ public sealed record IslandSettings
     public double Roundness { get; init; } = 1.0;
 
     /// <summary>Largura da ilha compacta (largura mínima).</summary>
-    public double CompactWidth { get; init; } = 190;
+    public double CompactWidth { get; init; } = 250;
 
     /// <summary>Altura da ilha compacta.</summary>
-    public double CompactHeight { get; init; } = 34;
+    public double CompactHeight { get; init; } = 32;
 
     /// <summary>Largura máxima da ilha expandida.</summary>
-    public double MaxWidth { get; init; } = 420;
+    public double MaxWidth { get; init; } = 440;
 
     // Comportamento
 

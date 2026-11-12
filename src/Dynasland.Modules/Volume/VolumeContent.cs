@@ -321,7 +321,7 @@ public sealed partial class VolumeContent(IAudioVolumeService audio, IAudioDevic
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
         IslandState.Expanded => new IslandDimensions(300, 50, 25),
-        IslandState.Interactive => new IslandDimensions(380, 104 + (HasMicrophone ? 48 : 0) + (HasDeviceChoice ? 40 : 0) + (HasApps ? 30 + Apps.Count * 32 : 0), 32),
+        IslandState.Interactive => new IslandDimensions(440, 84 + (HasMicrophone ? 48 : 0) + (HasDeviceChoice ? 40 : 0) + (HasApps ? 30 + Apps.Count * 32 : 0), 32),
         _ => null,
     };
 

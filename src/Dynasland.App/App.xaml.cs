@@ -155,7 +155,7 @@ public partial class App : Application
 
     /// <summary>
     /// Argumentos de linha de comando, na partida ou repassados por uma segunda execução:
-    /// <c>--configuracoes</c>, <c>--central</c>; sem argumentos, uma segunda execução apenas mostra a ilha.
+    /// <c>--configuracoes</c>; sem argumentos, uma segunda execução apenas mostra a ilha.
     /// </summary>
     private void HandleArguments(IReadOnlyList<string> args, bool isActivation)
     {
@@ -173,22 +173,13 @@ public partial class App : Application
             handled = true;
         }
 
-        // --central abre a Central; --central=agenda (ou notificacoes, foco, capturas, agua) abre a página.
-        if (args.FirstOrDefault(a => a.StartsWith("--central", StringComparison.OrdinalIgnoreCase)) is { } hubArg)
+#if DEBUG
+        if (args.FirstOrDefault(a => a.StartsWith("--demo=", StringComparison.OrdinalIgnoreCase)) is { } demoArg)
         {
-            var name = hubArg.Contains('=') ? hubArg[(hubArg.IndexOf('=') + 1)..].ToLowerInvariant() : null;
-            var page = name switch
-            {
-                "notificacoes" or "notificações" or "notifications" => HubPage.Notifications,
-                "agenda" or "calendar" => HubPage.Calendar,
-                "foco" or "focus" => HubPage.Focus,
-                "capturas" or "captures" => HubPage.Captures,
-                "agua" or "água" or "water" => HubPage.Water,
-                _ => HubPage.Clipboard,
-            };
-            _host.Services.GetRequiredService<IHubService>().Open(page);
+            DemoMode.Run(_host.Services, demoArg["--demo=".Length..]);
             handled = true;
         }
+#endif
 
         if (isActivation && !handled)
         {
@@ -285,12 +276,6 @@ public partial class App : Application
         builder.Services.AddSingleton<HotkeyService>();
         builder.Services.AddSingleton<IRegionSelector>(_ => new RegionSelector(Dispatcher));
         builder.Services.AddSingleton<IHubService>(sp => new HubWindowService(sp, Dispatcher));
-        builder.Services.AddTransient<IHubPage, ClipboardPageViewModel>();
-        builder.Services.AddTransient<IHubPage, NotificationsPageViewModel>();
-        builder.Services.AddTransient<IHubPage, CalendarPageViewModel>();
-        builder.Services.AddTransient<IHubPage, FocusPageViewModel>();
-        builder.Services.AddTransient<IHubPage, CapturesPageViewModel>();
-        builder.Services.AddTransient<IHubPage, WaterPageViewModel>();
         builder.Services.AddSingleton<IslandActions>();
         builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
 

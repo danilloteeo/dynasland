@@ -95,6 +95,12 @@ public static class DependencyInjection
             new HttpClient { Timeout = TimeSpan.FromSeconds(15), DefaultRequestHeaders = { { "User-Agent", "Dynasland" } } },
             sp.GetRequiredService<TimeProvider>()));
 
+        services.AddSingleton<IQuotesProvider>(_ => new Market.AwesomeApiQuotesProvider(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(15), DefaultRequestHeaders = { { "User-Agent", "Dynasland" } } }));
+        services.AddSingleton<IScoresProvider>(_ => new Market.EspnScoresProvider(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(15), DefaultRequestHeaders = { { "User-Agent", "Dynasland" } } }));
+        services.AddSingleton<IKeyLockService, Windows.KeyLockService>();
+
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IEventBus, EventBus>();
         services.AddSingleton<ModuleManager>();

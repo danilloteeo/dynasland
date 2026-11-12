@@ -1,0 +1,70 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common">
+
+    <common:GlyphContentConverter x:Key="GlyphContent" />
+
+    <!-- Painel de cotações: título e horário no topo, uma linha por moeda (nome, preço, variação do dia). -->
+    <DataTemplate x:Key="Dynasland.Modules.Quotes.QuotesContent:Interactive">
+        <Grid Margin="16,14,16,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
+                                    Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
+                    <TextBlock Text="Cotações" Margin="8,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5"
+                               FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                </StackPanel>
+                <TextBlock Text="{Binding Status}" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource IslandSecondaryTextBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource IslandWarningBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Quotes}" Focusable="False" Margin="0,6,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Height="30">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="76" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5"
+                                       Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding PriceText}" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5"
+                                       FontWeight="SemiBold" Typography.NumeralAlignment="Tabular" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                            <TextBlock Grid.Column="2" Text="{Binding ChangeText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontFamily="{DynamicResource IslandTextFont}" FontSize="11" Typography.NumeralAlignment="Tabular">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource IslandSecondaryTextBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsUp}" Value="True">
+                                                <Setter Property="Foreground" Value="#FF6CCB5F" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDown}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource IslandCriticalBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>

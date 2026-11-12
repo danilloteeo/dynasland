@@ -121,7 +121,7 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
         resources["IslandAccentBrush"] = Brush(accent);
 
         ApplyIslandBackground(current, accent);
-        resources["IslandShadowOpacity"] = 0.7 * current.ShadowIntensity;
+        resources["IslandShadowOpacity"] = 0.45;
 
         ThemeChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -132,20 +132,14 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
     /// </summary>
     private void ApplyIslandBackground(IslandSettings current, Color accent)
     {
+        // Como no modelo, a cápsula é sempre preta e opaca: não há tema, transparência nem cor da capa.
         var brush = IslandBrush;
-        var media = current.IslandThemeFollowsMedia ? TintColor() : null;
-        var (top, bottom) = media is { } color ? IslandThemes.Tinted(color) : IslandThemes.Colors(current.IslandTheme, accent);
-        var alpha = (byte)Math.Round(255 * current.IslandOpacity);
-        top.A = alpha;
-        bottom.A = alpha;
-
-        brush.EndPoint = media is null && IslandThemes.IsHorizontal(current.IslandTheme) ? new Point(1, 0) : new Point(0, 1);
         var animate = current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
-        Fade(brush.GradientStops[0], top, animate);
-        Fade(brush.GradientStops[1], bottom, animate);
+        Fade(brush.GradientStops[0], Colors.Black, animate);
+        Fade(brush.GradientStops[1], Colors.Black, animate);
 
         // Cópia congelada para quem usa o recurso fora da janela da ilha.
-        var snapshot = new LinearGradientBrush(top, bottom, brush.StartPoint, brush.EndPoint);
+        var snapshot = new LinearGradientBrush(Colors.Black, Colors.Black, brush.StartPoint, brush.EndPoint);
         snapshot.Freeze();
         _application?.Resources["IslandBackgroundBrush"] = snapshot;
     }

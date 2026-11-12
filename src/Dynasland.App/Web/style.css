@@ -1,0 +1,1398 @@
+/* =========================================================
+   Volum — visual (glassmorphism)
+   Tudo aqui é seu: cores, tamanhos, animações.
+
+   Como as cores funcionam:
+   - Tokens sólidos (abaixo) valem no Windows antigo e no "Modo leve".
+   - Com a classe .glass (Windows 11 + modo leve desligado) as superfícies viram
+     camadas rgba por cima do acrílico do Windows. Mais opaco = aumente o último número.
+   - data-scheme="dark|light" no <html> é o tema efetivo (o JS resolve o "Sistema").
+   ========================================================= */
+
+/* O slider anima o valor (--fill) suavemente: precisa ser uma propriedade registrada */
+@property --fill {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* ---------- Tokens: escuro sólido (padrão) ---------- */
+/* Laranja do site (#ED5A23) e neutros quentes (marrom bem escuro, não azulado) */
+:root {
+  --accent: #ed5a23;
+  --accent-2: #f5895a;
+  --accent-ring: rgba(237, 90, 35, .28);
+  --accent-glow: rgba(237, 90, 35, .5);
+  --danger: #ff7a8a;
+  --meter-a: #4ade80;
+  --meter-b: #2dd4bf;
+
+  --bg: #1b1613;
+  --surface: #26201c;
+  --surface-hover: #2f2824;
+  --border: #3a312c;
+  --highlight: rgba(255, 240, 230, .03);
+  --text: #f7f2ef;
+  --subtext: #a89c95;
+  --icon: #d2c8c2;
+  --track: #3e3530;
+  --meter-bg: #2c2521;
+  --seg-bg: #1d1714;
+  --seg-active: #3d342f;
+  --thumb: #ffffff;
+  --thumb-shadow: 0 1px 4px rgba(0, 0, 0, .45);
+  --sheen: transparent;
+  --edge: transparent;
+  --noise-opacity: 0;
+
+  --enter-ms: 300ms;
+  --exit-ms: 120ms;
+  --spring: cubic-bezier(.16, 1, .3, 1);       /* desacelera suave (estilo macOS) */
+  --bounce: cubic-bezier(.34, 1.56, .64, 1);   /* passa um pouquinho e volta */
+}
+
+/* ---------- Tokens: claro sólido ---------- */
+:root[data-scheme="light"] {
+  --accent: #e04a12;
+  --accent-2: #f07040;
+  --accent-ring: rgba(224, 74, 18, .22);
+  --accent-glow: rgba(224, 74, 18, .35);
+  --danger: #e5484d;
+  --meter-a: #22c55e;
+  --meter-b: #14b8a6;
+
+  --bg: #f8f5f3;
+  --surface: #ffffff;
+  --surface-hover: #f1ebe7;
+  --border: #e8e0db;
+  --highlight: rgba(255, 255, 255, .9);
+  --text: #1f1915;
+  --subtext: #73665f;
+  --icon: #51453f;
+  --track: #ddd4cf;
+  --meter-bg: #ece6e2;
+  --seg-bg: #f0eae6;
+  --seg-active: #ffffff;
+  --thumb-shadow: 0 1px 3px rgba(40, 20, 10, .25), 0 0 0 1px rgba(40, 20, 10, .06);
+}
+
+/* ---------- Tokens: vidro escuro ---------- */
+:root.glass {
+  --bg: rgba(30, 18, 12, .40);                 /* tom quente por cima do acrílico */
+  --surface: rgba(255, 236, 225, .055);
+  --surface-hover: rgba(255, 236, 225, .085);
+  --border: rgba(255, 230, 215, .09);
+  --highlight: rgba(255, 240, 230, .10);       /* fio de luz no topo de cada painel */
+  --track: rgba(255, 236, 225, .16);
+  --meter-bg: rgba(255, 236, 225, .07);
+  --seg-bg: rgba(0, 0, 0, .22);
+  --seg-active: rgba(255, 236, 225, .15);
+  --sheen: rgba(255, 230, 215, .07);           /* brilho diagonal no topo do vidro */
+  --edge: rgba(255, 230, 215, .11);            /* contorno de luz da janela */
+  --noise-opacity: .05;                        /* granulado sutil (vidro fosco) */
+}
+
+/* ---------- Tokens: vidro claro ---------- */
+:root.glass[data-scheme="light"] {
+  --bg: rgba(255, 250, 246, .40);
+  --surface: rgba(255, 255, 255, .5);
+  --surface-hover: rgba(255, 255, 255, .7);
+  --border: rgba(255, 255, 255, .7);
+  --highlight: rgba(255, 255, 255, .85);
+  --track: rgba(40, 20, 10, .12);
+  --meter-bg: rgba(40, 20, 10, .06);
+  --seg-bg: rgba(40, 20, 10, .06);
+  --seg-active: rgba(255, 255, 255, .9);
+  --sheen: rgba(255, 255, 255, .5);
+  --edge: rgba(255, 255, 255, .65);
+  --noise-opacity: .035;
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+}
+/* No vidro só o cartão pinta; a página fica transparente para o acrílico aparecer */
+:root.glass, :root.glass body { background: transparent; }
+
+button { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible + span { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+/* O cartão tem a mesma largura da janela (WidthDip no MixerForm.cs) */
+.card {
+  position: relative;
+  width: 360px;
+  padding-bottom: 8px;
+  background: var(--bg);
+  display: flow-root;
+  opacity: 0;                       /* só aparece quando o C# manda "open" */
+  transform-origin: 100% 100%;      /* anima a partir do canto da bandeja */
+}
+:root.glass .card {
+  background:
+    radial-gradient(120% 60% at 0% 0%, var(--sheen), transparent 60%),
+    linear-gradient(180deg, var(--sheen), transparent 35%),
+    var(--bg);
+  box-shadow: inset 0 0 0 1px var(--edge);
+  border-radius: 8px;               /* acompanha o canto arredondado do Windows 11 */
+}
+/* Granulado do vidro fosco (estático: custa só na primeira pintura) */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.card > * { position: relative; }   /* conteúdo acima do granulado */
+
+/* ---------- Animações de abrir/fechar ---------- */
+.card.enter { animation: enter var(--enter-ms) var(--spring) both; }
+.card.leave { animation: leave var(--exit-ms) ease-in both; }
+
+@keyframes enter {
+  from { opacity: 0; transform: scale(.965) translateY(10px); }   /* sem blur: pesa com o vidro */
+  to   { opacity: 1; transform: none; }
+}
+@keyframes leave {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: scale(.98) translateY(4px); }
+}
+
+/* As linhas entram em cascata */
+.card.enter .row {
+  animation: rise .42s var(--spring) both;
+  animation-delay: calc(var(--i, 0) * 30ms + 40ms);
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* ---------- Cabeçalho ---------- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 10px 8px 14px;
+}
+.logo {
+  width: 24px; height: 24px;
+  display: block;
+  filter: drop-shadow(0 2px 6px var(--accent-ring));
+}
+.brand {
+  margin-left: 6px;
+  margin-right: auto;               /* empurra os botões para a direita */
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--icon);
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, transform .18s var(--bounce);
+}
+.icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+.icon-btn:active { transform: scale(.9); }
+.icon-btn:disabled { opacity: .35; pointer-events: none; }
+.icon-btn svg { width: 16px; height: 16px; }
+
+.chevron { transition: transform .32s var(--spring); }
+[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+/* ---------- Painel de vidro (usado no volume geral e nas configurações) ---------- */
+.panel {
+  margin: 0 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+:root.glass .panel { box-shadow: inset 0 1px 0 var(--highlight), 0 8px 24px rgba(0, 0, 0, .12); }
+
+/* ---------- Configurações ---------- */
+/* Abre e fecha deslizando: a linha do grid vai de 0fr (fechada) a 1fr (altura do conteúdo) */
+.settings {
+  --settings-ms: 340ms;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--settings-ms) var(--spring);
+}
+.settings.open { grid-template-rows: 1fr; }
+
+.settings-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px) scale(.985);
+  transition: opacity calc(var(--settings-ms) * .8) ease, transform var(--settings-ms) var(--spring);
+}
+.settings.open .settings-inner { opacity: 1; transform: none; }
+.settings.instant, .settings.instant .settings-inner { transition: none; }
+
+.settings-panel { padding: 12px 12px 6px; margin-bottom: 8px; }
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--subtext);
+  margin: 0 2px 8px;
+}
+
+/* Seletor de tema com "pílula" que desliza até a opção escolhida */
+.segmented {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--seg-bg);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12);
+}
+.segmented::before {
+  content: "";
+  position: absolute;
+  top: 3px; bottom: 3px; left: 3px;
+  width: calc((100% - 6px) / 3);
+  border-radius: 8px;
+  background: var(--seg-active);
+  box-shadow: inset 0 1px 0 var(--highlight), 0 2px 8px rgba(0, 0, 0, .18);
+  transform: translateX(calc(var(--seg-i, 0) * 100%));
+  transition: transform .38s var(--spring);
+}
+.segmented button {
+  position: relative;
+  border: 0;
+  padding: 7px 0;
+  background: transparent;
+  color: var(--subtext);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button[aria-checked="true"] { color: var(--text); font-weight: 600; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px;
+}
+.setting-row + .setting-row { border-top: 1px solid var(--border); }
+.segmented + .setting-row { margin-top: 6px; }
+.setting-text small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  color: var(--subtext);
+}
+
+/* Atalho para abrir: mostra as teclas; clicar grava um novo */
+.hotkey-btn {
+  flex: none;
+  min-width: 96px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-hover);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease, color .2s ease;
+}
+.hotkey-btn:hover { border-color: var(--accent-2); }
+.hotkey-btn.recording {
+  color: var(--accent-2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* ---------- Lembrete de água ---------- */
+/* Azul só aqui, para a água não se confundir com o laranja dos volumes */
+:root { --water: #38bdf8; --water-2: #0ea5e9; }
+:root[data-scheme="light"] { --water: #0ea5e9; --water-2: #0284c7; }
+
+.water-options { display: grid; gap: 6px; padding: 2px 2px 10px; }
+.water-options[hidden] { display: none; }
+.stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--subtext); }
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  background: var(--seg-bg);
+  border: 1px solid var(--border);
+}
+.stepper button {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--icon);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: background .18s ease, color .18s ease;
+}
+.stepper button:hover { background: var(--surface-hover); color: var(--text); }
+.stepper button:disabled { opacity: .35; pointer-events: none; }
+.stepper output {
+  min-width: 58px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel.water { margin-top: 8px; padding: 10px 10px 10px 14px; }
+.panel.water[hidden] { display: none; }
+.water-row { display: flex; align-items: center; gap: 10px; }
+.water-drop { flex: none; width: 20px; height: 20px; fill: var(--water); filter: drop-shadow(0 2px 6px rgba(56, 189, 248, .35)); }
+.water-text { display: grid; flex: 1; min-width: 0; }
+.water-label { font-weight: 600; }
+.water-amount { font-size: 11.5px; color: var(--subtext); font-variant-numeric: tabular-nums; }
+.water-amount.done { color: var(--water); }
+.water-add {
+  flex: none;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--water), var(--water-2));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .2s var(--bounce);
+}
+.water-add:hover { transform: translateY(-1px); }
+.water-add:active { transform: scale(.95); }
+.water-bar { height: 4px; margin: 9px 0 0; border-radius: 4px; background: var(--meter-bg); overflow: hidden; }
+.water-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--water-2), var(--water));
+  transition: width .5s var(--spring);
+}
+:root.lite .water-drop { filter: none; }
+
+/* ---------- Novidades (popup depois de atualizar) ---------- */
+/* Fica por cima do mixer; o cartão cresce o bastante para caber o popup (o JS mede a altura) */
+.card.has-news { min-height: var(--news-h, 480px); }
+.card > .news {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border-radius: inherit;
+  background: rgba(10, 6, 4, .55);
+  animation: news-fade .25s ease both;
+}
+:root[data-scheme="light"] .card > .news { background: rgba(60, 30, 15, .22); }
+.card > .news[hidden] { display: none; }
+.news-box {
+  width: 100%;
+  padding: 14px 18px 16px;
+  border-radius: 14px;
+  background: var(--news-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45), inset 0 1px 0 var(--highlight);
+  text-align: center;
+  animation: news-pop .5s var(--bounce) both;
+}
+:root { --news-bg: #2a221e; }
+:root[data-scheme="light"] { --news-bg: #ffffff; }
+
+.mascot { display: block; width: 92px; height: 92px; margin: 0 auto 6px; overflow: visible; }
+.mascot .m-float { animation: m-float 2.6s ease-in-out infinite; }
+.mascot .m-shadow { opacity: .3; transform-box: fill-box; transform-origin: center; animation: m-shadow 2.6s ease-in-out infinite; }
+.mascot .m-wink { transform-box: fill-box; transform-origin: center; animation: m-wink 3.4s ease-in-out infinite; }
+.mascot .m-wave { opacity: 0; animation: m-wave 1.8s ease-out infinite; }
+.mascot .m-wave.w2 { animation-delay: .35s; }
+@keyframes m-float { 50% { transform: translateY(-5px); } }
+@keyframes m-shadow { 50% { transform: scaleX(.8); opacity: .18; } }
+@keyframes m-wink { 0%, 60%, 76%, 100% { transform: scaleY(1); } 64%, 72% { transform: scaleY(.1); } }
+@keyframes m-wave { 0% { opacity: 0; transform: translateX(-3px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(4px); } }
+@keyframes news-fade { from { opacity: 0; } }
+@keyframes news-pop { from { opacity: 0; transform: scale(.9) translateY(12px); } }
+
+.news-title {
+  margin: 0 0 12px;
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+}
+.news-title small {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 10.5px;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+.news-list { display: grid; gap: 9px; margin: 0 0 14px; padding: 0; list-style: none; text-align: left; }
+.news-list li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+.news-list .news-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--accent-2);
+  background: linear-gradient(135deg, rgba(245, 137, 90, .22), rgba(237, 90, 35, .08));
+}
+.news-list .news-icon svg { width: 14px; height: 14px; }
+.news-list b { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); }
+.news-list span { display: block; margin-top: 1px; font-size: 11.5px; line-height: 1.4; color: var(--subtext); }
+.news-ok {
+  width: 100%;
+  padding: 9px 0;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px var(--accent-ring), inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: transform .2s var(--bounce);
+}
+.news-ok:hover { transform: translateY(-1px); }
+.news-ok:active { transform: scale(.97); }
+
+/* Chave liga/desliga */
+.switch { position: relative; flex: none; width: 38px; height: 22px; }
+.switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+.switch span {
+  position: absolute; inset: 0;
+  border-radius: 22px;
+  background: var(--track);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .15);
+  transition: background .25s ease, box-shadow .25s ease;
+}
+.switch span::after {
+  content: "";
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  transition: transform .35s var(--bounce);
+}
+.switch input:checked + span {
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  box-shadow: 0 0 12px var(--accent-ring);
+}
+.switch input:checked + span::after { transform: translateX(16px); }
+.switch input:active + span::after { width: 19px; }
+
+/* ---------- Volume geral ---------- */
+.master { padding: 2px 0; }
+.master .row { padding: 10px 8px 10px 12px; }
+.master .row-name { font-weight: 600; }
+
+/* Microfone: abaixo do volume geral, separado por um fio */
+.mic[hidden] { display: none; }
+.mic { border-top: 1px solid var(--border); margin: 0 8px 0 12px; }   /* alinha com a linha de cima */
+.mic .row { padding-left: 0; padding-right: 0; }
+.mic .row { padding-bottom: 2px; }
+
+/* Escolha do microfone: texto pequeno alinhado com o slider (ícone 26px + espaço 12px) */
+.mic-picker { padding: 0 0 8px 38px; }
+.mic-current {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 6px 2px 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--subtext);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color .18s ease;
+}
+.mic-current:hover, .mic-current[aria-expanded="true"] { color: var(--text); }
+.mic-current span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mic-current .chevron { flex: none; width: 12px; height: 12px; }
+
+/* A lista abre deslizando (mesma técnica das configurações) */
+.mic-list {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .3s var(--spring);
+}
+.mic-list.open { grid-template-rows: 1fr; }
+.mic-list-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.mic-list.open .mic-list-inner { opacity: 1; padding-top: 4px; }
+
+.mic-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--subtext);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease;
+}
+.mic-option:hover { background: var(--surface-hover); color: var(--text); }
+.mic-option[aria-selected="true"] { color: var(--text); }
+.mic-option span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mic-option svg { flex: none; width: 14px; height: 14px; color: var(--accent-2); visibility: hidden; }
+.mic-option[aria-selected="true"] svg { visibility: visible; }
+
+.label-gap { margin-top: 14px; }
+
+/* Link "Site do Volum" no fim das configurações */
+.site-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin: 2px 0 6px;
+  padding: 9px 0 4px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--subtext);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color .18s ease;
+}
+.site-link:hover { color: var(--accent-2); }
+/* "O que tem de novo" e "Site do Volum" lado a lado, com o fio em cima da linha toda */
+.link-row { display: flex; margin: 2px 0 6px; border-top: 1px solid var(--border); }
+.link-row .site-link { margin: 0; border-top: 0; }
+.site-link svg { width: 12px; height: 12px; transition: transform .25s var(--bounce); }
+.site-link:hover svg { transform: translate(2px, -2px); }
+
+/* ---------- Lista de apps ---------- */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 22px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--subtext);
+}
+.count {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.apps {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 0 10px;
+}
+.apps::-webkit-scrollbar { width: 10px; }
+.apps::-webkit-scrollbar-thumb {
+  background: var(--track);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.empty {
+  margin: 14px 0 10px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--subtext);
+}
+.empty[hidden] { display: none; }
+
+/* ---------- Linha (app ou volume geral) ---------- */
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 8px 6px 8px 10px;
+  border-radius: 12px;
+  transition: background .2s ease, opacity .3s ease;
+}
+.apps .row:hover { background: var(--surface); box-shadow: inset 0 1px 0 var(--highlight); }
+.row.dim { opacity: .5; }
+
+/* Ícone sem fundo: aparece só o ícone do app (ou a inicial, quando não há ícone) */
+.row-icon {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  font-weight: 600;
+  color: var(--icon);
+}
+.row-icon img {
+  width: 26px; height: 26px;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25));
+}
+.row-icon svg { width: 22px; height: 22px; display: block; color: var(--icon); }
+
+.row-main { min-width: 0; }
+.row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.row-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-pct {
+  min-width: 26px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--subtext);
+  transition: color .2s ease, transform .25s var(--bounce);
+  transform-origin: right center;
+}
+.row.dragging .row-pct { color: var(--text); font-weight: 600; transform: scale(1.12); }
+
+/* Medidor de nível */
+.meter {
+  height: 2px;
+  margin: 1px 7px 0;
+  border-radius: 2px;
+  background: var(--meter-bg);
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--meter-a), var(--meter-b));
+  transform-origin: left;
+  transform: scaleX(0);
+}
+:root.glass .meter-fill { box-shadow: 0 0 6px var(--meter-a); }
+
+/* Botão de mute */
+.mute { border-radius: 50%; }
+.row.muted .mute { color: var(--danger); }
+.row.muted .slider { opacity: .4; filter: saturate(.3); }
+
+/* ---------- Slider ----------
+   Um <input type="range"> invisível recebe o mouse; o que aparece (trilho, preenchimento
+   e bolinha) é desenhado por cima e segue o valor --fill com transição (movimento suave). */
+.slider {
+  position: relative;
+  height: 22px;
+  margin-top: 2px;
+  --thumb-size: 14px;
+  transition: --fill 180ms var(--spring), opacity .25s ease, filter .25s ease;
+}
+.slider-track {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 99px;
+  background: var(--track);
+  overflow: hidden;
+  transition: height .2s var(--spring);
+}
+.slider:hover .slider-track,
+.row.dragging .slider-track { height: 6px; }
+
+.slider-fill {
+  height: 100%;
+  width: calc(var(--thumb-size) / 2 + (100% - var(--thumb-size)) * var(--fill) / 100);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+:root.glass .slider-fill { box-shadow: 0 0 10px var(--accent-glow); }
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  left: calc((100% - var(--thumb-size)) * var(--fill) / 100);
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  margin-top: calc(var(--thumb-size) / -2);
+  border-radius: 50%;
+  background: var(--thumb);
+  box-shadow: var(--thumb-shadow), 0 0 0 0 var(--accent-ring);
+  pointer-events: none;
+  transition: transform .28s var(--bounce), box-shadow .25s ease;
+}
+.slider:hover .slider-thumb { transform: scale(1.12); }
+.row.dragging .slider-thumb {
+  transform: scale(1.22);
+  box-shadow: var(--thumb-shadow), 0 0 0 6px var(--accent-ring);
+}
+
+/* Foco pelo teclado (Tab + setas) também mostra o anel na bolinha */
+.slider:has(.slider-input:focus-visible) .slider-thumb {
+  box-shadow: var(--thumb-shadow), 0 0 0 4px var(--accent-ring);
+}
+
+/* O input de verdade: invisível, com a "bolinha" do mesmo tamanho para o clique bater certinho */
+.slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
+}
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--thumb-size);
+  height: 22px;
+}
+
+/* =========================================================
+   Modo leve: tira tudo o que custa processamento
+   (vidro, brilhos, sombras, granulado e animações)
+   ========================================================= */
+:root.lite *, :root.lite *::before, :root.lite *::after {
+  animation: none !important;
+  transition: none !important;
+}
+:root.lite .card.enter { opacity: 1; }
+:root.lite .card.leave { opacity: 0; }
+:root.lite .card::before { display: none; }
+:root.lite .logo { filter: none; }
+:root.lite .row-icon img { filter: none; }
+:root.lite .switch input:checked + span { box-shadow: none; }
+
+
+/* =========================================================
+   Identidade do Volum (04/11/2026, refinamento do visual do Figma do Esdras)
+   Fundo #090909, branco no lugar de todo o laranja (inclusive nos degradês), fonte Sora,
+   ícones de traço com o mesmo peso. Vale para o mixer e para a janela de configurações
+   (que também carrega este arquivo). Fica por cima do resto.
+   ========================================================= */
+@font-face {
+  font-family: "Sora";
+  src: url("fonts/Sora.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: block;
+}
+:root, :root.glass {
+  --ink: #ffffff;                       /* o antigo laranja: destaque, preenchimentos, bolinha */
+  --ink-soft: rgba(255, 255, 255, .72); /* ícones parados */
+  --ink-dim: rgba(255, 255, 255, .46);  /* textos secundários */
+  --ink-faint: rgba(255, 255, 255, .09);/* trilhos */
+  --ink-hover: rgba(255, 255, 255, .06);
+  --edge-mid: #262626;                  /* meio do degradê da borda (antes marrom) */
+  --card-edge: #1a1a1a;                 /* borda do mixer: cinza quase preto, bem sutil */
+  --blue: #0084ff;
+  --blue-mid: #0d5598;
+
+  --accent: var(--ink);
+  --accent-2: var(--ink);
+  --accent-ring: rgba(255, 255, 255, .16);
+  --accent-glow: rgba(255, 255, 255, .2);
+  --bg: #090909;
+  --surface: #101010;
+  --surface-hover: #161616;
+  --border: #1c1c1c;
+  --highlight: transparent;
+  --text: #ffffff;
+  --subtext: var(--ink-dim);
+  --icon: var(--ink-soft);
+  --track: rgba(255, 255, 255, .12);
+  --meter-bg: var(--ink-faint);
+  --seg-bg: #0d0d0d;
+  --seg-active: #1e1e1e;
+  --thumb: #ffffff;
+  --water: var(--blue);
+  --water-2: var(--blue);
+  --news-bg: #0e0e0e;
+}
+:root[data-scheme="light"], :root.glass[data-scheme="light"] {
+  --ink: #111111;
+  --ink-soft: rgba(17, 17, 17, .72);
+  --ink-dim: rgba(17, 17, 17, .5);
+  --ink-faint: rgba(17, 17, 17, .09);
+  --ink-hover: rgba(17, 17, 17, .05);
+  --edge-mid: #e2e2e2;
+  --card-edge: #e8e8e8;
+  --blue-mid: #6db8ff;
+  --accent-ring: rgba(17, 17, 17, .14);
+  --accent-glow: rgba(17, 17, 17, .15);
+  --bg: #ffffff;
+  --surface: #f6f6f6;
+  --surface-hover: #efefef;
+  --border: #e6e6e6;
+  --text: #111111;
+  --track: rgba(17, 17, 17, .14);
+  --seg-bg: #f1f1f1;
+  --seg-active: #ffffff;
+  --news-bg: #ffffff;
+}
+html, body, :root.glass, :root.glass body { background: transparent; }
+body, button, input { font-family: "Sora", "Segoe UI", system-ui, sans-serif; }
+button:focus-visible, input:focus-visible + span { outline: 1.5px solid var(--ink); outline-offset: 2px; }
+
+/* Ícones: todos de traço, mesmo peso */
+.ico { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Cartão ---------- */
+.card, :root.glass .card {
+  width: 360px;
+  padding-bottom: 6px;
+  color: var(--text);
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: none;
+}
+/* Borda de 1 px, cinza quase preto e uniforme em toda a volta, num ::before com máscara */
+.card::before, :root.lite .card::before {
+  display: block;
+  z-index: 2;
+  padding: 1px;
+  opacity: 1;
+  background: var(--card-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* ---------- Cabeçalho ---------- */
+.header { gap: 2px; height: 52px; padding: 0 12px 0 20px; }
+.logo { display: none; }
+.brand { margin: 0 auto 0 0; font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: .2px; color: var(--ink); }
+.icon-btn { width: 28px; height: 28px; border-radius: 8px; color: var(--ink-soft); }
+.icon-btn svg { width: 16px; height: 16px; }
+.icon-btn:hover { background: var(--ink-hover); color: var(--ink); }
+
+/* Sem painéis nem etiquetas: tudo numa lista só */
+.panel, :root.glass .panel { margin: 0; padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.section-label, .meter { display: none; }
+
+/* ---------- Linhas ----------
+   ícone (20) | nome, % e slider | alto-falante ou onda (24) */
+.row, .master .row, .mic .row {
+  grid-template-columns: 20px 1fr 24px;
+  column-gap: 14px;
+  align-items: center;
+  padding: 9px 14px 9px 20px;
+  border-radius: 0;
+}
+.apps .row:hover { background: var(--ink-hover); box-shadow: none; }
+.row-top { height: 16px; align-items: baseline; }
+.row-name, .master .row-name { font-size: 12.5px; font-weight: 400; line-height: 16px; color: var(--text); }
+.row-pct { min-width: 0; font-size: 10.5px; font-weight: 400; line-height: 16px; color: var(--ink-dim); }
+.row-pct::after { content: "%"; }
+.row.dragging .row-pct { font-weight: 400; color: var(--text); transform: none; }
+
+.row-icon { width: 20px; height: 20px; color: var(--ink-soft); }
+.row-icon svg { width: 18px; height: 18px; color: var(--ink-soft); }
+.row-icon img { width: 20px; height: 20px; filter: none; }
+.row-icon:not(:has(img)):not(:has(svg)) { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+
+/* Slider fino: trilho de 3 px, preenchimento em degradê até o branco, bolinha branca de 10 px.
+   A caixa do slider passa 5 px de cada lado do trilho para o centro da bolinha bater nas pontas. */
+.slider { --thumb-size: 10px; height: 12px; margin: 5px -5px 0; }
+.slider-track, .slider:hover .slider-track, .row.dragging .slider-track {
+  left: 5px; right: 5px; height: 3px; border-radius: 2px; background: var(--ink-faint);
+}
+.slider-fill, :root.glass .slider-fill {
+  width: calc(100% * var(--fill) / 100);
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--ink-faint), var(--ink));
+  box-shadow: none;
+}
+.slider-thumb, .row.dragging .slider-thumb {
+  background: var(--ink);
+  box-shadow: 0 0 4px rgba(0, 0, 0, .6);
+}
+.slider:hover .slider-thumb { transform: scale(1.15); }
+.row.dragging .slider-thumb { transform: scale(1.25); box-shadow: 0 0 0 5px var(--accent-ring); }
+.slider-input::-webkit-slider-thumb { height: 12px; }
+
+/* Alto-falante (volume geral e microfone) e onda (apps) */
+.mute, .icon-btn.mute { width: 24px; height: 24px; border-radius: 7px; color: var(--ink-soft); }
+.mute svg { width: 16px; height: 16px; }
+.mute:hover { background: var(--ink-hover); color: var(--ink); }
+.row.muted .mute { color: var(--ink-dim); }
+.row.muted .slider { opacity: .4; filter: none; }
+
+.wave-btn svg { width: 18px; height: 18px; overflow: visible; }
+.wave-btn path {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(calc(.3 + .7 * var(--lvl, 0)));   /* parada ainda parece onda */
+  transition: transform .12s ease, opacity .2s ease;
+}
+.wave-btn.sounding path { animation: wave-wiggle .9s ease-in-out infinite; }
+.wave-btn.sounding path:nth-child(2) { animation-delay: -.3s; }
+.wave-btn.sounding path:nth-child(3) { animation-delay: -.6s; }
+.wave-btn.sounding path:nth-child(4) { animation-delay: -.15s; }
+.wave-btn.sounding path:nth-child(5) { animation-delay: -.45s; }
+.wave-btn.sounding path:nth-child(6) { animation-delay: -.75s; }
+.wave-btn.sounding path:nth-child(7) { animation-delay: -.2s; }
+@keyframes wave-wiggle { 50% { scale: 1 .65; } }
+/* Mudo: as barrinhas somem e fica uma linha reta fraquinha */
+.row.muted .wave-btn { opacity: .35; }
+.row.muted .wave-btn path { transform: scaleY(0); animation: none; }
+.row.muted .wave-btn svg { background: linear-gradient(currentColor, currentColor) center / 16px 1.5px no-repeat; }
+
+/* ---------- Volume geral e microfone ---------- */
+.master { padding: 0 0 4px; }
+.mic { margin: 0; border: 0; }
+.mic .row { padding-bottom: 3px; }
+.mic-picker { padding: 0 14px 6px 54px; }
+/* Saída de áudio: logo abaixo do volume geral (a linha de cima perde um pouco do espaço de baixo) */
+.out[hidden] { display: none; }
+.master:has(.out:not([hidden])) #master .row { padding-bottom: 3px; }
+.mic-current { padding: 0; font-size: 10.5px; color: var(--ink-dim); }
+.mic-current:hover, .mic-current[aria-expanded="true"] { color: var(--text); }
+.mic-option { font-size: 11px; color: var(--ink-dim); }
+.mic-option:hover, .mic-option[aria-selected="true"] { color: var(--text); background: var(--ink-hover); }
+.mic-option svg { color: var(--ink); }
+
+/* ---------- Linhas separadoras: degradê com o branco no meio ---------- */
+.panel.water, .apps { position: relative; }
+.panel.water::before, .panel.water::after, .apps::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ink) 50%, transparent);
+  opacity: .22;
+}
+.panel.water::before, .apps::before { top: 0; }
+.panel.water::after { bottom: 0; }
+.panel.water:not([hidden]) ~ .apps::before { display: none; }
+
+/* ---------- Água hoje ---------- */
+.panel.water { margin: 4px 0 0; padding: 14px 14px 14px 20px; }
+.water-row { display: grid; grid-template-columns: 20px 1fr auto auto; column-gap: 14px; align-items: center; }
+.water-drop { width: 18px; height: 18px; justify-self: center; color: var(--blue); filter: none; }
+.water-text { gap: 1px; }
+.water-label { font-size: 12.5px; font-weight: 400; line-height: 16px; color: var(--text); }
+.water-amount { font-size: 10.5px; color: var(--ink-dim); }
+.water-amount.done { color: var(--blue); }
+#waterMinus {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 20px;
+  margin-right: -10px;     /* 4 px entre o − e o + (o gap da grade é 14) */
+  padding: 0;
+  border: 1px solid var(--ink-faint);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+#waterMinus:hover { background: var(--ink-hover); border-color: var(--track); }
+#waterMinus svg { width: 10px; height: 10px; }
+#waterMinus:disabled { opacity: .35; pointer-events: none; }
+.water-add {
+  height: 20px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.water-bar { height: 3px; margin: 10px 38px 0 34px;   /* termina onde terminam os sliders */ border-radius: 2px; background: var(--ink-faint); }
+.water-bar span { border-radius: 2px; background: linear-gradient(90deg, var(--ink-faint), var(--blue-mid) 12%, var(--blue)); }
+
+/* ---------- Apps ---------- */
+.apps { margin-top: 4px; padding: 6px 0 2px; max-height: 360px; }
+.panel.water:not([hidden]) ~ .apps { margin-top: 0; }
+.empty { margin: 8px 0 12px; color: var(--ink-dim); }
+
+/* ---------- Popup de novidades: mesmo cartão do mixer ---------- */
+.card.has-news { min-height: var(--news-h, 440px); }
+.card > .news, :root[data-scheme="light"] .card > .news { padding: 16px; background: rgba(0, 0, 0, .6); }
+:root[data-scheme="light"] .card > .news { background: rgba(0, 0, 0, .25); }
+.news-box {
+  position: relative;
+  padding: 16px 18px 18px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
+}
+/* Borda igual à do mixer */
+.news-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--card-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.mascot { width: 76px; height: 76px; margin: 0 auto 4px; }
+.news-title { margin: 0 0 14px; font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: .1px; color: var(--text); }
+.news-title small { margin-bottom: 4px; font-size: 9.5px; font-weight: 500; letter-spacing: .9px; color: var(--ink-dim); }
+.news-list { gap: 11px; margin: 0 0 16px; }
+.news-list li { grid-template-columns: 28px 1fr; gap: 12px; align-items: center; }
+.news-list .news-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--ink-hover); border: 1px solid var(--border); color: var(--ink); }
+.news-list .news-icon svg { width: 15px; height: 15px; }
+.news-list b { font-size: 12px; font-weight: 600; }
+.news-list span { font-size: 10.5px; line-height: 1.45; color: var(--ink-dim); }
+.news-ok, .news-ok:hover {
+  padding: 9px 0;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+/* Mascote em pixel art (mascot.css): ao lado do "Volum" e no popup de novidades */
+.brand { display: inline-flex; align-items: center; gap: 8px; }
+.brand-mascot { display: block; line-height: 0; }
+.brand-mascot .mascot.px { display: block; width: 32px; height: 22px; margin: 0; }
+.news-mascot { display: block; line-height: 0; }
+.news-mascot .mascot.px { display: block; width: 80px; height: 55px; margin: 2px auto 12px; }
+
+/* Botão dentro de uma novidade (ex.: "Ver na Microsoft Store") */
+.news-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 12px;
+  border: 1px solid var(--track);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.news-link:hover { background: var(--ink-hover); border-color: var(--ink-dim); }
+
+/* Etiqueta "Em breve" (novidade que ainda vai chegar) */
+.news-soon {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--track);
+  border-radius: 6px;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: .3px;
+  vertical-align: 1px;
+  color: var(--ink-dim);
+}
+
+/* ---------- Controles compartilhados com a janela de configurações ---------- */
+.switch span { background: var(--track); box-shadow: none; }
+.switch input:checked + span { background: var(--ink); box-shadow: none; }
+.switch input:checked + span::after { background: var(--bg); box-shadow: none; }
+.segmented { box-shadow: none; border: 1px solid var(--border); }
+.segmented::before { box-shadow: none; border: 1px solid var(--track); }
+.hotkey-btn:hover { border-color: var(--ink-dim); }
+.hotkey-btn.recording { color: var(--ink); border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent-ring); }
+
+/* Modo leve: sem animação da onda */
+:root.lite .wave-btn path { animation: none; }
+
+/* ---------- Barra de rolagem (mixer e janela de configurações) ----------
+   Fininha, sem setas e sem trilho: só uma pílula cinza que clareia ao passar o mouse.
+   A lista de apps tem altura máxima de 6 apps e meio (a metade do 7º mostra que dá para rolar). */
+.apps { max-height: 340px; overscroll-behavior: contain; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-thumb,
+.apps::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .12);
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background-clip: padding-box;
+  min-height: 32px;
+}
+::-webkit-scrollbar-thumb:hover,
+.apps::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, .24); }
+.apps::-webkit-scrollbar { width: 8px; }
+:root[data-scheme="light"] ::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, .14); }
+:root[data-scheme="light"] ::-webkit-scrollbar-thumb:hover { background-color: rgba(0, 0, 0, .26); }
+
+/* ---------- Ícones animados (cabeçalho do mixer e menu das configurações) ----------
+   Cada ícone tem a sua animação, que toca ao passar o mouse (e, no menu, ao escolher a seção).
+   Curta, uma vez só, e com a mesma mola das outras animações. No modo leve tudo fica parado (bloco .lite). */
+:root { --ico-spring: cubic-bezier(.34, 1.56, .64, 1); }
+svg[data-anim], svg[data-anim] * { transform-box: view-box; }
+svg[data-anim] { transform-origin: 50% 50%; overflow: visible; }
+
+/* Configurações: a engrenagem gira um dente com um tranquinho no fim */
+:is(.icon-btn:hover, .nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="gear"] { animation: ico-gear .7s var(--ico-spring); }
+@keyframes ico-gear { from { transform: rotate(0); } to { transform: rotate(90deg); } }
+
+/* Apoiar: o coração bate duas vezes */
+:is(.icon-btn:hover, .nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="heart"] { animation: ico-heart .8s ease-in-out; }
+@keyframes ico-heart {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.22); } 30% { transform: scale(.96); }
+  45% { transform: scale(1.14); } 65% { transform: scale(1); }
+}
+
+/* Sugestões: o balão balança e os três pontinhos sobem um de cada vez ("digitando...") */
+.icon-btn:hover svg[data-anim="chat"] { animation: ico-chat .6s var(--ico-spring); transform-origin: 30% 90%; }
+@keyframes ico-chat { 0% { transform: rotate(0); } 30% { transform: rotate(-10deg); } 60% { transform: rotate(6deg); } 100% { transform: rotate(0); } }
+.icon-btn:hover svg[data-anim="chat"] :is(.a-dot1, .a-dot2, .a-dot3) { animation: ico-dot .9s ease-in-out; }
+.icon-btn:hover svg[data-anim="chat"] .a-dot2 { animation-delay: .12s; }
+.icon-btn:hover svg[data-anim="chat"] .a-dot3 { animation-delay: .24s; }
+@keyframes ico-dot { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-2.2px); } }
+
+/* Teclado: as teclas afundam uma por uma e a barra de espaço por último */
+:is(.icon-btn:hover, .nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="keys"] .a-keys { animation: ico-keys .7s steps(1, end); }
+:is(.icon-btn:hover, .nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="keys"] .a-space { animation: ico-space .7s ease-out; transform-origin: 12px 14px; }
+@keyframes ico-keys { 0% { transform: translateY(0); } 15% { transform: translateY(.9px); } 40% { transform: translateY(0); } 55% { transform: translateY(.9px); } 80% { transform: translateY(0); } }
+@keyframes ico-space { 0%, 55% { transform: scaleX(1) translateY(0); } 70% { transform: scaleX(.8) translateY(.9px); } 100% { transform: scaleX(1) translateY(0); } }
+
+/* Minimizar: a linha encolhe e volta, como se descesse para a bandeja */
+.icon-btn:hover svg[data-anim="min"] { animation: ico-min .55s var(--ico-spring); }
+@keyframes ico-min { 0% { transform: none; } 40% { transform: translateY(2.5px) scaleX(.55); } 100% { transform: none; } }
+
+/* Ilha: a pílula cresce como a ilha abrindo e volta com a mola */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="pill"] { animation: ico-pill .75s var(--ico-spring); }
+@keyframes ico-pill { 0% { transform: scale(1, 1); } 40% { transform: scale(1.18, 1.35); } 100% { transform: scale(1, 1); } }
+
+/* Foco: o ponteiro dá uma volta inteira e o botão do cronômetro afunda */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="timer"] .a-hand { animation: ico-hand .9s cubic-bezier(.45, 0, .2, 1); transform-origin: 12px 13px; }
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="timer"] .a-button { animation: ico-press .9s ease-out; }
+@keyframes ico-hand { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes ico-press { 0%, 100% { transform: translateY(0); } 12% { transform: translateY(1.2px); } 28% { transform: translateY(0); } }
+
+/* Água: a gota sobe, cai e amassa no chão antes de voltar */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="drop"] { animation: ico-drop .8s ease-in-out; transform-origin: 50% 90%; }
+@keyframes ico-drop {
+  0% { transform: none; } 30% { transform: translateY(-3px) scale(.94, 1.06); }
+  55% { transform: translateY(0) scale(1.12, .86); } 75% { transform: translateY(-.8px) scale(.97, 1.03); } 100% { transform: none; }
+}
+
+/* Agenda: as duas argolas pulam, uma depois da outra (como a folha virando) */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="cal"] :is(.a-ring1, .a-ring2) { animation: ico-ring .55s var(--ico-spring); }
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="cal"] .a-ring2 { animation-delay: .1s; }
+@keyframes ico-ring { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-2.2px); } }
+
+/* Clima: os raios do sol giram e a nuvem passa um pouquinho para o lado */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="wx"] .a-rays { animation: ico-rays 1s var(--ico-spring); transform-origin: 8px 9.3px; }
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="wx"] .a-cloud { animation: ico-cloud 1s ease-in-out; }
+@keyframes ico-rays { from { transform: rotate(0); } to { transform: rotate(90deg); } }
+@keyframes ico-cloud { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(1.8px); } }
+
+/* Sobre: o pinguinho do "i" pula */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="info"] .a-idot { animation: ico-idot .6s var(--ico-spring); }
+@keyframes ico-idot { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-2.6px); } }
+
+/* Temas: a paleta balança e as gotas de tinta piscam */
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="palette"] { animation: ico-palette .7s var(--ico-spring); }
+:is(.nav-item:hover, .nav-item[aria-current="page"]) svg[data-anim="palette"] .a-dots { animation: ico-paint .7s steps(4, end); }
+@keyframes ico-palette { 0% { transform: rotate(0); } 35% { transform: rotate(-14deg); } 70% { transform: rotate(6deg); } 100% { transform: rotate(0); } }
+@keyframes ico-paint { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
+
+@media (prefers-reduced-motion: reduce) {
+  svg[data-anim], svg[data-anim] * { animation: none !important; }
+}
+
+/* =========================================================
+   Novidades em "stories" (0.7.0): uma novidade por vez com ilustração animada, pontinhos e "Próximo"/"Bora!".
+   Confete de pixel e o mascote pulando na entrada. Tudo parado no modo leve (regra geral do .lite).
+   ========================================================= */
+.news-box { overflow: hidden; padding: 18px 18px 16px; text-align: center; }
+.news-box::after {   /* brilho suave atrás do mascote */
+  content: ""; position: absolute; left: 50%; top: -60px; width: 260px; height: 180px; margin-left: -130px; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, .1), transparent); }
+.news-mascot .mascot.px { width: 64px; height: 44px; margin: 0 auto 8px; animation: news-hop .9s var(--spring, ease) .15s both; }
+@keyframes news-hop { 0% { opacity: 0; transform: translateY(14px) scale(.6); } 55% { opacity: 1; transform: translateY(-6px) scale(1.06); } 100% { transform: none; } }
+.news-title { margin: 0 0 12px; animation: news-rise .5s ease .25s both; }
+@keyframes news-rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* Confete de pixel: cai uma vez, girando de leve */
+.news-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 3; }
+.news-confetti i { position: absolute; top: -10px; width: 6px; height: 6px; image-rendering: pixelated; opacity: 0;
+  animation: news-fall 2s cubic-bezier(.25, .6, .4, 1) both; }
+@keyframes news-fall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--x, 0), 300px) rotate(var(--r, 180deg)); }
+}
+
+/* Palco: os slides ficam empilhados (altura da maior) e só o atual aparece */
+.news-stage { display: grid; text-align: left; }
+.news-slide { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+.news-slide.on { visibility: visible; opacity: 1; }
+.news-slide.from-right { animation: news-in-r .45s cubic-bezier(.2, .8, .2, 1) both; }
+.news-slide.from-left { animation: news-in-l .45s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes news-in-r { from { opacity: 0; transform: translateX(26px); filter: blur(4px); } }
+@keyframes news-in-l { from { opacity: 0; transform: translateX(-26px); filter: blur(4px); } }
+.news-head { display: block; font-size: 15px; font-weight: 700; letter-spacing: -.2px; color: var(--text); }
+.news-text { margin: 5px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); }
+.news-slide .news-link { margin-top: 10px; }
+
+/* Rodapé: pontinhos (o atual vira um tracinho) e o botão */
+.news-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.news-dots { display: flex; gap: 5px; }
+.news-dot { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 3px; background: var(--ink-faint); cursor: pointer; transition: width .3s cubic-bezier(.2, .8, .2, 1), background .25s ease; }
+.news-dot.seen { background: var(--ink-dim); }
+.news-dot.on { width: 20px; background: var(--ink); }
+.news-ok, .news-ok:hover { width: auto; min-width: 104px; padding: 9px 18px; transition: transform .15s ease, box-shadow .3s ease; }
+.news-ok.go { box-shadow: 0 0 0 4px rgba(255, 255, 255, .1), 0 6px 18px rgba(255, 255, 255, .15); }
+
+/* ---------- Ilustrações ---------- */
+.news-art { position: relative; display: grid; place-items: center; height: 116px; margin-bottom: 14px; overflow: hidden; border-radius: 12px;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, .08), transparent 60%), #0d0d0d; box-shadow: inset 0 0 0 1px var(--border); }
+.news-slide.on .news-art > * { animation: news-pop .6s cubic-bezier(.2, .9, .3, 1.2) .05s both; }
+@keyframes news-pop { from { opacity: 0; transform: translateY(10px) scale(.92); } }
+.na-icon { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px; background: var(--ink-hover); color: var(--ink); }
+.na-icon svg { width: 26px; height: 26px; }
+
+/* Ilha em miniatura: capa, hora e onda */
+.na-island { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 14px; border-radius: 14px; background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 10px 24px rgba(0, 0, 0, .5); color: #fff; font-size: 14px; font-weight: 700; }
+.na-island b { flex: 1; text-align: center; min-width: 60px; }
+.na-cover { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #ff9a62, #c36bff 60%, #5b5bff); }
+.na-wave { display: flex; align-items: center; gap: 2px; height: 16px; }
+.na-wave i { width: 3px; height: 100%; border-radius: 2px; background: #fff; animation: na-wave 1s ease-in-out infinite; }
+.na-wave i:nth-child(1) { height: 30%; animation-delay: -.2s; } .na-wave i:nth-child(2) { height: 65%; animation-delay: -.5s; }
+.na-wave i:nth-child(3) { animation-delay: -.8s; } .na-wave i:nth-child(4) { height: 50%; animation-delay: -.3s; }
+.na-wave i:nth-child(5) { height: 80%; animation-delay: -.6s; } .na-wave i:nth-child(6) { height: 35%; animation-delay: -.1s; }
+@keyframes na-wave { 50% { transform: scaleY(.45); } }
+
+/* Pomodoro: a bolha sai de trás da ilha e o anel vai enchendo */
+.na-pomo { display: flex; align-items: center; gap: 7px; }
+.na-small { width: 150px; }
+.na-bubble { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 14px; background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .12); animation: na-bubble 4s cubic-bezier(.2, .9, .3, 1.2) infinite; }
+.na-bubble svg { position: absolute; width: 30px; height: 30px; }
+.na-bubble .na-clock { position: static; width: 15px; height: 15px; }
+.na-ring-bg { fill: none; stroke: rgba(135, 135, 135, .5); stroke-width: 3; }
+.na-ring { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 81.7; transform: rotate(-90deg); transform-origin: center;
+  animation: na-ring 4s linear infinite; }
+@keyframes na-bubble { 0%, 8% { opacity: 0; transform: translateX(-30px) scale(.4); } 22%, 88% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateX(-30px) scale(.4); } }
+@keyframes na-ring { 0%, 20% { stroke-dashoffset: 81.7; } 85%, 100% { stroke-dashoffset: 0; } }
+
+/* Temas: quatro cartinhas em leque, flutuando */
+.na-themes { position: relative; width: 220px; height: 84px; }
+.na-t { position: absolute; top: 6px; width: 58px; height: 72px; border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .1);
+  animation: na-float 3.2s ease-in-out infinite; }
+.na-xmas { left: 4px; transform: rotate(-9deg); background: radial-gradient(circle at 20% 18%, #e8384f 0 3px, transparent 4px), radial-gradient(circle at 50% 22%, #ffc94d 0 3px, transparent 4px),
+  radial-gradient(circle at 80% 18%, #8fb8ff 0 3px, transparent 4px), linear-gradient(180deg, #2e7d46 0 9px, #102016 9px, #0a120d); }
+.na-snow { left: 56px; transform: rotate(-3deg); animation-delay: -.8s;
+  background: radial-gradient(circle at 78% 20%, #f6f1d4 0 5px, transparent 6px), radial-gradient(circle at 25% 40%, #fff 0 1px, transparent 2px),
+  radial-gradient(circle at 55% 62%, #fff 0 1px, transparent 2px), linear-gradient(180deg, #13214a, #070b18 75%, #eef4ff 75%); }
+.na-candy { left: 108px; transform: rotate(3deg); animation-delay: -1.6s; background: #170a11; border: 3px solid transparent;
+  background-image: linear-gradient(#170a11, #170a11), repeating-linear-gradient(135deg, #e0283f 0 5px, #fff 5px 10px);
+  background-origin: border-box; background-clip: padding-box, border-box; }
+.na-glass { left: 160px; transform: rotate(9deg); animation-delay: -2.4s;
+  background: radial-gradient(circle at 30% 25%, rgba(122, 92, 255, .9), transparent 55%), radial-gradient(circle at 75% 80%, rgba(198, 242, 78, .7), transparent 55%), #15151c; }
+@keyframes na-float { 50% { translate: 0 -5px; } }
+/* Verão Vice: prints reais do mixer nos dois temas, um por vez (troca suave + aproximação lenta) */
+.na-shots { position: relative; width: 196px; height: 109px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 26px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .12); }
+.na-shots img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: na-shot 9s ease-in-out infinite; }
+.na-shots img + img { animation-delay: -4.5s; }
+@keyframes na-shot { 0% { opacity: 0; transform: scale(1.02); } 8%, 46% { opacity: 1; } 54%, 100% { opacity: 0; transform: scale(1.1); } }
+:root.lite .na-shots img + img { display: none; }
+:root.lite .na-shots img { animation: none; opacity: 1; }
+/* Pesquisa: as cinco carinhas; a escolha passa por elas e para na última (que pula) */
+.na-rate { display: flex; gap: 8px; }
+.na-rate i { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; font-style: normal; font-size: 21px; background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); filter: grayscale(.7); opacity: .6; animation: na-rate 4s ease-in-out infinite; }
+.na-rate i:nth-child(1) { animation-delay: 0s; } .na-rate i:nth-child(2) { animation-delay: .25s; } .na-rate i:nth-child(3) { animation-delay: .5s; } .na-rate i:nth-child(4) { animation-delay: .75s; }
+.na-rate i:nth-child(5) { animation-name: na-rate-pick; animation-delay: 0s; }
+@keyframes na-rate { 0%, 100% { filter: grayscale(.7); opacity: .6; transform: none; } 6% { filter: none; opacity: 1; transform: translateY(-3px); } 14% { filter: grayscale(.7); opacity: .6; transform: none; } }
+@keyframes na-rate-pick { 0%, 25% { filter: grayscale(.7); opacity: .6; transform: none; background: rgba(255, 255, 255, .05); }
+  32%, 88% { filter: none; opacity: 1; transform: translateY(-4px) scale(1.12); background: #fff; } 100% { filter: grayscale(.7); opacity: .6; transform: none; } }
+:root.lite .na-rate i { animation: none; }
+
+/* Vidro: barra de abas com a pílula verde-limão que estica de uma aba para a outra */
+.na-tabs { position: relative; display: flex; gap: 8px; padding: 6px; border-radius: 24px; background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.na-tabs i { position: relative; z-index: 1; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1); }
+.na-pill { position: absolute; z-index: 2; top: 6px; left: 6px; width: 34px; height: 34px; border-radius: 17px;
+  background: linear-gradient(135deg, #f0ffae, #c6f24e 55%, #9fd82e); box-shadow: 0 0 18px rgba(198, 242, 78, .45); animation: na-pill 4s cubic-bezier(.3, .9, .3, 1) infinite; }
+@keyframes na-pill {
+  0%, 12% { left: 6px; width: 34px; }
+  24% { left: 6px; width: 76px; }
+  34%, 46% { left: 48px; width: 34px; }
+  58% { left: 48px; width: 118px; }
+  68%, 82% { left: 132px; width: 34px; }
+  92% { left: 6px; width: 160px; }
+  100% { left: 6px; width: 34px; }
+}
+
+/* Bateria e mudo: o anel desce mudando de cor (verde → amarelo → vermelho) */
+.na-bat { gap: 8px; }
+.na-ring-bat { width: 22px; height: 22px; }
+.na-bat-bg { fill: none; stroke: rgba(135, 135, 135, .4); stroke-width: 1.8; }
+.na-bat-fg { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 62.8; transform: rotate(-90deg); transform-origin: center;
+  animation: na-bat 5s linear infinite; }
+@keyframes na-bat { 0% { stroke-dashoffset: 0; stroke: hsl(110, 88%, 52%); } 50% { stroke: hsl(45, 88%, 56%); } 90%, 100% { stroke-dashoffset: 50; stroke: hsl(0, 88%, 56%); } }
+.na-mute { display: grid; place-items: center; width: 24px; color: #9a9a9a; }
+.na-mute svg { width: 20px; height: 20px; }
+
+/* Correções: chave inglesa com brilhinhos em volta */
+.na-fix { position: relative; display: grid; place-items: center; width: 120px; height: 90px; }
+.na-fix-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: #fff; color: #090909;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, .08); animation: na-wrench 2.4s ease-in-out infinite; }
+.na-fix-icon svg { width: 28px; height: 28px; }
+.na-fix i { position: absolute; width: 6px; height: 6px; background: #fff; animation: na-twinkle 2s ease-in-out infinite; }
+.na-fix i:nth-of-type(1) { left: 14px; top: 18px; } .na-fix i:nth-of-type(2) { right: 12px; top: 30px; animation-delay: -.7s; }
+.na-fix i:nth-of-type(3) { left: 30px; bottom: 10px; animation-delay: -1.3s; width: 4px; height: 4px; }
+@keyframes na-wrench { 0%, 70%, 100% { transform: rotate(0); } 78% { transform: rotate(-14deg); } 88% { transform: rotate(10deg); } }
+@keyframes na-twinkle { 0%, 100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1); } }
+
+/* Tema claro: o palco da ilustração continua escuro (as miniaturas são da ilha, que é sempre preta) */
+:root[data-scheme="light"] .news-art { background: radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, .08), transparent 60%), #111; }

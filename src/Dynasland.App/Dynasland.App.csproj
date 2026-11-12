@@ -26,6 +26,11 @@
     <Resource Include="Assets\Fonts\*.ttf" />
   </ItemGroup>
 
+  <!-- Páginas web das janelas (WebView2): copiadas para a pasta Web ao lado do executável. CSS derivado do Volum (MIT). -->
+  <ItemGroup>
+    <Content Include="Web\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="Dynasland.Tests" />
   </ItemGroup>
@@ -33,6 +38,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
   </ItemGroup>
 
   <ItemGroup>

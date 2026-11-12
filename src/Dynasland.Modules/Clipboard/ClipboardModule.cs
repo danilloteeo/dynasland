@@ -18,7 +18,6 @@ public sealed class ClipboardModule(
     IClipboardService clipboard,
     ClipboardHistory history,
     IIslandSettingsService settings,
-    IHubService hub,
     IEventBus bus,
     IUiDispatcher ui,
     IShortcutRegistry shortcuts,
@@ -51,12 +50,12 @@ public sealed class ClipboardModule(
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await clipboard.StartAsync(cancellationToken);
-        _content = new ClipboardContent(ReloadHistoryAsync, () => hub.Open(HubPage.Clipboard));
+        _content = new ClipboardContent(ReloadHistoryAsync, () => { });
         clipboard.ContentChanged += OnContentChanged;
         _registrations.Add(shortcuts.Register(new IslandShortcut("clipboard.panel", ModuleId, Glyphs.Clipboard, "Área de transferência", OpenPanel)));
         _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
             "clipboard.history", "Histórico da área de transferência", "Área de transferência",
-            new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'V'), () => hub.Open(HubPage.Clipboard))));
+            new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'V'), OpenPanel)));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

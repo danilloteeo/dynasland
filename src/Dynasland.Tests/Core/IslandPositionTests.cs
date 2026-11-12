@@ -12,10 +12,10 @@ public class IslandPositionTests
     private static readonly PixelRect FullHd = new(0, 0, 1920, 1040);
 
     [Fact]
-    public void Defaults_keep_the_floating_island_centered()
+    public void Defaults_keep_the_docked_island_centered()
     {
         Assert.Equal(IslandPosition.Center, IslandSettings.Default.Position);
-        Assert.Equal(IslandShape.Float, IslandSettings.Default.Shape);
+        Assert.Equal(IslandShape.Notch, IslandSettings.Default.Shape);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class IslandPositionTests
         var settings = IslandSettingsMapper.FromValues(values);
 
         Assert.Equal(IslandPosition.Center, settings.Position);
-        Assert.Equal(IslandShape.Float, settings.Shape);
+        Assert.Equal(IslandShape.Notch, settings.Shape);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class IslandPositionTests
         var settings = IslandSettingsMapper.FromValues(new Dictionary<string, string>());
 
         Assert.Equal(IslandPosition.Center, settings.Position);
-        Assert.Equal(IslandShape.Float, settings.Shape);
+        Assert.Equal(IslandShape.Notch, settings.Shape);
     }
 
     [Fact]

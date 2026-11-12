@@ -5,16 +5,16 @@ namespace Dynasland.Core.Layout;
 /// <summary>Dimensões da cápsula para cada estado da ilha.</summary>
 public static class IslandLayout
 {
-    public static IslandDimensions Compact { get; } = new(190, 34, 17);
+    public static IslandDimensions Compact { get; } = new(250, 32, 16);
 
     public static IslandDimensions Expanded { get; } = new(340, 72, 30);
 
-    public static IslandDimensions Interactive { get; } = new(400, 150, 36);
+    public static IslandDimensions Interactive { get; } = new(440, 150, 30);
 
     /// <summary>Limites aceitos para tamanhos pedidos pelos módulos (a janela comporta o máximo + sombra).</summary>
     public static IslandDimensions Minimum { get; } = new(120, 30, 0);
 
-    public static IslandDimensions Maximum { get; } = new(420, 380, 0);
+    public static IslandDimensions Maximum { get; } = new(440, 380, 0);
 
     public static IslandDimensions For(IslandState state) => state switch
     {

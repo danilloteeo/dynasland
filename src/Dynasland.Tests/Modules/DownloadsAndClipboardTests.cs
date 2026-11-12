@@ -75,7 +75,7 @@ public class DownloadsAndClipboardTests : IDisposable
     {
         var history = new ClipboardHistory(clipboard, new SqliteClipboardHistoryStore(db.Factory), settings, time, NullLogger<ClipboardHistory>.Instance);
         var module = new ClipboardModule(
-            clipboard, history, settings, new FakeHub(), _recorder.Bus, new InlineDispatcher(), new ShortcutRegistry(),
+            clipboard, history, settings, _recorder.Bus, new InlineDispatcher(), new ShortcutRegistry(),
             new GlobalShortcutRegistry(new InMemorySettingsStore()), TestOptions.Create(), NullLogger<ClipboardModule>.Instance);
         return (module, history);
     }

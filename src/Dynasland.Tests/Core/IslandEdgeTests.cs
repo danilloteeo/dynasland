@@ -6,9 +6,9 @@ namespace Dynasland.Tests.Core;
 public class IslandEdgeTests
 {
     [Fact]
-    public void Default_edge_is_bottom()
+    public void Default_edge_is_top()
     {
-        Assert.Equal(IslandEdge.Bottom, IslandSettings.Default.Edge);
+        Assert.Equal(IslandEdge.Top, IslandSettings.Default.Edge);
     }
 
     [Fact]
@@ -28,6 +28,6 @@ public class IslandEdgeTests
     {
         var values = new Dictionary<string, string> { [IslandSettingsMapper.Keys.Edge] = raw };
 
-        Assert.Equal(IslandEdge.Bottom, IslandSettingsMapper.FromValues(values).Edge);
+        Assert.Equal(IslandEdge.Top, IslandSettingsMapper.FromValues(values).Edge);
     }
 }

@@ -131,6 +131,6 @@ public sealed partial class ClockContent : ObservableObject, IActivityContent
         }
 
         var rows = (Shortcuts.Count + ShortcutsPerRow - 1) / ShortcutsPerRow;
-        return new IslandDimensions(400, 120 + rows * 46 + Glances.Count * 22, 36);
+        return new IslandDimensions(440, 120 + rows * 46 + Glances.Count * 22, 36);
     }
 }

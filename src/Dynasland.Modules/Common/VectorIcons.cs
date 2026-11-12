@@ -71,6 +71,12 @@ public static class VectorIcons
 
     public const string Keyboard = Prefix + "keyboard";
 
+    /// <summary>Linha de alta com seta (módulo Cotações).</summary>
+    public const string Trend = Prefix + "trend";
+
+    /// <summary>Bola de basquete (módulo Placar).</summary>
+    public const string Ball = Prefix + "ball";
+
     public const string Storage = Prefix + "storage";
 
     public const string Info = Prefix + "info";
@@ -233,6 +239,12 @@ public static class VectorIcons
         [Lock] = new VectorIcon(
             Outline: "M5,11 H19 A2,2 0 0 1 21,13 V20 A2,2 0 0 1 19,22 H5 A2,2 0 0 1 3,20 V13 A2,2 0 0 1 5,11 Z",
             Detail: "M7,11 V7 A5,5 0 0 1 17,7 V11"),
+        [Trend] = new VectorIcon(
+            Outline: "M3,17 L9,11 L13,15 L21,7",
+            Detail: "M15,7 H21 V13"),
+        [Ball] = new VectorIcon(
+            Outline: "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12",
+            Detail: "M2,12 H22 M12,2 V22 M5,5 C9,9 9,15 5,19 M19,5 C15,9 15,15 19,19"),
         [Keyboard] = new VectorIcon(
             Outline: "M4,5 H20 A2,2 0 0 1 22,7 V17 A2,2 0 0 1 20,19 H4 A2,2 0 0 1 2,17 V7 A2,2 0 0 1 4,5 Z",
             Detail: "M6,9 H6.01 M10,9 H10.01 M14,9 H14.01 M18,9 H18.01 M8,15 H16"),

@@ -28,7 +28,7 @@ public sealed class QueueContent(string title) : IActivityContent
     public System.Collections.ObjectModel.ObservableCollection<QueueItemViewModel> Items { get; } = [];
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) =>
-        state == IslandState.Interactive ? new IslandDimensions(400, Math.Min(380, 64 + Items.Count * 40), 34) : null;
+        state == IslandState.Interactive ? new IslandDimensions(440, Math.Min(380, 64 + Items.Count * 40), 34) : null;
 }
 
 /// <summary>View model de uma sessão de mídia. Atualizado sempre na thread de UI.</summary>
@@ -282,7 +282,7 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     {
         IslandState.Compact => new IslandDimensions(HasOtherSessions ? 252 : 232, 34, 17),
         IslandState.Expanded => new IslandDimensions(360, 72, 30),
-        IslandState.Interactive => new IslandDimensions(400, 168 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0) + (HasLyrics ? 70 : 0), 36),
+        IslandState.Interactive => new IslandDimensions(440, 132 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0) + (HasLyrics ? 70 : 0), 36),
         _ => null,
     };
 

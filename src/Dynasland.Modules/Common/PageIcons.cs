@@ -32,6 +32,9 @@ public static class PageIcons
         ["gaming"] = new(VectorIcons.Game, "Jogo"),
         ["clock"] = new(VectorIcons.Clock, "Relógio"),
         ["water"] = new(VectorIcons.Water, "Água"),
+        ["quotes"] = new(VectorIcons.Trend, "Cotações"),
+        ["scores"] = new(VectorIcons.Ball, "Placar"),
+        ["keys"] = new(VectorIcons.Keyboard, "Teclas"),
         [AppModuleId] = new(VectorIcons.Refresh, "Atualização"),
     };
 

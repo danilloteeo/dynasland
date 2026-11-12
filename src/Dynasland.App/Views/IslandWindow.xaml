@@ -42,59 +42,49 @@
             <Setter Property="IsHitTestVisible" Value="False" />
         </Style>
 
-        <Style x:Key="FooterButton" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
-            <Setter Property="Width" Value="24" />
-            <Setter Property="Height" Value="24" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
-        </Style>
-
-        <!-- Ícone da dock: botão redondo; o do módulo em foco vira pílula branca (como a atividade ativa do Volum).
-             Selos: anel fino de progresso (ex.: água do dia) e ponto de aviso (ex.: notificações novas). -->
-        <Style x:Key="DockItemButton" TargetType="Button">
+        <!-- Seta de página: círculo de 22px a 10% de branco (18% no hover), com a seta em cinza que clareia, como no Volum. -->
+        <Style x:Key="PageArrow" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Margin" Value="2,0" />
-            <Setter Property="FontFamily" Value="{StaticResource IslandIconFont}" />
-            <Setter Property="FontSize" Value="17" />
-            <Setter Property="Foreground" Value="#FFD6D6D6" />
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Foreground" Value="#FF9B9BA1" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Border x:Name="Pill" Background="Transparent" CornerRadius="18">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <Ellipse x:Name="RingTrack" Stroke="#26FFFFFF" StrokeThickness="2" Visibility="Collapsed" IsHitTestVisible="False" />
-                            <Ellipse x:Name="Ring" Stroke="{StaticResource IslandFillBrush}" StrokeThickness="2" Visibility="Collapsed" IsHitTestVisible="False"
-                                     StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5"
-                                     StrokeDashArray="{Binding Badge.Progress, Converter={StaticResource RingDash}}">
-                                <Ellipse.RenderTransform>
-                                    <RotateTransform Angle="-90" />
-                                </Ellipse.RenderTransform>
-                            </Ellipse>
-                            <Ellipse x:Name="Dot" Width="9" Height="9" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,3,0"
-                                     Fill="{StaticResource IslandCriticalBrush}" Stroke="#FF000000" StrokeThickness="1.5"
-                                     Visibility="Collapsed" IsHitTestVisible="False" />
+                            <Ellipse x:Name="Disc" Fill="#1AFFFFFF" />
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource IslandSurfaceBrush}" />
-                                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                                <Setter TargetName="Disc" Property="Fill" Value="#2EFFFFFF" />
+                                <Setter Property="Foreground" Value="#FFF5F5F7" />
                             </Trigger>
-                            <DataTrigger Binding="{Binding Badge.Kind}" Value="Ring">
-                                <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="RingTrack" Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Badge.Kind}" Value="Dot">
-                                <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
-                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Bolinha de página: 5px a 30% de branco; a da página aberta fica comprida (14px) e branca. -->
+        <Style x:Key="PageDot" TargetType="Button">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent" Height="14" Margin="2.5,0">
+                            <Border x:Name="Dot" Width="4" Height="4" CornerRadius="2" Background="#33FFFFFF" VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                <Setter TargetName="Pill" Property="Background" Value="{StaticResource IslandFillBrush}" />
-                                <Setter Property="Foreground" Value="#FF090909" />
+                                <Setter TargetName="Dot" Property="Width" Value="12" />
+                                <Setter TargetName="Dot" Property="Background" Value="#FFFFFFFF" />
                             </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Dot" Property="Background" Value="#80FFFFFF" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -131,8 +121,8 @@
                     </MultiBinding>
                 </Border.CornerRadius>
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="20"
-                                      ShadowDepth="4"
+                    <DropShadowEffect BlurRadius="30"
+                                      ShadowDepth="8"
                                       Direction="270"
                                       Opacity="{DynamicResource IslandShadowOpacity}"
                                       Color="Black"
@@ -151,47 +141,151 @@
                 </Border.CornerRadius>
                 <Grid x:Name="ContentGrid" ClipToBounds="True">
                     <Grid.RowDefinitions>
-                        <!-- Conteúdo do módulo (expandido/interativo); altura 0 no compacto. -->
-                        <RowDefinition x:Name="ContentRowDefinition" Height="*" />
-                        <!-- A dock: sempre visível. -->
-                        <RowDefinition x:Name="FooterRow" Height="48" />
+                        <!-- Data e hora (só aberta). -->
+                        <RowDefinition x:Name="StatusRow" Height="0" />
+                        <!-- Conteúdo do módulo. -->
+                        <RowDefinition Height="*" />
+                        <!-- Bolinhas das páginas (só aberta, com mais de uma página). -->
+                        <RowDefinition x:Name="DotsRow" Height="0" />
                     </Grid.RowDefinitions>
 
-                    <!-- Vidro: brilho suave no topo e linha fina entre o conteúdo e a dock. -->
-                    <Border Grid.RowSpan="2" IsHitTestVisible="False">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#1CFFFFFF" Offset="0" />
-                                <GradientStop Color="#00FFFFFF" Offset="0.55" />
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <Border x:Name="DockDivider" Grid.Row="1" Height="1" Margin="14,0" Background="#26FFFFFF"
-                            VerticalAlignment="Top" IsHitTestVisible="False" Opacity="0" />
+                    <!-- Ilha fechada: o conteúdo compacto ocupa a cápsula inteira (relógio no meio, como no Volum). -->
+                    <ContentPresenter x:Name="CompactLayer" Grid.RowSpan="3"
+                                      Style="{StaticResource LayerStyle}"
+                                      Content="{Binding CompactContent}"
+                                      ContentTemplateSelector="{StaticResource CompactTemplates}">
+                        <ContentPresenter.RenderTransform>
+                            <TranslateTransform />
+                        </ContentPresenter.RenderTransform>
+                    </ContentPresenter>
 
-                    <ContentPresenter x:Name="ExpandedLayer"
+                    <!-- Pílula fechada do Volum: clima na esquerda, hora no meio e a onda (música tocando) na direita. -->
+                    <Grid x:Name="ClosedPill" Grid.RowSpan="3" Margin="12,0,14,0" Opacity="0" IsHitTestVisible="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <!-- Esquerda: clima (ícone e temperatura). -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Visibility="{Binding HasWeather, Converter={StaticResource BoolToVisibility}}">
+                            <ContentControl Content="{Binding WeatherGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
+                                            Foreground="{StaticResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
+                            <TextBlock Text="{Binding WeatherTemp}" Margin="4,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                       Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding PillTime}" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}"
+                                   FontSize="14" FontWeight="Bold" Typography.NumeralAlignment="Tabular" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Height="14"
+                                        Visibility="{Binding MusicPlaying, Converter={StaticResource BoolToVisibility}}" AutomationProperties.Name="Música tocando">
+                                <StackPanel.Resources>
+                                    <Style TargetType="Rectangle">
+                                        <Setter Property="Width" Value="2.5" />
+                                        <Setter Property="Margin" Value="1,0" />
+                                        <Setter Property="RadiusX" Value="1.25" />
+                                        <Setter Property="RadiusY" Value="1.25" />
+                                        <Setter Property="Fill" Value="{DynamicResource IslandPrimaryTextBrush}" />
+                                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+                                    </Style>
+                                </StackPanel.Resources>
+                                <Rectangle x:Name="Wave1"><Rectangle.RenderTransform><ScaleTransform ScaleY="0.35" /></Rectangle.RenderTransform></Rectangle>
+                                <Rectangle x:Name="Wave2"><Rectangle.RenderTransform><ScaleTransform ScaleY="0.75" /></Rectangle.RenderTransform></Rectangle>
+                                <Rectangle x:Name="Wave3"><Rectangle.RenderTransform><ScaleTransform ScaleY="1" /></Rectangle.RenderTransform></Rectangle>
+                                <Rectangle x:Name="Wave4"><Rectangle.RenderTransform><ScaleTransform ScaleY="0.6" /></Rectangle.RenderTransform></Rectangle>
+                                <Rectangle x:Name="Wave5"><Rectangle.RenderTransform><ScaleTransform ScaleY="0.4" /></Rectangle.RenderTransform></Rectangle>
+                                <StackPanel.Triggers>
+                                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard Timeline.DesiredFrameRate="20" RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetName="Wave1" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.5" AutoReverse="True" />
+                                                <DoubleAnimation Storyboard.TargetName="Wave2" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.3" Duration="0:0:0.62" AutoReverse="True" />
+                                                <DoubleAnimation Storyboard.TargetName="Wave3" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.45" Duration="0:0:0.42" AutoReverse="True" />
+                                                <DoubleAnimation Storyboard.TargetName="Wave4" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.56" AutoReverse="True" />
+                                                <DoubleAnimation Storyboard.TargetName="Wave5" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.9" Duration="0:0:0.46" AutoReverse="True" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </StackPanel.Triggers>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Aviso (estado expandido): faixa que ocupa a cápsula inteira. -->
+                    <ContentPresenter x:Name="ExpandedLayer" Grid.RowSpan="3"
                                       Style="{StaticResource LayerStyle}"
                                       Content="{Binding ExpandedContent}"
-                                      ContentTemplateSelector="{StaticResource ExpandedTemplates}">
+                                      ContentTemplateSelector="{StaticResource ExpandedTemplates}"
+                                      RenderTransformOrigin="0.5,0.5">
                         <ContentPresenter.RenderTransform>
-                            <TranslateTransform />
+                            <TransformGroup>
+                                <ScaleTransform />
+                                <TranslateTransform />
+                            </TransformGroup>
                         </ContentPresenter.RenderTransform>
                     </ContentPresenter>
-                    <ContentPresenter x:Name="InteractiveLayer"
+
+                    <!-- Ilha aberta: o painel do módulo entre a data/hora e as bolinhas. -->
+                    <ContentPresenter x:Name="InteractiveLayer" Grid.Row="1" Margin="26,0"
                                       Style="{StaticResource LayerStyle}"
                                       Content="{Binding InteractiveContent}"
-                                      ContentTemplateSelector="{StaticResource InteractiveTemplates}">
+                                      ContentTemplateSelector="{StaticResource InteractiveTemplates}"
+                                      RenderTransformOrigin="0.5,0.5">
                         <ContentPresenter.RenderTransform>
-                            <TranslateTransform />
+                            <TransformGroup>
+                                <ScaleTransform />
+                                <TranslateTransform />
+                            </TransformGroup>
                         </ContentPresenter.RenderTransform>
                     </ContentPresenter>
+
+                    <!-- Data e hora no alto da ilha aberta: "qui., 12 nov" em cinza e a hora em negrito. -->
+                    <StackPanel x:Name="StatusBar" Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                IsHitTestVisible="False" Opacity="0">
+                        <TextBlock Text="{Binding StatusDate}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5"
+                                   Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                        <TextBlock Text="{Binding StatusTime}" Margin="4,0,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" FontWeight="SemiBold"
+                                   Typography.NumeralAlignment="Tabular" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                    </StackPanel>
+
+                    <!-- Setas ‹ › nas laterais do painel (só com mais de uma página). -->
+                    <Grid x:Name="Pager" Grid.RowSpan="3" Opacity="0" IsHitTestVisible="False"
+                          Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
+                        <Button Style="{StaticResource PageArrow}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,42,0,0"
+                                Command="{Binding PreviousPageCommand}" ToolTip="Página anterior" AutomationProperties.Name="Página anterior">
+                            <Path Data="M10,3.5 L5.5,8 L10,12.5" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.8"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="16" Height="16" />
+                        </Button>
+                        <Button Style="{StaticResource PageArrow}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,42,12,0"
+                                Command="{Binding NextPageCommand}" ToolTip="Próxima página" AutomationProperties.Name="Próxima página">
+                            <Path Data="M6,3.5 L10.5,8 L6,12.5" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.8"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="16" Height="16" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Bolinhas das páginas: a da página aberta fica comprida e branca; clicar numa abre aquela página. -->
+                    <ItemsControl x:Name="Dots" Grid.Row="2" ItemsSource="{Binding Dock}" Focusable="False" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                  Margin="0,3,0,0" Opacity="0" IsHitTestVisible="False"
+                                  Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource PageDot}" ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}"
+                                        Command="{Binding DataContext.OpenDockItemCommand, ElementName=Root}" CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <!--
                         Indicadores de privacidade (só no compacto): microfone (laranja) e câmera (verde) em uso,
                         empilhados na folga direita da cápsula (o conteúdo compacto termina 14 px antes da borda).
                         Visibilidade e fade são controlados pela janela (ApplyPrivacyDot).
                     -->
-                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                    <StackPanel Grid.RowSpan="3" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
                         <Ellipse x:Name="MicrophoneDot" Width="8" Height="8" Margin="0,1"
                                  Fill="{StaticResource IslandMicBrush}" Stroke="{StaticResource IslandPrivacyDotRingBrush}" StrokeThickness="1"
                                  Visibility="Collapsed" Opacity="0"
@@ -207,56 +301,20 @@
                     </StackPanel>
 
                     <!-- Eventos agrupados (ex.: várias mensagens do mesmo app): "+N" no canto. -->
-                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,12,0" Padding="6,1"
+                    <Border Grid.RowSpan="3" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,12,0" Padding="6,1"
                             CornerRadius="8" Background="{DynamicResource IslandSurfaceBrush}" IsHitTestVisible="False"
                             Visibility="{Binding HasGroupBadge, Converter={StaticResource BoolToVisibility}}">
                         <TextBlock Text="{Binding GroupBadge}" FontSize="10" FontFamily="{DynamicResource IslandTextFont}"
                                    Foreground="{StaticResource IslandSecondaryTextBrush}" />
                     </Border>
-
-                    <!-- Dock: um ícone por módulo, o texto compacto da atividade ao lado e, no interativo, as ferramentas. -->
-                    <DockPanel x:Name="DockBar" Grid.Row="1" Margin="10,0">
-                        <StackPanel x:Name="Footer" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
-                                    Opacity="0" IsHitTestVisible="False">
-                            <Button Style="{StaticResource FooterButton}" Content="{Binding PinGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding TogglePinCommand}"
-                                    ToolTip="{Binding PinToolTip}"
-                                    Visibility="{Binding CanPinFocused, Converter={StaticResource BoolToVisibility}}" />
-                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Close}, Converter={StaticResource GlyphContent}}" Command="{Binding DismissCommand}"
-                                    ToolTip="Fechar esta atividade"
-                                    Visibility="{Binding CanDismissFocused, Converter={StaticResource BoolToVisibility}}" />
-                            <Button Style="{StaticResource FooterButton}" Content="{Binding Source={x:Static common:VectorIcons.Gear}, Converter={StaticResource GlyphContent}}" Command="{Binding OpenSettingsCommand}"
-                                    ToolTip="Configurações" />
-                        </StackPanel>
-                        <ItemsControl ItemsSource="{Binding Dock}" Focusable="False" DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Style="{StaticResource DockItemButton}"
-                                            Content="{Binding Glyph, Converter={StaticResource GlyphContent}}"
-                                            ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}"
-                                            Command="{Binding DataContext.OpenDockItemCommand, ElementName=Root}"
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <!-- Separador fino entre os ícones e o texto de repouso/atividade (só no compacto, com texto). -->
-                        <Border x:Name="DockSeparator" DockPanel.Dock="Left" Width="1" Height="18" Margin="8,0,2,0" Background="#33FFFFFF"
-                                VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0" />
-                        <ContentPresenter x:Name="CompactLayer"
-                                          Style="{StaticResource LayerStyle}"
-                                          Content="{Binding CompactContent}"
-                                          ContentTemplateSelector="{StaticResource CompactTemplates}">
-                            <ContentPresenter.RenderTransform>
-                                <TranslateTransform />
-                            </ContentPresenter.RenderTransform>
-                        </ContentPresenter>
-                    </DockPanel>
                 </Grid>
             </Border>
+
+            <!-- Orelhas (só encaixada em cima): duas curvas de 10px que ligam a pílula à borda da tela, como no Volum. -->
+            <Path x:Name="EarLeft" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-9.5,0,0,0"
+                  Data="M10,0 L0,0 A10,10 0 0 1 10,10 Z" Fill="{DynamicResource IslandBackgroundBrush}" IsHitTestVisible="False" Visibility="Collapsed" />
+            <Path x:Name="EarRight" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,-9.5,0"
+                  Data="M0,0 L10,0 A10,10 0 0 0 0,10 Z" Fill="{DynamicResource IslandBackgroundBrush}" IsHitTestVisible="False" Visibility="Collapsed" />
 
             <!-- Anel de alerta: pulsa uma vez ao chegar um aviso importante (IslandAlertPulse). -->
             <Border x:Name="AlertRing"

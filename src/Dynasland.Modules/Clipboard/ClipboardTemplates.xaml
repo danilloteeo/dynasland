@@ -63,8 +63,6 @@
             <Grid Margin="8,0,0,4">
                 <TextBlock Text="Área de transferência · clique para copiar de novo" FontFamily="{DynamicResource IslandTextFont}" FontSize="11"
                            Foreground="{DynamicResource IslandTertiaryTextBrush}" VerticalAlignment="Center" />
-                <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Ver tudo" Command="{Binding OpenAllCommand}"
-                        HorizontalAlignment="Right" Padding="10,2" FontSize="11" ToolTip="Abrir o histórico completo na Central" />
             </Grid>
             <ItemsControl Grid.Row="1" ItemsSource="{Binding History}" Focusable="False">
                 <ItemsControl.ItemTemplate>

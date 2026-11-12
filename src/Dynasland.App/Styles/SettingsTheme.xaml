@@ -377,6 +377,26 @@
         </Setter>
     </Style>
 
+    <!-- Trecho preenchido: a cor de destaque some em degradê até ~9% na ponta esquerda, como no Volum. A máscara só usa o alfa, então vale nos dois temas. -->
+    <Style x:Key="SettingsSliderFill" TargetType="RepeatButton" BasedOn="{StaticResource SettingsSliderRepeat}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Grid Background="Transparent">
+                        <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}">
+                            <Border.OpacityMask>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#17000000" Offset="0" />
+                                    <GradientStop Color="#FF000000" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.OpacityMask>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="SettingsSlider" TargetType="Slider">
         <Setter Property="IsMoveToPointEnabled" Value="True" />
         <Setter Property="Height" Value="24" />
@@ -386,7 +406,7 @@
                 <ControlTemplate TargetType="Slider">
                     <Track x:Name="PART_Track">
                         <Track.DecreaseRepeatButton>
-                            <RepeatButton Style="{StaticResource SettingsSliderRepeat}" Background="{DynamicResource SettingsAccentBrush}" Command="Slider.DecreaseLarge" />
+                            <RepeatButton Style="{StaticResource SettingsSliderFill}" Background="{DynamicResource SettingsAccentBrush}" Command="Slider.DecreaseLarge" />
                         </Track.DecreaseRepeatButton>
                         <Track.IncreaseRepeatButton>
                             <RepeatButton Style="{StaticResource SettingsSliderRepeat}" Background="{DynamicResource SettingsTrackBrush}" Command="Slider.IncreaseLarge" />

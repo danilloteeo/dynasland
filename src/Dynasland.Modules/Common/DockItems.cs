@@ -31,7 +31,7 @@ public static class DockItems
 {
     private static readonly string[] ModuleOrder =
     [
-        "media", "volume", "brightness", "timer", "weather", "calendar", "downloads", "bluetooth",
+        "media", "volume", "brightness", "quotes", "scores", "timer", "weather", "calendar", "downloads", "bluetooth",
         "battery", "capture", "clipboard", "notifications", "system", "gaming", "clock", "water",
     ];
 

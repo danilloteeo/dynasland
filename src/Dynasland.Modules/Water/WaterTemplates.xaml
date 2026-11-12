@@ -120,30 +120,87 @@
         </Grid>
     </DataTemplate>
 
+    <!-- Botões do painel de água, como no Volum: pílula azul de 22px e botão de contorno. -->
+    <Style x:Key="WaterPillButton" TargetType="Button">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="#FFFFFFFF" />
+        <Setter Property="FontFamily" Value="{DynamicResource IslandTextFont}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chrome" Height="22" CornerRadius="11" Padding="10,0" Background="{DynamicResource IslandWaterBrush}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Opacity" Value="0.88" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="WaterGhostButton" TargetType="Button" BasedOn="{StaticResource WaterPillButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chrome" Height="22" CornerRadius="11" Padding="10,0" Background="Transparent" BorderBrush="#24FFFFFF" BorderThickness="1">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="#14FFFFFF" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Barra do dia: degradê do azul escuro ao azul da água, 3px. -->
+    <LinearGradientBrush x:Key="WaterBarBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#1A0084FF" Offset="0" />
+        <GradientStop Color="#FF0D5598" Offset="0.12" />
+        <GradientStop Color="#FF0084FF" Offset="1" />
+    </LinearGradientBrush>
+
     <DataTemplate x:Key="Dynasland.Modules.Water.WaterBodyPanelContent:Interactive">
-        <Grid Margin="24,18,22,18">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <water:WaterBodyMeter Width="102" Height="204" VerticalAlignment="Center"
-                                  Progress="{Binding Progress}" Celebrate="{Binding GoalReached}"
-                                  Foreground="{DynamicResource IslandPrimaryTextBrush}" />
-            <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="Água de hoje" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
-                <TextBlock Text="{Binding ProgressText}" Margin="0,2,0,0" FontFamily="{DynamicResource IslandFont}" FontSize="18" FontWeight="SemiBold"
-                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding PercentText}" Margin="0,2,0,0" FontFamily="{DynamicResource IslandFont}" FontSize="34" FontWeight="SemiBold"
-                           Foreground="{DynamicResource IslandWaterBrush}" />
-                <TextBlock Text="{Binding Message}" Margin="0,2,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" TextWrapping="Wrap"
-                           Foreground="{DynamicResource IslandSecondaryTextBrush}" />
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                    <!-- Principal: botão claro com texto escuro (IslandPrimaryButtonStyle). -->
-                    <Button Style="{DynamicResource IslandPrimaryButtonStyle}" Content="{Binding DrinkLabel}" Command="{Binding DrinkCommand}" />
-                    <Button Style="{DynamicResource IslandTextButtonStyle}" Content="{Binding UndoLabel}" Command="{Binding UndoCommand}" Margin="8,0,0,0" />
+        <Grid Margin="20,16,16,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+                                Foreground="{DynamicResource IslandWaterBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
+                <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="Água hoje" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+                    <TextBlock Text="{Binding LitersText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
+                               Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
-            </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource WaterGhostButton}" Content="−" Padding="0" Command="{Binding UndoCommand}" ToolTip="{Binding UndoLabel}" />
+                    <Button Style="{StaticResource WaterPillButton}" Content="{Binding DrinkMillilitersLabel}" Command="{Binding DrinkCommand}" Margin="6,0,0,0" ToolTip="{Binding DrinkLabel}" />
+                </StackPanel>
+            </Grid>
+            <ProgressBar Grid.Row="1" Style="{DynamicResource IslandProgressBarStyle}" Height="3" Maximum="1" Margin="0,12,0,0"
+                         Foreground="{StaticResource WaterBarBrush}" Value="{Binding Progress, Mode=OneWay}" />
         </Grid>
     </DataTemplate>
 

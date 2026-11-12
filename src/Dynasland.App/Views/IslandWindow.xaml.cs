@@ -43,14 +43,13 @@ public partial class IslandWindow : Window
     private const double HoverMilliseconds = 160;
     private const double HoverScale = 1.05;
 
-    /// <summary>Largura das ferramentas da dock no interativo (fixar, fechar, configurações).</summary>
-    private const double DockToolsWidth = 80;
     private const double EnterMilliseconds = 300;
 
     /// <summary>Quanto o cartão de aviso desliza ao entrar e sair, em DIPs.</summary>
     private const double NoticeSlide = 14;
     private const double LeaveMilliseconds = 120;
     private const double EnterScale = 0.965;
+    private const double ContentEnterScale = 0.92;
     private const double EnterRise = 10;
     private const double LeaveScale = 0.98;
     private const double LeaveRise = 4;
@@ -93,6 +92,8 @@ public partial class IslandWindow : Window
     private bool _wantsVisible;
     private IEasingFunction _expandEasing = NoSpringEasing;
     private double _expandEasingIntensity = -1;
+    private IEasingFunction _collapseWidthEasing = CollapseEasing;
+    private double _collapseEasingIntensity = -1;
 
     public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus, ThemeService theme)
     {
@@ -255,6 +256,7 @@ public partial class IslandWindow : Window
     private void ApplyPositionAndShape(IslandSettings settings)
     {
         Shape = settings.Shape;
+        UpdateEars(settings.Shape, settings.Edge);
         var edge = IslandPlacementCalculator.EdgeMargin;
         (IslandHost.HorizontalAlignment, IslandHost.Margin, IslandHost.RenderTransformOrigin) = settings.Position switch
         {
@@ -268,25 +270,23 @@ public partial class IslandWindow : Window
     /// Borda de baixo: a cápsula cola embaixo da janela e cresce para cima, com a dock na base.
     /// Borda de cima: cola em cima e cresce para baixo, com a dock no topo.
     /// </summary>
+    /// <summary>As orelhas só existem com a ilha encaixada na borda de cima.</summary>
+    private void UpdateEars(IslandShape shape, IslandEdge edge)
+    {
+        var visible = shape == IslandShape.Notch && edge == IslandEdge.Top ? Visibility.Visible : Visibility.Collapsed;
+        EarLeft.Visibility = visible;
+        EarRight.Visibility = visible;
+    }
+
     private void ApplyEdge(IslandEdge edge)
     {
+        UpdateEars(Shape, edge);
         var bottom = edge == IslandEdge.Bottom;
         _viewModel.Edge = edge;
         IslandHost.VerticalAlignment = bottom ? VerticalAlignment.Bottom : VerticalAlignment.Top;
         Stage.RenderTransformOrigin = new Point(0.5, bottom ? 1 : 0);
         IslandHost.RenderTransformOrigin = new Point(IslandHost.RenderTransformOrigin.X, bottom ? 1 : 0);
 
-        ContentGrid.RowDefinitions.Clear();
-        ContentGrid.RowDefinitions.Add(bottom ? ContentRowDefinition : FooterRow);
-        ContentGrid.RowDefinitions.Add(bottom ? FooterRow : ContentRowDefinition);
-        foreach (var layer in new[] { ExpandedLayer, InteractiveLayer })
-        {
-            Grid.SetRow(layer, bottom ? 0 : 1);
-        }
-
-        Grid.SetRow(DockBar, bottom ? 1 : 0);
-        Grid.SetRow(DockDivider, bottom ? 1 : 0);
-        DockDivider.VerticalAlignment = bottom ? VerticalAlignment.Top : VerticalAlignment.Bottom;
         if (ShadowBorder.Effect is DropShadowEffect shadow)
         {
             shadow.Direction = bottom ? 90 : 270;
@@ -419,9 +419,12 @@ public partial class IslandWindow : Window
                 UpdateOutsideClickWatcher();
                 break;
 
+            case nameof(IslandViewModel.IsClosedPill):
+                ApplyPill(_viewModel.State, ShouldAnimate, Scaled(ExpandMilliseconds));
+                break;
+
             case nameof(IslandViewModel.Dimensions):
-            case nameof(IslandViewModel.DockWidth):
-            case nameof(IslandViewModel.DockIconsWidth):
+            case nameof(IslandViewModel.HasPages):
                 ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
                 break;
 
@@ -486,12 +489,37 @@ public partial class IslandWindow : Window
         {
             AnimateHover(true);
         }
+
+        FadePager(true);
     }
 
     private void OnIslandMouseLeave(object sender, MouseEventArgs e)
     {
         _viewModel.OnPointerExited();
         AnimateHover(false);
+        FadePager(false);
+    }
+
+    /// <summary>Mostra as setas ‹ › e as bolinhas com o mouse sobre a ilha aberta e as esconde quando ele sai.</summary>
+    private void FadePager(bool visible)
+    {
+        if (_viewModel.State != IslandState.Interactive)
+        {
+            return;
+        }
+
+        var target = visible ? 1.0 : 0.0;
+        foreach (UIElement navigation in new UIElement[] { Pager, Dots })
+        {
+            if (!ShouldAnimate)
+            {
+                SetImmediate(navigation, OpacityProperty, target);
+            }
+            else
+            {
+                Animate(navigation, OpacityProperty, target, TimeSpan.FromMilliseconds(140), SoftEasing);
+            }
+        }
     }
 
     private void OnIslandMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -563,20 +591,27 @@ public partial class IslandWindow : Window
         return screenX >= topLeft.X && screenX <= bottomRight.X && screenY >= topLeft.Y && screenY <= bottomRight.Y;
     }
 
+    /// <summary>Altura da linha de data e hora no alto da ilha aberta (20 px do Volum mais a folga de cima).</summary>
+    private const double StatusRowHeight = 30;
+
+    /// <summary>Altura da linha das bolinhas de página embaixo da ilha aberta.</summary>
+    private const double DotsRowHeight = 22;
+
     private void ApplyDimensions(IslandDimensions requested, bool animate)
     {
         var target = IslandAppearance.Adjust(requested, _viewModel.State, _settings.Current);
-        var compact = _viewModel.State == IslandState.Compact;
         var interactive = _viewModel.State == IslandState.Interactive;
-        // A dock é sempre a última linha; o conteúdo do módulo só existe fora do compacto.
-        var height = (compact ? 0 : target.Height) + DockMetrics.Height;
-        // A área da pílula ativa (texto compacto) só existe no compacto; fora dele a dock é só ícones e ferramentas.
-        var dockWidth = (compact ? _viewModel.DockWidth : _viewModel.DockIconsWidth) + (interactive ? DockToolsWidth : 0);
+
+        // Aberta, o painel do módulo ganha a data e a hora em cima e as bolinhas embaixo (só com mais de uma página).
+        var statusHeight = interactive ? StatusRowHeight : 0;
+        var dotsHeight = interactive && _viewModel.HasPages ? DotsRowHeight : 0;
+        StatusRow.Height = new GridLength(statusHeight);
+        DotsRow.Height = new GridLength(dotsHeight);
+
+        var height = target.Height + statusHeight + dotsHeight;
         // Nunca mais larga que a janela (menos a folga das laterais), senão as bordas são cortadas.
-        var maxWidth = Width - IslandPlacementCalculator.EdgeMargin * 2;
-        var width = Math.Min(maxWidth, compact ? dockWidth : Math.Max(target.Width, dockWidth));
+        var width = Math.Min(Width - IslandPlacementCalculator.EdgeMargin * 2, target.Width);
         var radius = Math.Min(target.CornerRadius, height / 2);
-        DockSeparator.Opacity = compact && _viewModel.DockWidth > _viewModel.DockIconsWidth ? 1 : 0;
         if (!animate)
         {
             SetImmediate(IslandHost, WidthProperty, width);
@@ -589,9 +624,49 @@ public partial class IslandWindow : Window
         var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
         var easing = growing ? ExpandEasing() : CollapseEasing;
 
-        Animate(IslandHost, WidthProperty, width, duration, easing);
+        // Na retração só a largura tem mola; a altura segue suave.
+        Animate(IslandHost, WidthProperty, width, duration, growing ? easing : CollapseWidthEasing());
         Animate(IslandHost, HeightProperty, height, duration, easing);
         Animate(this, CornerSizeProperty, radius, duration, easing);
+    }
+
+    /// <summary>
+    /// Pílula fechada (hora, clima, onda): aparece só no compacto quando o indicador é o relógio ou a música. O conteúdo
+    /// compacto dos módulos fica de fora nesse caso, para a hora nunca sumir.
+    /// </summary>
+    private void ApplyPill(IslandState state, bool animate, TimeSpan resizeDuration)
+    {
+        var pill = _viewModel.IsClosedPill;
+        CompactLayer.Visibility = pill ? Visibility.Collapsed : Visibility.Visible;
+        var show = state == IslandState.Compact && pill;
+        if (!animate)
+        {
+            SetImmediate(ClosedPill, OpacityProperty, show ? 1 : 0);
+        }
+        else if (show)
+        {
+            Animate(ClosedPill, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+        }
+        else
+        {
+            Animate(ClosedPill, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+        }
+    }
+
+    private DispatcherTimer? _statusTimer;
+
+    /// <summary>Mantém a data e a hora do alto da ilha em dia enquanto ela está aberta.</summary>
+    private void UpdateStatusClock(bool open)
+    {
+        if (!open)
+        {
+            _statusTimer?.Stop();
+            return;
+        }
+
+        _viewModel.UpdateStatusClock();
+        _statusTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, (_, _) => _viewModel.UpdateStatusClock(), Dispatcher);
+        _statusTimer.Start();
     }
 
     private void ApplyLayers(IslandState state, bool animate)
@@ -612,6 +687,11 @@ public partial class IslandWindow : Window
             {
                 // O conteúdo aparece depois que a cápsula já ganhou espaço, evitando corte do texto.
                 Animate(layer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+                if (layer != CompactLayer)
+                {
+                    ScaleLayerIn(layer, resizeDuration * 0.4);
+                }
+
                 if (layer == ExpandedLayer)
                 {
                     // Aviso: desliza a partir da dock (do lado da borda), com mola.
@@ -628,24 +708,33 @@ public partial class IslandWindow : Window
             }
         }
 
+        ApplyPill(state, animate, resizeDuration);
+
+        // Data e hora, setas e bolinhas só existem na ilha aberta; aparecem junto com o painel.
         var interactive = state == IslandState.Interactive;
-        Footer.IsHitTestVisible = interactive;
-        // A linha entre o conteúdo e a dock só existe quando há conteúdo.
-        DockDivider.Opacity = state == IslandState.Compact ? 0 : 1;
-        if (!animate)
+        Pager.IsHitTestVisible = interactive;
+        Dots.IsHitTestVisible = interactive;
+        foreach (UIElement chrome in new UIElement[] { StatusBar, Pager, Dots })
         {
-            SetImmediate(Footer, OpacityProperty, interactive ? 1 : 0);
-        }
-        else if (interactive)
-        {
-            Animate(Footer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
-        }
-        else
-        {
-            Animate(Footer, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+            // As setas e as bolinhas só aparecem com o mouse sobre a ilha; a data e a hora ficam sempre à vista.
+            var target = !interactive ? 0 : (chrome == Pager || chrome == Dots) && !IslandHost.IsMouseOver ? 0 : 1;
+            if (!animate)
+            {
+                SetImmediate(chrome, OpacityProperty, target);
+            }
+            else if (interactive)
+            {
+                Animate(chrome, OpacityProperty, target, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+            }
+            else
+            {
+                Animate(chrome, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+            }
         }
 
-        // O rodapé muda a altura total mesmo quando o conteúdo mantém o mesmo tamanho.
+        UpdateStatusClock(interactive);
+
+        // As linhas de cima e de baixo mudam a altura total mesmo quando o painel mantém o mesmo tamanho.
         ApplyDimensions(_viewModel.Dimensions, animate);
 
         if (interactive && animate)
@@ -703,7 +792,7 @@ public partial class IslandWindow : Window
     /// <summary>Move a camada na vertical de <paramref name="from"/> até <paramref name="to"/> (DIPs).</summary>
     private static void SlideLayer(ContentPresenter layer, double from, double to, TimeSpan duration, IEasingFunction easing, TimeSpan beginTime)
     {
-        if (layer.RenderTransform is not TranslateTransform translate)
+        if (TranslateOf(layer) is not { } translate)
         {
             return;
         }
@@ -731,12 +820,37 @@ public partial class IslandWindow : Window
         }
 
         layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
-        if (layer.RenderTransform is TranslateTransform translate)
-        {
-            translate.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(SwapOffset, 0, duration) { EasingFunction = SoftEasing }));
-        }
+        TranslateOf(layer)?.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(SwapOffset, 0, duration) { EasingFunction = SoftEasing }));
 
         FadeOutGhost(duration);
+    }
+
+    private static TranslateTransform? TranslateOf(ContentPresenter layer) => layer.RenderTransform switch
+    {
+        TranslateTransform translate => translate,
+        TransformGroup group => group.Children.OfType<TranslateTransform>().FirstOrDefault(),
+        _ => null,
+    };
+
+    private static ScaleTransform? ScaleOf(ContentPresenter layer) =>
+        (layer.RenderTransform as TransformGroup)?.Children.OfType<ScaleTransform>().FirstOrDefault();
+
+    /// <summary>O conteúdo do módulo cresce de 0,92 a 1 ao entrar, junto com a abertura da cápsula.</summary>
+    private void ScaleLayerIn(ContentPresenter layer, TimeSpan beginTime)
+    {
+        if (ScaleOf(layer) is not { } scale)
+        {
+            return;
+        }
+
+        scale.ScaleX = scale.ScaleY = ContentEnterScale;
+        var grow = Frozen(new DoubleAnimation(ContentEnterScale, 1, new Duration(Scaled(EnterMilliseconds)))
+        {
+            EasingFunction = SpringOut,
+            BeginTime = beginTime,
+        });
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
     }
 
     /// <summary>
@@ -904,6 +1018,21 @@ public partial class IslandWindow : Window
         }
 
         return _expandEasing;
+    }
+
+    /// <summary>Mola da largura ao recolher: metade da amplitude da expansão (0 = sem efeito de mola).</summary>
+    private IEasingFunction CollapseWidthEasing()
+    {
+        var intensity = _settings.Current.AnimationIntensity;
+        if (intensity != _collapseEasingIntensity)
+        {
+            _collapseEasingIntensity = intensity;
+            _collapseWidthEasing = intensity <= 0.01
+                ? CollapseEasing
+                : Frozen(new BackEase { Amplitude = BaseSpringAmplitude * 0.5 * intensity, EasingMode = EasingMode.EaseOut });
+        }
+
+        return _collapseWidthEasing;
     }
 
     private static T Frozen<T>(T freezable) where T : Freezable

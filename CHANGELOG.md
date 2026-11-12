@@ -1,5 +1,26 @@
 # Notas da versão
 
+## 1.7.0 — 2026-11-12
+
+### Novidades
+- **Ilha no formato da ilha do Volum**: pílula preta de 250 × 32 px, encaixada em cima por padrão (com as orelhas de
+  10 px). Fechada, mostra o clima à esquerda, a hora no meio e uma onda quando há música tocando, à direita. Aberta
+  (440 px), tem data e hora no alto e as páginas dos módulos, com setas ‹ › e bolinhas que só aparecem com o mouse
+  sobre a ilha. A dock de ícones saiu.
+- **Configurações refeitas em WebView2**, com o CSS do Volum (licença MIT, aviso em `Web/LICENSE-Volum.txt`).
+  Exige o WebView2 Runtime, já presente no Windows 11 e na maioria dos Windows 10.
+- **Cotações** (dólar, euro e bitcoin em reais, pela AwesomeAPI), **Placar NBA** (ESPN) e **Caps Lock e Num Lock**
+  (aviso rápido). Cotações e placar só buscam dados com o painel aberto.
+- **Painéis no tamanho do modelo**: Música, Água, Volume e Notificação com a tipografia e as medidas novas. O
+  painel de Água agora mostra o dia em litros ("1,25 L de 2 L") e o botão "+ 250 ml".
+
+### Mudanças
+- A cápsula é sempre preta e opaca. Saíram as opções de tema da ilha, seguir a cor da música, opacidade, sombra,
+  largura, altura, arredondamento e o texto de repouso. Os pontos de câmera e microfone ficam sempre ligados.
+- Módulos Bateria, Bluetooth, Capture Center, Downloads, Gaming Monitor, Agenda, Monitor do sistema e Focus Center
+  foram desligados e escondidos (o código continua no projeto). A Central e as páginas de Atalhos saíram da tela.
+- Padrões novos: borda em cima e formato encaixado. Quem já tinha escolhido outra posição mantém a escolha.
+
 ## 1.6.0 — 2026-11-12
 
 ### Novidades

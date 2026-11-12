@@ -86,8 +86,8 @@ public sealed partial class NotificationContent(
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
-        IslandState.Expanded => new IslandDimensions(400, NotificationReading.Height(BodyLines), 32),
-        IslandState.Interactive => new IslandDimensions(410, 170, 36),
+        IslandState.Expanded => new IslandDimensions(380, NotificationReading.Height(BodyLines), 32),
+        IslandState.Interactive => new IslandDimensions(440, 170, 36),
         _ => null,
     };
 

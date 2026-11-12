@@ -80,16 +80,15 @@ public static partial class IslandSettingsMapper
                 ? islandTheme
                 : d.IslandTheme,
             IslandThemeFollowsMedia = ReadBool(values, Keys.IslandThemeFollowsMedia, d.IslandThemeFollowsMedia),
-            IdleDisplay = values.TryGetValue(Keys.IdleDisplay, out var idle) && Enum.TryParse<IdleDisplay>(idle, ignoreCase: true, out var idleDisplay) && Enum.IsDefined(idleDisplay)
-                ? idleDisplay
-                : d.IdleDisplay,
+            // Como no modelo, o repouso é só a dock: o texto ao lado dos ícones não é mais uma opção.
+            IdleDisplay = IdleDisplay.TimeOnly,
             AccentColor = accent is not null && IsHexColor(accent) ? accent.ToUpperInvariant() : d.AccentColor,
             IslandOpacity = ReadDouble(values, Keys.IslandOpacity, d.IslandOpacity, 0.5, 1),
             ShadowIntensity = ReadDouble(values, Keys.ShadowIntensity, d.ShadowIntensity, 0, 1),
-            Roundness = ReadDouble(values, Keys.Roundness, d.Roundness, 0.3, 1),
-            CompactWidth = ReadDouble(values, Keys.CompactWidth, d.CompactWidth, 140, 300),
-            CompactHeight = ReadDouble(values, Keys.CompactHeight, d.CompactHeight, 28, 44),
-            MaxWidth = ReadDouble(values, Keys.MaxWidth, d.MaxWidth, 340, 420),
+            Roundness = d.Roundness,
+            CompactWidth = d.CompactWidth,
+            CompactHeight = d.CompactHeight,
+            MaxWidth = d.MaxWidth,
             CheckForUpdates = ReadBool(values, Keys.CheckForUpdates, d.CheckForUpdates),
             CollapseOnClickOutside = ReadBool(values, Keys.CollapseOnClickOutside, d.CollapseOnClickOutside),
             DoubleClickAction = values.TryGetValue(Keys.DoubleClickAction, out var dbl) && Enum.TryParse<DoubleClickAction>(dbl, ignoreCase: true, out var action) && Enum.IsDefined(action)
@@ -101,7 +100,8 @@ public static partial class IslandSettingsMapper
             ClipboardMaxItems = (int)ReadDouble(values, Keys.ClipboardMaxItems, d.ClipboardMaxItems, 20, 2000),
             NotificationHistoryEnabled = ReadBool(values, Keys.NotificationHistoryEnabled, d.NotificationHistoryEnabled),
             NotificationHistoryDays = (int)ReadDouble(values, Keys.NotificationHistoryDays, d.NotificationHistoryDays, 1, 90),
-            ShowPrivacyIndicators = ReadBool(values, Keys.ShowPrivacyIndicators, d.ShowPrivacyIndicators),
+            // Os pontos de câmera e microfone ficam sempre ligados: a opção saiu das configurações.
+            ShowPrivacyIndicators = true,
             WeatherLocation = string.IsNullOrWhiteSpace(weather) ? null : weather,
             SpotifyClientId = string.IsNullOrWhiteSpace(spotify) ? null : spotify.Trim(),
             LastSeenVersion = string.IsNullOrWhiteSpace(lastSeen) ? null : lastSeen.Trim(),

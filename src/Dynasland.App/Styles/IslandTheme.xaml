@@ -15,7 +15,7 @@
     <FontFamily x:Key="IslandIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="IslandEdgeBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="IslandEdgeBrush" Color="#17FFFFFF" />
     <SolidColorBrush x:Key="IslandPrimaryTextBrush" Color="#FFF5F5F7" />
     <SolidColorBrush x:Key="IslandSecondaryTextBrush" Color="#99F5F5F7" />
     <SolidColorBrush x:Key="IslandTertiaryTextBrush" Color="#66F5F5F7" />
@@ -255,6 +255,26 @@
         </Setter>
     </Style>
 
+    <!-- Trecho preenchido do slider: some em degradê (~9%) na ponta esquerda e chega ao branco na bolinha, como no Volum. -->
+    <Style x:Key="IslandSliderFillButtonStyle" TargetType="RepeatButton" BasedOn="{StaticResource IslandSliderRepeatButtonStyle}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Grid Background="Transparent">
+                        <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}">
+                            <Border.OpacityMask>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#17000000" Offset="0" />
+                                    <GradientStop Color="#FF000000" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.OpacityMask>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="IslandSliderStyle" TargetType="Slider">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -268,7 +288,7 @@
                 <ControlTemplate TargetType="Slider">
                     <Track x:Name="PART_Track" VerticalAlignment="Stretch">
                         <Track.DecreaseRepeatButton>
-                            <RepeatButton Style="{StaticResource IslandSliderRepeatButtonStyle}"
+                            <RepeatButton Style="{StaticResource IslandSliderFillButtonStyle}"
                                           Background="{StaticResource IslandFillBrush}"
                                           Command="Slider.DecreaseLarge" />
                         </Track.DecreaseRepeatButton>

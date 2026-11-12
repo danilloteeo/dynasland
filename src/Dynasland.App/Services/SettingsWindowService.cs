@@ -8,7 +8,7 @@ namespace Dynasland.App.Services;
 /// <summary>Abre a janela de configurações (uma só instância; reabrir apenas a traz para frente).</summary>
 public sealed class SettingsWindowService(IServiceProvider services)
 {
-    private SettingsWindow? _window;
+    private WebSettingsWindow? _window;
 
     public void Show() => Show(null);
 
@@ -17,9 +17,9 @@ public sealed class SettingsWindowService(IServiceProvider services)
     {
         if (_window is not null)
         {
-            if (section is { } target && _window.DataContext is SettingsViewModel current)
+            if (section is { } target)
             {
-                current.Section = target;
+                _window.ViewModel.Section = target;
             }
 
             if (_window.WindowState == WindowState.Minimized)
@@ -37,7 +37,7 @@ public sealed class SettingsWindowService(IServiceProvider services)
             viewModel.Section = initial;
         }
 
-        _window = new SettingsWindow(viewModel, services.GetRequiredService<ThemeService>());
+        _window = new WebSettingsWindow(viewModel, services.GetRequiredService<ThemeService>());
         _window.Closed += (_, _) => _window = null;
         _window.Show();
         _window.Activate();

@@ -105,7 +105,7 @@ public sealed partial class ClipboardContent(Func<Task> reloadHistory, Action op
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
         IslandState.Expanded => new IslandDimensions(340, 56, 28),
-        IslandState.Interactive => new IslandDimensions(410, 170, 34),
+        IslandState.Interactive => new IslandDimensions(440, 170, 34),
         _ => null,
     };
 

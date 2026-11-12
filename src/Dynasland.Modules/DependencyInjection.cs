@@ -6,9 +6,12 @@ using Dynasland.Modules.Clipboard;
 using Dynasland.Modules.Clock;
 using Dynasland.Modules.Downloads;
 using Dynasland.Modules.Gaming;
+using Dynasland.Modules.KeyLocks;
 using Dynasland.Modules.Life;
 using Dynasland.Modules.Media;
 using Dynasland.Modules.Notifications;
+using Dynasland.Modules.Quotes;
+using Dynasland.Modules.Scores;
 using Dynasland.Modules.SystemMonitor;
 using Dynasland.Modules.Timer;
 using Dynasland.Modules.Volume;
@@ -25,17 +28,12 @@ public static class DependencyInjection
         services.AddSingleton<IIslandModule, MediaModule>();
         services.AddSingleton<IIslandModule, VolumeModule>();
         services.AddSingleton<IIslandModule, BrightnessModule>();
+        services.AddSingleton<IIslandModule, QuotesModule>();
+        services.AddSingleton<IIslandModule, ScoresModule>();
+        services.AddSingleton<IIslandModule, KeyLockModule>();
         services.AddSingleton<IIslandModule, NotificationsModule>();
-        services.AddSingleton<IIslandModule, DownloadsModule>();
-        services.AddSingleton<IIslandModule, BatteryModule>();
-        services.AddSingleton<IIslandModule, Bluetooth.BluetoothModule>();
-        services.AddSingleton<IIslandModule, TimerModule>();
         services.AddSingleton<IIslandModule, ClipboardModule>();
-        services.AddSingleton<IIslandModule, GamingModule>();
-        services.AddSingleton<IIslandModule, SystemMonitorModule>();
-        services.AddSingleton<IIslandModule, CaptureModule>();
         services.AddSingleton<IIslandModule, WeatherModule>();
-        services.AddSingleton<IIslandModule, CalendarModule>();
         services.AddSingleton<IIslandModule, WaterModule>();
         services.AddSingleton<IIslandModule, ClockModule>();
 
@@ -58,6 +56,9 @@ public static class DependencyInjection
                      "Gaming/GamingTemplates.xaml",
                      "Life/LifeTemplates.xaml",
                      "Water/WaterTemplates.xaml",
+                     "Quotes/QuotesTemplates.xaml",
+                     "Scores/ScoresTemplates.xaml",
+                     "KeyLocks/KeyLockTemplates.xaml",
                      "Clock/ClockTemplates.xaml",
                  })
         {

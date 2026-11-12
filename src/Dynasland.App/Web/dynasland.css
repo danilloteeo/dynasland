@@ -1,0 +1,74 @@
+/* Ajustes do Dynasland sobre o CSS do Volum: campos de texto, lista de módulos, amostras de cor e pequenos detalhes. */
+
+.page { max-width: 600px; }
+.page h1 { margin-bottom: 18px; }
+.page > .group:last-child { margin-bottom: 4px; }
+
+.group .label { margin-top: 2px; }
+.group .label-gap { margin-top: 14px; }
+.group .segmented + .segmented { margin-top: 8px; }
+.group .setting-row:first-child { padding-top: 4px; }
+
+/* Texto, valor e botões numa linha */
+.field {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--seg-bg);
+  color: var(--text);
+  font: inherit;
+}
+.field:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field-row { display: flex; gap: 8px; margin-top: 8px; }
+.field-row .btn { flex: none; }
+.value-note { margin: 6px 2px 0; color: var(--subtext); font-size: 12px; line-height: 1.5; }
+.value-note b { color: var(--text); font-weight: 600; }
+.group .btn-row { margin: 10px 0 2px; }
+.group > .btn-row:first-child { margin-top: 2px; }
+.btn.danger { border-color: rgba(255, 107, 107, .4); color: #ff8a8a; }
+
+/* Lista de resultados da busca de cidade e de monitores */
+.pick-list { display: grid; gap: 2px; margin-top: 8px; }
+.pick-list button {
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+.pick-list button:hover { background: var(--surface-hover); }
+.pick-list button[aria-checked="true"] { background: var(--seg-active); font-weight: 600; box-shadow: inset 2px 0 0 var(--accent); }
+.pick-list small { display: block; color: var(--subtext); font-weight: 400; font-size: 11.5px; }
+
+/* Cores de destaque */
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+  transition: transform .2s var(--bounce, ease);
+}
+.swatch:hover { transform: scale(1.1); }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink, #fff); }
+
+/* Módulos e aplicativos: nome, estado e opções abaixo */
+.mod-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 2px; }
+.mod-name { font-weight: 600; }
+.mod-state { margin-left: 8px; font-size: 11px; color: var(--subtext); font-weight: 400; }
+.mod-state.bad { color: #ff8a8a; }
+.mod-desc { margin: 2px 2px 6px; color: var(--subtext); font-size: 12px; line-height: 1.45; }
+.mod-opts { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 4px; }
+.group + .page-note { margin-top: 0; }
+
+.progress { height: 3px; border-radius: 2px; background: var(--ink-faint, rgba(255,255,255,.09)); overflow: hidden; margin-top: 10px; }
+.progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--ink-faint, rgba(255,255,255,.09)), var(--ink, #fff)); transition: width .2s ease; }

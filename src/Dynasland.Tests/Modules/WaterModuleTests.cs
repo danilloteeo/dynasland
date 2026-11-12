@@ -35,7 +35,7 @@ public class WaterModuleTests : IDisposable
         var glances = new GlanceRegistry();
         var options = TestOptions.Create();
         var shortcuts = new ShortcutRegistry();
-        var module = new WaterModule(wrap?.Invoke(store) ?? store, new NoHub(), _recorder.Bus, new InlineDispatcher(), time, shortcuts, glances, new SilentSound(),
+        var module = new WaterModule(wrap?.Invoke(store) ?? store, _recorder.Bus, new InlineDispatcher(), time, shortcuts, glances, new SilentSound(),
             options, new GlobalShortcutRegistry(new InMemorySettingsStore()), NullLogger<WaterModule>.Instance, badges);
         await module.StartAsync(CancellationToken.None);
         await module.RescheduleAsync();

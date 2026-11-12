@@ -121,7 +121,7 @@ public sealed partial class WeatherContent(Func<Task> refresh) : ObservableObjec
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
-        IslandState.Interactive => new IslandDimensions(410, HasReport ? 252 : 120, 36),
+        IslandState.Interactive => new IslandDimensions(440, HasReport ? 252 : 120, 36),
         _ => null,
     };
 

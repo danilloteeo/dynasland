@@ -22,7 +22,7 @@
     <BooleanToVisibilityConverter x:Key="VolumeBoolToVisibility" />
 
     <DataTemplate x:Key="Dynasland.Modules.Volume.VolumeContent:Interactive">
-        <Grid Margin="16,14,22,14">
+        <Grid Margin="16,12,16,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -68,23 +68,24 @@
                 </ItemsControl>
             </StackPanel>
 
-            <Grid Margin="6,0,0,0">
-                <TextBlock Text="{Binding DeviceName}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                           Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" Margin="0,0,48,0" />
-                <TextBlock Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
-                           Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" />
-            </Grid>
-            <Grid Grid.Row="1" VerticalAlignment="Center" Margin="0,6,0,0">
+            <!-- Ícone (mudo), rótulo e porcentagem na mesma linha; o slider vem logo abaixo, como no Volum. -->
+            <Grid Height="28">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo">
-                    <common:WaveIcon IsMuted="{Binding IsMuted}" Level="{Binding Level}" />
-                </Button>
-                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
-                        Value="{Binding Level, Mode=TwoWay}" />
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" FontSize="14" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo"
+                        Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" />
+                <TextBlock Grid.Column="1" Text="Volume geral" ToolTip="{Binding DeviceName}" Margin="8,0" VerticalAlignment="Center"
+                           FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2" Text="{Binding Percent, StringFormat={}{0}%}" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"
+                           FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" />
             </Grid>
+            <Slider Grid.Row="1" Style="{DynamicResource IslandSliderStyle}" Height="20" Margin="0,2,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
+                    Value="{Binding Level, Mode=TwoWay}" />
 
             <!-- Microfone padrão -->
             <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasMicrophone, Converter={StaticResource VolumeBoolToVisibility}}">

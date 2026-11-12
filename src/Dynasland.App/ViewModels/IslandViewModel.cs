@@ -20,6 +20,9 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _ui;
     private readonly IShortcutRegistry _shortcuts;
     private readonly IDockBadges _badges;
+    private readonly IGlanceRegistry _glances;
+    private readonly IMediaSessionService _media;
+    private readonly System.Windows.Threading.DispatcherTimer _pillClock;
     private IslandSnapshot _lastSnapshot = IslandSnapshot.Empty;
     private IActivityContent? _presented;
     private IslandState _presentedState;
@@ -79,7 +82,9 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         IPrivacyIndicatorService privacy,
         IUiDispatcher ui,
         IShortcutRegistry shortcuts,
-        IDockBadges badges)
+        IDockBadges badges,
+        IGlanceRegistry glances,
+        IMediaSessionService media)
     {
         _controller = controller;
         _settingsWindow = settingsWindow;
@@ -88,6 +93,12 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         _ui = ui;
         _shortcuts = shortcuts;
         _badges = badges;
+        _glances = glances;
+        _media = media;
+        glances.Changed += OnPillSourcesChanged;
+        media.Changed += OnPillSourcesChanged;
+        _pillClock = new System.Windows.Threading.DispatcherTimer(TimeSpan.FromSeconds(5), System.Windows.Threading.DispatcherPriority.Background, (_, _) => UpdatePill(), System.Windows.Application.Current.Dispatcher);
+        UpdatePill();
         badges.Changed += OnShortcutsChanged;
         controller.Changed += OnSnapshotChanged;
         shortcuts.Changed += OnShortcutsChanged;
@@ -114,13 +125,83 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Skip() => _controller.SkipCurrent();
 
-    /// <summary>Largura da dock no estado compacto: ícones mais o texto de repouso ou da atividade.</summary>
+    /// <summary>
+    /// Pílula fechada do Volum: hora no meio, clima e a onda de música tocando na direita. Vale quando o indicador é o relógio
+    /// ou a música; outras atividades (ex.: lembrete de água) continuam mostrando o próprio conteúdo compacto.
+    /// </summary>
     [ObservableProperty]
-    private double _dockWidth = DockMetrics.MinimumWidth;
+    private bool _isClosedPill = true;
 
-    /// <summary>Largura só dos ícones, sem o texto ao lado (estados expandido e interativo).</summary>
     [ObservableProperty]
-    private double _dockIconsWidth = DockMetrics.MinimumWidth;
+    private string _pillTime = string.Empty;
+
+    /// <summary>Alguma mídia está tocando: aparece a onda ao lado do clima.</summary>
+    [ObservableProperty]
+    private bool _musicPlaying;
+
+    [ObservableProperty]
+    private bool _hasWeather;
+
+    /// <summary>Temperatura curta do clima atual, como "23°".</summary>
+    [ObservableProperty]
+    private string _weatherTemp = string.Empty;
+
+    [ObservableProperty]
+    private string _weatherGlyph = VectorIcons.Weather;
+
+    private void OnPillSourcesChanged(object? sender, EventArgs e) => _ui.Post(UpdatePill);
+
+    private void UpdatePill()
+    {
+        PillTime = DateTime.Now.ToString("HH:mm", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+        MusicPlaying = _media.Sessions.Any(session => session.PlaybackState == MediaPlaybackState.Playing);
+
+        var weather = _glances.Glances.FirstOrDefault(glance => glance.Id == "weather.now");
+        var temp = weather?.ShortText?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        HasWeather = !string.IsNullOrEmpty(temp);
+        WeatherTemp = temp ?? string.Empty;
+        WeatherGlyph = weather?.Glyph ?? VectorIcons.Weather;
+    }
+
+    /// <summary>Há mais de uma página (módulo) para percorrer: aparecem as setas e as bolinhas.</summary>
+    [ObservableProperty]
+    private bool _hasPages;
+
+    /// <summary>Data curta no alto da ilha aberta, como "qui., 12 nov".</summary>
+    [ObservableProperty]
+    private string _statusDate = string.Empty;
+
+    /// <summary>Hora no alto da ilha aberta, como "14:52".</summary>
+    [ObservableProperty]
+    private string _statusTime = string.Empty;
+
+    /// <summary>Atualiza a data e a hora do alto da ilha (a janela chama enquanto está aberta).</summary>
+    public void UpdateStatusClock()
+    {
+        var now = DateTime.Now;
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+        StatusDate = now.ToString("ddd, d MMM", culture);
+        StatusTime = now.ToString("HH:mm", culture);
+    }
+
+    [RelayCommand]
+    private void PreviousPage() => StepPage(-1);
+
+    [RelayCommand]
+    private void NextPage() => StepPage(1);
+
+    /// <summary>Seta ‹ ou ›: abre a página anterior (-1) ou a próxima (+1), dando a volta no fim.</summary>
+    private void StepPage(int direction)
+    {
+        if (Dock.Count < 2)
+        {
+            return;
+        }
+
+        var current = Dock.ToList().FindIndex(item => item.IsActive);
+        var next = (((current < 0 ? 0 : current + direction) % Dock.Count) + Dock.Count) % Dock.Count;
+        OpenDockItem(Dock[next]);
+    }
 
     /// <summary>Borda da tela: decide para que lado a cápsula cresce (definida pela janela).</summary>
     [ObservableProperty]
@@ -132,6 +213,13 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     {
         if (item is null)
         {
+            return;
+        }
+
+        // Como no modelo: clicar no módulo que já está aberto fecha o painel.
+        if (item.IsActive && State == IslandState.Interactive)
+        {
+            CollapseInteractive();
             return;
         }
 
@@ -238,12 +326,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
             }
         }
 
-        // No repouso o indicador é o relógio: o texto dele depende da opção "Ilha em repouso".
-        var extra = snapshot.Indicator is null ? 0
-            : snapshot.Indicator.ModuleId == "clock" ? DockMetrics.IdleExtra(_settings.Current.IdleDisplay)
-            : DockMetrics.ActivePillExtra;
-        DockIconsWidth = DockMetrics.Width(Dock.Count, 0);
-        DockWidth = DockMetrics.Width(Dock.Count, extra);
+        HasPages = Dock.Count > 1;
+
     }
 
     // O serviço avisa de uma thread do pool.
@@ -262,6 +346,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         // Conteúdo antes do estado, para a view animar a transição já com o conteúdo certo.
         // O conteúdo de um estado que está saindo é mantido até o fade terminar.
         CompactContent = snapshot.Indicator?.Content;
+        IsClosedPill = snapshot.Indicator is null || snapshot.Indicator.ModuleId is "clock" or "media";
         if (snapshot.State == IslandState.Expanded)
         {
             ExpandedContent = snapshot.Focused?.Content;
@@ -310,6 +395,9 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         _privacy.Changed -= OnPrivacyChanged;
         _shortcuts.Changed -= OnShortcutsChanged;
         _badges.Changed -= OnShortcutsChanged;
+        _glances.Changed -= OnPillSourcesChanged;
+        _media.Changed -= OnPillSourcesChanged;
+        _pillClock.Stop();
         _settings.Changed -= OnSettingsChanged;
     }
 }

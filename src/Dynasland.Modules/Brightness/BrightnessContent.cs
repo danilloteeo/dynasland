@@ -40,7 +40,7 @@ public sealed partial class BrightnessContent(Action<int> requestBrightness) : O
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
         IslandState.Expanded => new IslandDimensions(300, 50, 25),
-        IslandState.Interactive => new IslandDimensions(360, 96, 32),
+        IslandState.Interactive => new IslandDimensions(440, 96, 32),
         _ => null,
     };
 

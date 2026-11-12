@@ -80,14 +80,14 @@ public class PrivacyUsageTests
     }
 
     [Fact]
-    public void Privacy_indicators_setting_round_trips()
+    public void Privacy_indicators_stay_on_even_when_a_stored_value_says_off()
     {
         var off = IslandSettings.Default with { ShowPrivacyIndicators = false };
 
         var values = IslandSettingsMapper.ToValues(off);
 
         Assert.Equal("false", values[IslandSettingsMapper.Keys.ShowPrivacyIndicators]);
-        Assert.False(IslandSettingsMapper.FromValues(values).ShowPrivacyIndicators);
+        Assert.True(IslandSettingsMapper.FromValues(values).ShowPrivacyIndicators);
     }
 
     [Theory]

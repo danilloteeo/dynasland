@@ -16,12 +16,12 @@ public sealed partial class WaterBodyPanelContent(Action drink, Action undo, Act
     : ObservableObject, IActivityContent
 {
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Count), nameof(ProgressText), nameof(Message), nameof(GoalReached))]
+    [NotifyPropertyChangedFor(nameof(Count), nameof(ProgressText), nameof(LitersText), nameof(Message), nameof(GoalReached))]
     [NotifyCanExecuteChangedFor(nameof(UndoCommand))]
     private int _glasses;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Count), nameof(ProgressText), nameof(Message), nameof(GoalReached))]
+    [NotifyPropertyChangedFor(nameof(Count), nameof(ProgressText), nameof(LitersText), nameof(Message), nameof(GoalReached))]
     private int _goal = 8;
 
     /// <summary>Nível da água, N/M limitado a 1 (0 = pés, 1 = topo da cabeça).</summary>
@@ -44,6 +44,20 @@ public sealed partial class WaterBodyPanelContent(Action drink, Action undo, Act
 
     public string ProgressText => $"{Glasses} de {Goal} copos hoje";
 
+    /// <summary>Um copo é 250 ml: o painel mostra o dia em litros, ex.: "1,25 L de 2 L".</summary>
+    public const int GlassMilliliters = 250;
+
+    public string LitersText
+    {
+        get
+        {
+            var culture = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+            return string.Create(culture, $"{Glasses * GlassMilliliters / 1000.0:0.##} L de {Goal * GlassMilliliters / 1000.0:0.##} L");
+        }
+    }
+
+    public string DrinkMillilitersLabel => $"+ {GlassMilliliters} ml";
+
     public bool GoalReached => Glasses >= Goal;
 
     public string Message => GoalReached
@@ -63,7 +77,7 @@ public sealed partial class WaterBodyPanelContent(Action drink, Action undo, Act
     {
         IslandState.Compact => new IslandDimensions(200, 34, 17),
         IslandState.Expanded => new IslandDimensions(320, 64, 30),
-        IslandState.Interactive => new IslandDimensions(400, 240, 36),
+        IslandState.Interactive => new IslandDimensions(440, 100, 32),
         _ => null,
     };
 

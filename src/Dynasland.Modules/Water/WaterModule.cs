@@ -24,7 +24,6 @@ namespace Dynasland.Modules.Water;
 /// </remarks>
 public sealed class WaterModule(
     IWaterStore store,
-    IHubService hub,
     IEventBus bus,
     IUiDispatcher ui,
     TimeProvider time,
@@ -79,7 +78,7 @@ public sealed class WaterModule(
 
     public string Description => "Lembra de beber água e conta os copos do dia. O botão Água da ilha mostra um corpo que se enche conforme você bebe (Ctrl+Alt+G registra um copo).";
 
-    public IReadOnlyList<ModuleOption> Options => [Sound, Interval, StartHour, EndHour, Goal];
+    public IReadOnlyList<ModuleOption> Options => [StartHour, EndHour, Goal];
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -254,7 +253,7 @@ public sealed class WaterModule(
                 return;
             }
 
-            glances.Set(new IslandGlance(GlanceId, "", $"{glasses}/{goal} copos", Order: 2, Invoke: () => hub.Open(HubPage.Water)));
+            glances.Set(new IslandGlance(GlanceId, "", $"{glasses}/{goal} copos", Order: 2));
             // Anel de progresso do dia em volta do ícone da água na dock.
             badges?.Set(ModuleId, new DockBadge(DockBadgeKind.Ring, goal > 0 ? glasses / (double)goal : 0));
             UpdatePanel(glasses, goal);
