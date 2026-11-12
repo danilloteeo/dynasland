@@ -45,25 +45,26 @@
             <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
         </Style>
 
-        <!-- Ponto de página: clicável, destacado quando é a aba atual. -->
+        <!-- Ponto de página: clicável; a aba atual vira uma pílula clara (14x6), as demais são pontos 6x6. -->
         <Style x:Key="PageDotButton" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Width" Value="14" />
+            <Setter Property="Width" Value="20" />
             <Setter Property="Height" Value="20" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid Background="Transparent">
-                            <Ellipse x:Name="Dot" Width="6" Height="6" Fill="{StaticResource IslandTertiaryTextBrush}" />
+                            <Border x:Name="Dot" Width="6" Height="6" CornerRadius="3" Background="{StaticResource IslandTertiaryTextBrush}" />
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                                <Setter TargetName="Dot" Property="Fill" Value="{StaticResource IslandPrimaryTextBrush}" />
-                            </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Dot" Property="Fill" Value="{StaticResource IslandSecondaryTextBrush}" />
+                                <Setter TargetName="Dot" Property="Background" Value="{StaticResource IslandSecondaryTextBrush}" />
                             </Trigger>
+                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                <Setter TargetName="Dot" Property="Width" Value="14" />
+                                <Setter TargetName="Dot" Property="Background" Value="{StaticResource IslandFillBrush}" />
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -154,20 +155,24 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding HasPages, Converter={StaticResource BoolToVisibility}}">
                             <Button Style="{StaticResource FooterButton}" Content="&#xE76B;" Command="{Binding PreviousPageCommand}" ToolTip="Aba anterior" />
-                            <ItemsControl ItemsSource="{Binding Pages}" Focusable="False" Margin="4,0" VerticalAlignment="Center">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="Ir para a aba"
-                                                Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
-                                                CommandParameter="{Binding Index}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <!-- Barra translúcida com os pontos de página, como o seletor do Volum. -->
+                            <Border Margin="4,0" Padding="2,0" CornerRadius="10" VerticalAlignment="Center"
+                                    Background="{DynamicResource IslandSurfaceBrush}">
+                                <ItemsControl ItemsSource="{Binding Pages}" Focusable="False" VerticalAlignment="Center">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="Ir para a aba"
+                                                    Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
+                                                    CommandParameter="{Binding Index}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
                             <Button Style="{StaticResource FooterButton}" Content="&#xE76C;" Command="{Binding NextPageCommand}" ToolTip="Próxima aba" />
                         </StackPanel>
                         <Button Style="{StaticResource FooterButton}" Content="&#xE713;" Command="{Binding OpenSettingsCommand}"

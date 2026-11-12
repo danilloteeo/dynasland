@@ -84,7 +84,7 @@
 
             <!-- Tempo restante antes de a notificação sair da ilha. -->
             <Border Height="2" CornerRadius="1" Margin="34,0,34,7" VerticalAlignment="Bottom" IsHitTestVisible="False"
-                    Background="#1AFFFFFF">
+                    Background="{DynamicResource IslandTrackBrush}">
                 <Border CornerRadius="1" Background="{Binding AccentBrush}" common:CountdownBar.Span="{Binding Countdown}" />
             </Border>
         </Grid>

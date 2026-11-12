@@ -24,6 +24,8 @@
     <SolidColorBrush x:Key="IslandPressedBrush" Color="#38FFFFFF" />
     <SolidColorBrush x:Key="IslandTrackBrush" Color="#33FFFFFF" />
     <SolidColorBrush x:Key="IslandFillBrush" Color="#FFF5F5F7" />
+    <!-- Texto sobre IslandFillBrush (botão principal claro). -->
+    <SolidColorBrush x:Key="IslandOnFillTextBrush" Color="#FF111111" />
     <SolidColorBrush x:Key="IslandAccentBrush" Color="#FFFFFFFF" />
     <SolidColorBrush x:Key="IslandWaterBrush" Color="#FF0084FF" />
     <SolidColorBrush x:Key="IslandWarningBrush" Color="#FFFF9F0A" />
@@ -128,7 +130,7 @@
         </Setter>
     </Style>
 
-    <!-- Botão de texto em pílula (Abrir, Dispensar...). -->
+    <!-- Botão de texto (Abrir, Dispensar...): retângulo arredondado translúcido, como no Volum. -->
     <Style x:Key="IslandTextButtonStyle" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
         <Setter Property="Width" Value="NaN" />
         <Setter Property="Height" Value="30" />
@@ -139,7 +141,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="15" Padding="{TemplateBinding Padding}"
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform />
@@ -165,6 +167,52 @@
                                 <BeginStoryboard Storyboard="{StaticResource IslandPressUpStoryboard}" />
                             </MultiTrigger.ExitActions>
                         </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Ação principal (Bebi, Abrir...): fundo claro e texto escuro. Hover/press mudam a opacidade em vez do
+        fundo, porque os pincéis translúcidos de hover deixariam o texto escuro sobre quase preto.
+    -->
+    <Style x:Key="IslandPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource IslandTextButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource IslandFillBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource IslandOnFillTextBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform />
+                        </Border.RenderTransform>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Opacity" Value="0.88" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Opacity" Value="0.74" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="views:IslandPressFeedback.IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard Storyboard="{StaticResource IslandPressDownStoryboard}" />
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard Storyboard="{StaticResource IslandPressUpStoryboard}" />
+                            </MultiTrigger.ExitActions>
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
