@@ -24,5 +24,8 @@ public sealed record IslandSnapshot(
     int FocusedGroupCount = 1,
     bool IndicatorPinned = false)
 {
+    /// <summary>No estado interativo: o módulo de cada aba, na ordem das abas (identifica o ícone da aba); vazio fora dele.</summary>
+    public PageModuleList PageModules { get; init; } = PageModuleList.Empty;
+
     public static IslandSnapshot Empty { get; } = new(IslandState.Compact, null, null, IslandLayout.Compact, 0);
 }

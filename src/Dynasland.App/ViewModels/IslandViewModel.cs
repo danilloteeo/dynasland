@@ -9,9 +9,6 @@ using Dynasland.Core.Models;
 
 namespace Dynasland.App.ViewModels;
 
-/// <summary>Indicador de uma aba do estado interativo.</summary>
-public sealed record PageDot(int Index, bool IsCurrent);
-
 public sealed partial class IslandViewModel : ObservableObject, IDisposable
 {
     private readonly IslandController _controller;
@@ -97,8 +94,12 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     /// <summary>Ponto verde: só no compacto, na borda direita da cápsula.</summary>
     public bool ShowCameraDot => CameraInUse && State == IslandState.Compact;
 
-    /// <summary>Pontos das abas; vazio quando há apenas uma.</summary>
-    public ObservableCollection<PageDot> Pages { get; } = [];
+    /// <summary>Abas do rodapé; vazio quando há apenas uma.</summary>
+    public ObservableCollection<PageTab> Pages { get; } = [];
+
+    /// <summary>Abas como ícones do módulo (cabem e todas têm ícone); senão, pontos.</summary>
+    [ObservableProperty]
+    private bool _showTabIcons;
 
     public bool HasPages => Pages.Count > 1;
 
@@ -202,20 +203,26 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     private void UpdatePages(IslandSnapshot snapshot)
     {
-        if (snapshot.State == IslandState.Interactive && (Pages.Count != snapshot.PageCount || PageIndex != snapshot.PageIndex))
+        if (snapshot.State != IslandState.Interactive)
         {
-            Pages.Clear();
-            if (snapshot.PageCount > 1)
-            {
-                for (var i = 0; i < snapshot.PageCount; i++)
-                {
-                    Pages.Add(new PageDot(i, i == snapshot.PageIndex));
-                }
-            }
-
-            PageIndex = snapshot.PageIndex;
-            OnPropertyChanged(nameof(HasPages));
+            return;
         }
+
+        var tabs = PageTabBar.PagesFor(snapshot);
+        if (tabs.SequenceEqual(Pages))
+        {
+            return;
+        }
+
+        Pages.Clear();
+        foreach (var tab in tabs)
+        {
+            Pages.Add(tab);
+        }
+
+        ShowTabIcons = PageTabBar.ShowsIcons(tabs, snapshot.Dimensions.Width);
+        PageIndex = snapshot.PageIndex;
+        OnPropertyChanged(nameof(HasPages));
     }
 
     /// <summary>Avisa o conteúdo que ficou visível (e o que deixou de estar), para pausar trabalho invisível.</summary>

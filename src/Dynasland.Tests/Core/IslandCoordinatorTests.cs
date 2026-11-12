@@ -301,6 +301,50 @@ public class IslandCoordinatorTests
     }
 
     [Fact]
+    public void Interactive_snapshot_lists_the_module_of_each_page_in_page_order()
+    {
+        _coordinator.Post(Live("clock", ActivityPriority.Low, module: "clock"), At(0));
+        _coordinator.Post(Live("media", module: "media"), At(0));
+        _coordinator.Post(Transient("system.panel", module: "system") with { OpenInteractive = true }, At(0));
+
+        Assert.Equal(new[] { "system", "media", "clock" }, _coordinator.Snapshot.PageModules);
+        Assert.Equal(_coordinator.Snapshot.PageCount, _coordinator.Snapshot.PageModules.Count);
+    }
+
+    [Fact]
+    public void Page_modules_are_empty_outside_interactive()
+    {
+        _coordinator.Post(Live("media", module: "media"), At(0));
+        _coordinator.Post(Live("clock", ActivityPriority.Low, module: "clock"), At(0));
+
+        Assert.Empty(_coordinator.Snapshot.PageModules);
+        Assert.Empty(IslandSnapshot.Empty.PageModules);
+    }
+
+    [Fact]
+    public void Page_modules_compare_by_value_so_an_unchanged_snapshot_is_not_republished()
+    {
+        var a = IslandSnapshot.Empty with { PageModules = new PageModuleList(["media", "clock"]) };
+        var b = IslandSnapshot.Empty with { PageModules = new PageModuleList(["media", "clock"]) };
+        var c = IslandSnapshot.Empty with { PageModules = new PageModuleList(["clock", "media"]) };
+
+        Assert.Equal(a, b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        Assert.NotEqual(a, c);
+
+        _coordinator.Post(Live("media", module: "media"), At(0));
+        _coordinator.Post(Live("clock", ActivityPriority.Low, module: "clock"), At(0));
+        _coordinator.ToggleInteractive(At(1));
+        var changes = 0;
+        _coordinator.Changed += (_, _) => changes++;
+
+        // Pedir a aba que já está em foco não muda nada visível: nenhum aviso.
+        _coordinator.SelectPage(0, At(2));
+
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
     public void Removing_focused_live_activity_moves_focus_or_collapses()
     {
         _coordinator.Post(Live("clock", ActivityPriority.Low), At(0));

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
         xmlns:views="clr-namespace:Dynasland.App.Views"
+        xmlns:common="clr-namespace:Dynasland.Modules.Common;assembly=Dynasland.Modules"
         xmlns:models="clr-namespace:Dynasland.Core.Models;assembly=Dynasland.Core"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:IslandViewModel}"
@@ -28,6 +29,7 @@
         Apenas a cápsula (IslandHost) é animada, evitando redimensionar o HWND a cada frame.
     -->
     <Window.Resources>
+        <common:GlyphContentConverter x:Key="GlyphContent" />
         <views:ActivityTemplateSelector x:Key="CompactTemplates" Mode="{x:Static models:IslandState.Compact}" />
         <views:ActivityTemplateSelector x:Key="ExpandedTemplates" Mode="{x:Static models:IslandState.Expanded}" />
         <views:ActivityTemplateSelector x:Key="InteractiveTemplates" Mode="{x:Static models:IslandState.Interactive}" />
@@ -45,7 +47,7 @@
             <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
         </Style>
 
-        <!-- Ponto de página: clicável; a aba atual vira uma pílula clara (14x6), as demais são pontos 6x6. -->
+        <!-- Aba de página: clicável. Ponto (a atual vira pílula clara 14x6, as demais 6x6) ou, com Tag=True, o ícone do módulo. -->
         <Style x:Key="PageDotButton" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
@@ -56,15 +58,32 @@
                     <ControlTemplate TargetType="Button">
                         <Grid Background="Transparent">
                             <Border x:Name="Dot" Width="6" Height="6" CornerRadius="3" Background="{StaticResource IslandTertiaryTextBrush}" />
+                            <Grid x:Name="Icon" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock x:Name="IconGlyph" FontFamily="{StaticResource IslandIconFont}" FontSize="14"
+                                           Foreground="{StaticResource IslandTertiaryTextBrush}"
+                                           Text="{Binding Glyph, Converter={StaticResource GlyphContent}, ConverterParameter=glyph}" />
+                                <ContentPresenter x:Name="IconVector" TextElement.Foreground="{StaticResource IslandTertiaryTextBrush}"
+                                                  TextElement.FontSize="14"
+                                                  Content="{Binding Glyph, Converter={StaticResource GlyphContent}, ConverterParameter=vector}" />
+                            </Grid>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Dot" Property="Background" Value="{StaticResource IslandSecondaryTextBrush}" />
+                                <Setter TargetName="IconGlyph" Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
+                                <Setter TargetName="IconVector" Property="TextElement.Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
                             </Trigger>
                             <DataTrigger Binding="{Binding IsCurrent}" Value="True">
                                 <Setter TargetName="Dot" Property="Width" Value="14" />
                                 <Setter TargetName="Dot" Property="Background" Value="{StaticResource IslandFillBrush}" />
+                                <Setter TargetName="IconGlyph" Property="Foreground" Value="{StaticResource IslandFillBrush}" />
+                                <Setter TargetName="IconVector" Property="TextElement.Foreground" Value="{StaticResource IslandFillBrush}" />
                             </DataTrigger>
+                            <Trigger Property="Tag" Value="True">
+                                <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="Icon" Property="Visibility" Value="Visible" />
+                                <Setter Property="Width" Value="40" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -196,7 +215,9 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="Ir para a aba"
+                                            <Button Style="{StaticResource PageDotButton}" AutomationProperties.Name="{Binding AccessibleName}"
+                                                    ToolTip="{Binding AccessibleName}"
+                                                    Tag="{Binding DataContext.ShowTabIcons, ElementName=Root}"
                                                     Command="{Binding DataContext.SelectPageCommand, ElementName=Root}"
                                                     CommandParameter="{Binding Index}" />
                                         </DataTemplate>

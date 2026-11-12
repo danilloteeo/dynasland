@@ -441,6 +441,10 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
         return pages;
     }
 
+    /// <summary>Módulo da atividade de uma aba (o painel/aviso aberto ou uma contínua).</summary>
+    private string ModuleOfPage(string activityId) =>
+        (_shown?.Id == activityId ? _shown : _live.GetValueOrDefault(activityId))?.Activity.ModuleId ?? string.Empty;
+
     private void RemoveCore(string activityId, DateTimeOffset now, ActivityRecordState reason, bool keepLive = false)
     {
         var removed = _live.GetValueOrDefault(activityId)
@@ -573,7 +577,10 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
             pages.Count,
             pageIndex,
             focusedEntry?.GroupCount ?? 1,
-            pinned);
+            pinned)
+        {
+            PageModules = pages.Count == 0 ? PageModuleList.Empty : new PageModuleList(pages.Select(ModuleOfPage)),
+        };
         if (snapshot == Snapshot)
         {
             return;

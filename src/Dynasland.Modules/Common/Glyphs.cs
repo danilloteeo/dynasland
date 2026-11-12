@@ -3,6 +3,9 @@ namespace Dynasland.Modules.Common;
 /// <summary>Códigos de ícones comuns a Segoe Fluent Icons e Segoe MDL2 Assets.</summary>
 public static class Glyphs
 {
+    public const string Bluetooth = "";
+    public const string Battery = "";
+    public const string Clock = "";
     public const string Play = "";
     public const string Pause = "";
     public const string Previous = "";
