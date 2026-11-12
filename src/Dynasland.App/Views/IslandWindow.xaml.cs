@@ -569,8 +569,12 @@ public partial class IslandWindow : Window
         var interactive = _viewModel.State == IslandState.Interactive;
         // A dock é sempre a última linha; o conteúdo do módulo só existe fora do compacto.
         var height = (compact ? 0 : target.Height) + DockMetrics.Height;
-        var dockWidth = Math.Max(_viewModel.DockWidth, DockMetrics.MinimumWidth) + (interactive ? DockToolsWidth : 0);
-        var width = compact ? dockWidth : Math.Max(target.Width, dockWidth);
+        // A área da pílula ativa (texto compacto) só existe no compacto; fora dele a dock é só ícones e ferramentas.
+        var dockWidth = DockMetrics.Width(_viewModel.Dock.Count, hasActivePill: compact && _viewModel.CompactContent is not null)
+            + (interactive ? DockToolsWidth : 0);
+        // Nunca mais larga que a janela (menos a folga das laterais), senão as bordas são cortadas.
+        var maxWidth = Width - IslandPlacementCalculator.EdgeMargin * 2;
+        var width = Math.Min(maxWidth, compact ? dockWidth : Math.Max(target.Width, dockWidth));
         var radius = Math.Min(target.CornerRadius, height / 2);
         if (!animate)
         {

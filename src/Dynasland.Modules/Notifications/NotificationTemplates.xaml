@@ -89,11 +89,22 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding Headline}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0"
+                                    Style="{StaticResource NotificationQueueVisibility}">
+                        <Border CornerRadius="99" Padding="7,1" Background="{DynamicResource IslandSurfaceBrush}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DataContext.QueuedCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=+{0} na fila}"
+                                   FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                    </Border>
+                    <Button Style="{DynamicResource IslandIconButtonStyle}" Width="22" Height="22" FontSize="12" Margin="4,0,0,0"
+                            Command="{Binding DataContext.SkipCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="Próximo aviso" Content="{Binding Source=vector:chevronright, Converter={StaticResource GlyphContent}}" />
+                        </StackPanel>
                         <!-- "Aplicativo · hora" dá lugar às ações quando o mouse está sobre o aviso. -->
-                        <Grid Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Height="24">
+                        <Grid Grid.Column="2" Margin="10,0,0,0" VerticalAlignment="Center" Height="24">
                             <TextBlock x:Name="AppLineText" Text="{Binding AppLine}" Style="{StaticResource NotificationAppLine}" FontSize="11"
                                        VerticalAlignment="Center" MaxWidth="125" TextTrimming="CharacterEllipsis" />
                             <StackPanel x:Name="Actions" Orientation="Horizontal" HorizontalAlignment="Right" Opacity="0" IsHitTestVisible="False">
@@ -118,16 +129,6 @@
                     Background="#26FFFFFF" Style="{StaticResource NotificationQueueVisibility}" />
             <Border Height="2" CornerRadius="1" Margin="34,0,34,4" VerticalAlignment="Bottom" IsHitTestVisible="False"
                     Background="#40FFFFFF" Style="{StaticResource NotificationQueueVisibility}" />
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,12"
-                        Style="{StaticResource NotificationQueueVisibility}">
-                <Border CornerRadius="99" Padding="7,1" Background="{DynamicResource IslandSurfaceBrush}" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding DataContext.QueuedCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=+{0} na fila}"
-                               FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
-                </Border>
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="22" Height="22" FontSize="12" Margin="4,0,0,0"
-                        Command="{Binding DataContext.SkipCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                        ToolTip="Próximo aviso" Content="{Binding Source=vector:chevronright, Converter={StaticResource GlyphContent}}" />
-            </StackPanel>
 
             <!-- Tempo restante antes de a notificação sair da ilha. -->
             <Border Height="2" CornerRadius="1" Margin="34,0,34,7" VerticalAlignment="Bottom" IsHitTestVisible="False"
