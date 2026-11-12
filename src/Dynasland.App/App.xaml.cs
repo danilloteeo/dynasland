@@ -16,6 +16,7 @@ using Dynasland.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.App;
 
@@ -80,7 +81,7 @@ public partial class App : Application
             // Último atalho da tela inicial da ilha, depois dos registrados pelos módulos.
             var settingsWindow = _host.Services.GetRequiredService<SettingsWindowService>();
             _host.Services.GetRequiredService<IShortcutRegistry>().Register(
-                new IslandShortcut("app.settings", "app", "", "Configurações", settingsWindow.Show));
+                new IslandShortcut("app.settings", "app", Glyphs.Settings, "Configurações", settingsWindow.Show));
 
             _host.Services.GetRequiredService<IslandActions>().RegisterShortcuts();
             _host.Services.GetRequiredService<HotkeyService>().Start();

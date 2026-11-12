@@ -1,6 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common">
 
+    <common:GlyphContentConverter x:Key="GlyphContent" />
     <BooleanToVisibilityConverter x:Key="LifeBoolToVisibility" />
 
     <!-- Cores dos ícones de clima. -->
@@ -139,7 +141,7 @@
                                    Foreground="{DynamicResource IslandSecondaryTextBrush}" />
                     </StackPanel>
                     <StackPanel Grid.Column="3" VerticalAlignment="Top" HorizontalAlignment="Right">
-                        <Button Style="{DynamicResource IslandIconButtonStyle}" Content="&#xE72C;" Command="{Binding RefreshCommand}"
+                        <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Source={x:Static common:VectorIcons.Refresh}, Converter={StaticResource GlyphContent}}" Command="{Binding RefreshCommand}"
                                 ToolTip="Atualizar agora" Width="28" Height="28" FontSize="11" HorizontalAlignment="Right" />
                     </StackPanel>
                 </Grid>
@@ -169,7 +171,7 @@
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <TextBlock Text="&#xE81D;" FontFamily="{DynamicResource IslandIconFont}" FontSize="11" Foreground="{DynamicResource IslandSecondaryTextBrush}"
+                        <ContentControl Content="{Binding Source={x:Static common:VectorIcons.MapPin}, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="11" Foreground="{DynamicResource IslandSecondaryTextBrush}"
                                    VerticalAlignment="Center" Margin="0,0,4,0" />
                         <TextBlock Text="{Binding LocationText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5" MaxWidth="120"
                                    Foreground="{DynamicResource IslandSecondaryTextBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />

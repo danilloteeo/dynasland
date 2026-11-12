@@ -75,6 +75,72 @@ public static class VectorIcons
 
     public const string Info = Prefix + "info";
 
+    public const string Play = Prefix + "play";
+
+    public const string Pause = Prefix + "pause";
+
+    public const string Previous = Prefix + "previous";
+
+    public const string Next = Prefix + "next";
+
+    public const string Stop = Prefix + "stop";
+
+    public const string Add = Prefix + "add";
+
+    public const string Copy = Prefix + "copy";
+
+    public const string Document = Prefix + "document";
+
+    public const string Warning = Prefix + "warning";
+
+    public const string Accept = Prefix + "accept";
+
+    public const string Flag = Prefix + "flag";
+
+    public const string History = Prefix + "history";
+
+    public const string Search = Prefix + "search";
+
+    public const string Trash = Prefix + "trash";
+
+    public const string Star = Prefix + "star";
+
+    public const string StarFill = Prefix + "starfill";
+
+    public const string Record = Prefix + "record";
+
+    public const string Microphone = Prefix + "microphone";
+
+    public const string Mute = Prefix + "mute";
+
+    public const string VolumeLow = Prefix + "volumelow";
+
+    public const string VolumeMedium = Prefix + "volumemedium";
+
+    public const string FolderOpen = Prefix + "folderopen";
+
+    public const string OpenFile = Prefix + "openfile";
+
+    public const string Pin = Prefix + "pin";
+
+    public const string PinOff = Prefix + "pinoff";
+
+    public const string Bolt = Prefix + "bolt";
+
+    public const string Crop = Prefix + "crop";
+
+    public const string Window = Prefix + "window";
+
+    public const string MicrophoneOff = Prefix + "microphoneoff";
+
+    public const string ChevronDown = Prefix + "chevrondown";
+
+    public const string Pencil = Prefix + "pencil";
+
+    public const string Undo = Prefix + "undo";
+
+    public const string MapPin = Prefix + "mappin";
+
     private static readonly Dictionary<string, VectorIcon> Icons = new(StringComparer.Ordinal)
     {
         [Water] = new VectorIcon(
@@ -176,6 +242,107 @@ public static class VectorIcons
         [Info] = new VectorIcon(
             Outline: "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12",
             Detail: "M12,16 V12 M12,8 H12.01"),
+        [Play] = new VectorIcon(
+            Outline: "M7,4 L19,12 L7,20 Z",
+            Detail: ""),
+        [Pause] = new VectorIcon(
+            Outline: "M7,4 H10 V20 H7 Z",
+            Detail: "M14,4 H17 V20 H14 Z"),
+        [Previous] = new VectorIcon(
+            Outline: "M19,19 L9,12 L19,5 Z",
+            Detail: "M5,19 V5"),
+        [Next] = new VectorIcon(
+            Outline: "M5,19 L15,12 L5,5 Z",
+            Detail: "M19,19 V5"),
+        [Stop] = new VectorIcon(
+            Outline: "M7,7 H17 V17 H7 Z",
+            Detail: ""),
+        [Add] = new VectorIcon(
+            Outline: "M12,5 V19",
+            Detail: "M5,12 H19"),
+        [Copy] = new VectorIcon(
+            Outline: "M11,8 H19 A2,2 0 0 1 21,10 V19 A2,2 0 0 1 19,21 H11 A2,2 0 0 1 9,19 V10 A2,2 0 0 1 11,8 Z",
+            Detail: "M5,16 H4 A2,2 0 0 1 2,14 V5 A2,2 0 0 1 4,3 H13 A2,2 0 0 1 15,5 V6"),
+        [Document] = new VectorIcon(
+            Outline: "M14,2 H6 A2,2 0 0 0 4,4 V20 A2,2 0 0 0 6,22 H18 A2,2 0 0 0 20,20 V8 Z",
+            Detail: "M14,2 V8 H20 M8,13 H16 M8,17 H13"),
+        [Warning] = new VectorIcon(
+            Outline: "M10.3,3.9 L1.8,18 A2,2 0 0 0 3.5,21 H20.5 A2,2 0 0 0 22.2,18 L13.7,3.9 A2,2 0 0 0 10.3,3.9 Z",
+            Detail: "M12,9 V13 M12,17 H12.01"),
+        [Accept] = new VectorIcon(
+            Outline: "M20,6 L9,17 L4,12",
+            Detail: ""),
+        [Flag] = new VectorIcon(
+            Outline: "M4,15 C4,15 5,14 8,14 C11,14 13,16 16,16 C19,16 20,15 20,15 V3 C20,3 19,4 16,4 C13,4 11,2 8,2 C5,2 4,3 4,3 Z",
+            Detail: "M4,22 V15"),
+        [History] = new VectorIcon(
+            Outline: "M3,12 A9,9 0 1 0 6,5.3 L3,8",
+            Detail: "M3,3 V8 H8 M12,7 V12 L16,14"),
+        [Search] = new VectorIcon(
+            Outline: "M19,11 A8,8 0 1 1 3,11 A8,8 0 1 1 19,11",
+            Detail: "M21,21 L16.65,16.65"),
+        [Trash] = new VectorIcon(
+            Outline: "M3,6 H21",
+            Detail: "M19,6 V20 A2,2 0 0 1 17,22 H7 A2,2 0 0 1 5,20 V6 M8,6 V4 A2,2 0 0 1 10,2 H14 A2,2 0 0 1 16,4 V6"),
+        [Star] = new VectorIcon(
+            Outline: "M12,2 L15.09,8.26 L22,9.27 L17,14.14 L18.18,21.02 L12,17.77 L5.82,21.02 L7,14.14 L2,9.27 L8.91,8.26 Z",
+            Detail: ""),
+        [StarFill] = new VectorIcon(
+            Outline: "M12,2 L15.09,8.26 L22,9.27 L17,14.14 L18.18,21.02 L12,17.77 L5.82,21.02 L7,14.14 L2,9.27 L8.91,8.26 Z",
+            Detail: "",
+            Filled: true),
+        [Record] = new VectorIcon(
+            Outline: "M18,12 A6,6 0 1 1 6,12 A6,6 0 1 1 18,12",
+            Detail: "",
+            Filled: true),
+        [Microphone] = new VectorIcon(
+            Outline: "M12,2 A3,3 0 0 0 9,5 V12 A3,3 0 0 0 15,12 V5 A3,3 0 0 0 12,2 Z",
+            Detail: "M19,10 V12 A7,7 0 0 1 5,12 V10 M12,19 V22"),
+        [Mute] = new VectorIcon(
+            Outline: "M11,5 L6,9 H2 V15 H6 L11,19 Z",
+            Detail: "M22,9 L16,15 M16,9 L22,15"),
+        [VolumeLow] = new VectorIcon(
+            Outline: "M11,5 L6,9 H2 V15 H6 L11,19 Z",
+            Detail: "M15.5,9.5 A3.5,3.5 0 0 1 15.5,14.5"),
+        [VolumeMedium] = new VectorIcon(
+            Outline: "M11,5 L6,9 H2 V15 H6 L11,19 Z",
+            Detail: "M15.5,8.5 A5,5 0 0 1 15.5,15.5"),
+        [FolderOpen] = new VectorIcon(
+            Outline: "M4,20 H18 A2,2 0 0 0 20,18 V9 A2,2 0 0 0 18,7 H11 L9,5 H4 A2,2 0 0 0 2,7 V18 A2,2 0 0 0 4,20 Z",
+            Detail: ""),
+        [OpenFile] = new VectorIcon(
+            Outline: "M18,13 V19 A2,2 0 0 1 16,21 H5 A2,2 0 0 1 3,19 V8 A2,2 0 0 1 5,6 H11",
+            Detail: "M15,3 H21 V9 M10,14 L21,3"),
+        [Pin] = new VectorIcon(
+            Outline: "M5,17 H19 V15.2 A2,2 0 0 0 18,13.5 L16,12.5 V5 H17 A1,1 0 0 0 17,3 H7 A1,1 0 0 0 7,5 H8 V12.5 L6,13.5 A2,2 0 0 0 5,15.2 Z",
+            Detail: "M12,17 V22"),
+        [PinOff] = new VectorIcon(
+            Outline: "M5,17 H19 V15.2 A2,2 0 0 0 18,13.5 L16,12.5 V5 H17 A1,1 0 0 0 17,3 H7 A1,1 0 0 0 7,5 H8 V12.5 L6,13.5 A2,2 0 0 0 5,15.2 Z",
+            Detail: "M12,17 V22 M3,3 L21,21"),
+        [Bolt] = new VectorIcon(
+            Outline: "M13,2 L3,14 H12 L11,22 L21,10 H12 Z",
+            Detail: ""),
+        [Crop] = new VectorIcon(
+            Outline: "M6,2 V16 A2,2 0 0 0 8,18 H22",
+            Detail: "M2,6 H16 A2,2 0 0 1 18,8 V22"),
+        [Window] = new VectorIcon(
+            Outline: "M5,4 H19 A2,2 0 0 1 21,6 V18 A2,2 0 0 1 19,20 H5 A2,2 0 0 1 3,18 V6 A2,2 0 0 1 5,4 Z",
+            Detail: "M3,9 H21"),
+        [MicrophoneOff] = new VectorIcon(
+            Outline: "M12,2 A3,3 0 0 0 9,5 V12 A3,3 0 0 0 15,12 V5 A3,3 0 0 0 12,2 Z",
+            Detail: "M19,10 V12 A7,7 0 0 1 5,12 V10 M12,19 V22 M3,3 L21,21"),
+        [ChevronDown] = new VectorIcon(
+            Outline: "M6,9 L12,15 L18,9",
+            Detail: ""),
+        [Pencil] = new VectorIcon(
+            Outline: "M17,3 A2.1,2.1 0 0 1 21,7 L7.5,20.5 L2,22 L3.5,16.5 Z",
+            Detail: "M15,5 L19,9"),
+        [Undo] = new VectorIcon(
+            Outline: "M3,12 A9,9 0 1 1 6,18.7 L3,16",
+            Detail: "M3,21 V16 H8"),
+        [MapPin] = new VectorIcon(
+            Outline: "M20,10 C20,16 12,22 12,22 C12,22 4,16 4,10 A8,8 0 0 1 20,10 Z",
+            Detail: "M15,10 A3,3 0 1 1 9,10 A3,3 0 1 1 15,10"),
     };
 
     /// <summary>O ícone da chave, ou null se a chave não for de um ícone vetorial conhecido.</summary>

@@ -42,7 +42,7 @@
                             <Border Width="80" Height="50" CornerRadius="4" Background="{DynamicResource SettingsChipBrush}" Margin="0,0,12,0">
                                 <Grid>
                                     <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
-                                    <TextBlock Text="&#xE714;" FontFamily="{StaticResource IslandIconFont}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    <ContentControl Content="{Binding Source=vector:record, Converter={StaticResource GlyphContent}}" FontFamily="{StaticResource IslandIconFont}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="{DynamicResource SettingsSecondaryTextBrush}"
                                                Visibility="{Binding IsRecording, Converter={StaticResource BoolToVisibility}}" />
                                 </Grid>
@@ -52,11 +52,11 @@
                                 <TextBlock Text="{Binding Detail}" Style="{StaticResource CardDescription}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE8A7;" ToolTip="Abrir"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:openfile" ToolTip="Abrir"
                                         Command="{Binding DataContext.OpenCommand, ElementName=List}" CommandParameter="{Binding}" />
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE838;" ToolTip="Mostrar na pasta"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:folderopen" ToolTip="Mostrar na pasta"
                                         Command="{Binding DataContext.RevealCommand, ElementName=List}" CommandParameter="{Binding}" />
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE74D;" ToolTip="Excluir"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:trash" ToolTip="Excluir"
                                         Command="{Binding DataContext.DeleteCommand, ElementName=List}" CommandParameter="{Binding}" />
                             </StackPanel>
                         </Grid>

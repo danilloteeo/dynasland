@@ -7,6 +7,7 @@ using Dynasland.Core.Modules;
 using Dynasland.Core.Session;
 using Dynasland.Core.Shortcuts;
 using Microsoft.Extensions.Logging;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Life;
 
@@ -58,7 +59,7 @@ public sealed class CalendarModule(
     {
         _running = true;
         store.Changed += OnStoreChanged;
-        _registrations.Add(shortcuts.Register(new IslandShortcut("calendar.open", ModuleId, "", "Agenda", () => hub.Open(HubPage.Calendar))));
+        _registrations.Add(shortcuts.Register(new IslandShortcut("calendar.open", ModuleId, Glyphs.Calendar, "Agenda", () => hub.Open(HubPage.Calendar))));
         _registrations.Add(globalShortcuts.Register(new GlobalShortcut(
             "calendar.open", "Abrir a agenda", "Agenda",
             new HotkeyGesture(HotkeyModifiers.Control | HotkeyModifiers.Alt, 'A'), () => hub.Open(HubPage.Calendar))));
@@ -167,7 +168,7 @@ public sealed class CalendarModule(
             return;
         }
 
-        glances.Set(new IslandGlance(GlanceId, "", $"{upcoming.Title} · {DescribeStart(upcoming, now)}", Order: 1, Invoke: () => hub.Open(HubPage.Calendar)));
+        glances.Set(new IslandGlance(GlanceId, Glyphs.Calendar, $"{upcoming.Title} · {DescribeStart(upcoming, now)}", Order: 1, Invoke: () => hub.Open(HubPage.Calendar)));
     }
 
     /// <summary>"em 15 min", "hoje às 14:00", "amanhã às 9:30", "hoje (dia inteiro)".</summary>

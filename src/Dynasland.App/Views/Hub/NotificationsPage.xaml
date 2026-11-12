@@ -65,9 +65,9 @@
                                            Visibility="{Binding HasBody, Converter={StaticResource BoolToVisibility}}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,0">
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE8A7;" ToolTip="Abrir o aplicativo"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:openfile" ToolTip="Abrir o aplicativo"
                                         Command="{Binding DataContext.OpenAppCommand, ElementName=List}" CommandParameter="{Binding}" />
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE74D;" ToolTip="Excluir"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:trash" ToolTip="Excluir"
                                         Command="{Binding DataContext.DeleteCommand, ElementName=List}" CommandParameter="{Binding}" />
                             </StackPanel>
                         </Grid>

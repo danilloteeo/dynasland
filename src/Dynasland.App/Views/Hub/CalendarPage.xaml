@@ -69,9 +69,9 @@
             <Border Style="{StaticResource SettingsCard}" Padding="12">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,8">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource HubIconButton}" Content="&#xE76C;" ToolTip="Próximo mês" Command="{Binding NextMonthCommand}" />
-                        <Button DockPanel.Dock="Right" Style="{StaticResource HubIconButton}" Content="&#xE8D1;" ToolTip="Hoje" Command="{Binding GoToTodayCommand}" />
-                        <Button DockPanel.Dock="Right" Style="{StaticResource HubIconButton}" Content="&#xE76B;" ToolTip="Mês anterior" Command="{Binding PreviousMonthCommand}" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource HubIconButton}" Content="vector:chevronright" ToolTip="Próximo mês" Command="{Binding NextMonthCommand}" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource HubIconButton}" Content="vector:calendar" ToolTip="Hoje" Command="{Binding GoToTodayCommand}" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource HubIconButton}" Content="vector:chevronleft" ToolTip="Mês anterior" Command="{Binding PreviousMonthCommand}" />
                         <TextBlock Text="{Binding MonthTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
                     </DockPanel>
                     <ItemsControl ItemsSource="{Binding Source={x:Static hub:CalendarPageViewModel.WeekDays}}" Focusable="False">
@@ -144,8 +144,8 @@
                                                    Visibility="{Binding HasNotes, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                                        <Button Style="{StaticResource HubIconButton}" Content="&#xE70F;" ToolTip="Editar" Command="{Binding Edit}" />
-                                        <Button Style="{StaticResource HubIconButton}" Content="&#xE74D;" ToolTip="Excluir" Command="{Binding Delete}" />
+                                        <Button Style="{StaticResource HubIconButton}" Content="vector:pencil" ToolTip="Editar" Command="{Binding Edit}" />
+                                        <Button Style="{StaticResource HubIconButton}" Content="vector:trash" ToolTip="Excluir" Command="{Binding Delete}" />
                                     </StackPanel>
                                 </Grid>
                             </Border>

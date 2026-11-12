@@ -80,7 +80,7 @@
                                                    Visibility="{Binding FollowsMode, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                        <Button Style="{StaticResource HubIconButton}" Content="&#xE713;" ToolTip="Opções deste aplicativo" Margin="0,0,10,0"
+                                        <Button Style="{StaticResource HubIconButton}" Content="vector:gear" ToolTip="Opções deste aplicativo" Margin="0,0,10,0"
                                                 Command="{Binding ToggleExpandedCommand}" />
                                         <CheckBox Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" IsChecked="{Binding Shows}"
                                                   AutomationProperties.Name="{Binding Name, StringFormat=Permitir {0}}" />

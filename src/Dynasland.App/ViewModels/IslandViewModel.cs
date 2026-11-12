@@ -6,6 +6,7 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.App.ViewModels;
 
@@ -105,7 +106,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     public bool HasGroupBadge => GroupBadge.Length > 0;
 
-    public string PinGlyph => IsFocusedPinned ? "" : "";
+    public string PinGlyph => IsFocusedPinned ? VectorIcons.PinOff : VectorIcons.Pin;
 
     public string PinToolTip => IsFocusedPinned ? "Desafixar do compacto" : "Fixar no compacto";
 

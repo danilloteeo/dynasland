@@ -208,7 +208,7 @@ public sealed partial class VolumeContent(IAudioVolumeService audio, IAudioDevic
 
     public int MicrophonePercent => (int)Math.Round(MicrophoneLevel);
 
-    public string MicrophoneGlyph => MicrophoneMuted ? "\uEC54" : Glyphs.Microphone;
+    public string MicrophoneGlyph => MicrophoneMuted ? VectorIcons.MicrophoneOff : Glyphs.Microphone;
 
     public string SpeakersGlyph => Glyphs.Speakers;
 

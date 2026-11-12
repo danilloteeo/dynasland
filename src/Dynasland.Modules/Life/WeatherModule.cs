@@ -7,6 +7,7 @@ using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
 using Dynasland.Core.Session;
 using Microsoft.Extensions.Logging;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Life;
 
@@ -50,7 +51,7 @@ public sealed class WeatherModule(
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _content = new WeatherContent(() => RefreshAsync(force: true));
-        _registrations.Add(shortcuts.Register(new IslandShortcut("weather.panel", ModuleId, "", "Clima", OpenPanel)));
+        _registrations.Add(shortcuts.Register(new IslandShortcut("weather.panel", ModuleId, Glyphs.Weather, "Clima", OpenPanel)));
         _registrations.Add(bus.Subscribe<SessionChangedEvent>(e =>
         {
             if (e.Change == SessionChange.Resumed)
@@ -177,7 +178,7 @@ public sealed class WeatherModule(
         var stale = now - report.FetchedAt > StaleAfter ? " (desatualizado)" : string.Empty;
         glances.Set(new IslandGlance(
             GlanceId,
-            "",
+            Glyphs.Weather,
             $"{WeatherText.Temperature(current.TemperatureC)} {WeatherText.ConditionName(current.Condition)} · {report.Location.Name}{stale}",
             Order: 0,
             Invoke: OpenPanel,

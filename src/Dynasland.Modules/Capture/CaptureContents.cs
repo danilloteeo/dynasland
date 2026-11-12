@@ -23,11 +23,11 @@ public sealed partial class CapturePanelContent(Action region, Action screen, Ac
 
     partial void OnMessageChanged(string? value) => OnPropertyChanged(nameof(HasMessage));
 
-    public string RegionGlyph => "";
+    public string RegionGlyph => VectorIcons.Crop;
 
     public string ScreenGlyph => Glyphs.Monitor;
 
-    public string WindowGlyph => "";
+    public string WindowGlyph => VectorIcons.Window;
 
     public string RecordGlyph => Glyphs.Record;
 

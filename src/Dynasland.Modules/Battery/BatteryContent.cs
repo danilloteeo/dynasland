@@ -29,7 +29,7 @@ public sealed partial class BatteryContent : ObservableObject, IActivityContent
 
     public double Fraction => Percent / 100.0;
 
-    public string ChargingGlyph => "";
+    public string ChargingGlyph => VectorIcons.Bolt;
 
     public void Apply(PowerState state, string headline, int lowThreshold = BatteryAlertPolicy.LowThreshold)
     {

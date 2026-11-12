@@ -74,11 +74,11 @@
                                 <TextBlock Text="{Binding DetailText}" Style="{StaticResource CardDescription}" Margin="0,2,0,0" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE8C8;" ToolTip="Copiar"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:copy" ToolTip="Copiar"
                                         Command="{Binding DataContext.CopyCommand, ElementName=List}" CommandParameter="{Binding}" />
                                 <Button Style="{StaticResource HubIconButton}" Content="{Binding FavoriteGlyph}" ToolTip="{Binding FavoriteToolTip}"
                                         Command="{Binding DataContext.ToggleFavoriteCommand, ElementName=List}" CommandParameter="{Binding}" />
-                                <Button Style="{StaticResource HubIconButton}" Content="&#xE74D;" ToolTip="Excluir"
+                                <Button Style="{StaticResource HubIconButton}" Content="vector:trash" ToolTip="Excluir"
                                         Command="{Binding DataContext.DeleteCommand, ElementName=List}" CommandParameter="{Binding}" />
                             </StackPanel>
                         </Grid>

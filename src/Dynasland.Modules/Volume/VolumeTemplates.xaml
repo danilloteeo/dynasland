@@ -1,5 +1,7 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <DataTemplate x:Key="Dynasland.Modules.Volume.VolumeContent:Expanded">
         <Grid Margin="18,0">
@@ -8,7 +10,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="44" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
+            <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
                        Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
             <ProgressBar Grid.Column="1" Style="{DynamicResource IslandProgressBarStyle}" Height="6" Maximum="100"
                          Value="{Binding Level, Mode=OneWay}" VerticalAlignment="Center" />
@@ -43,7 +45,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="40" />
                                 </Grid.ColumnDefinitions>
-                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" FontSize="13" Content="{Binding Glyph}"
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" FontSize="13" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}"
                                         Command="{Binding ToggleMuteCommand}" ToolTip="Silenciar este aplicativo" />
                                 <TextBlock Grid.Column="1" Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Margin="6,0,0,0"
                                            Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
@@ -69,7 +71,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph}" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo" />
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo" />
                 <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
                         Value="{Binding Level, Mode=TwoWay}" />
             </Grid>
@@ -81,7 +83,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="44" />
                 </Grid.ColumnDefinitions>
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding MicrophoneGlyph}" Command="{Binding ToggleMicrophoneMuteCommand}"
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding MicrophoneGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding ToggleMicrophoneMuteCommand}"
                         ToolTip="Ligar/desligar o microfone" />
                 <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
                         AutomationProperties.Name="Volume do microfone" Value="{Binding MicrophoneLevel, Mode=TwoWay}" ToolTip="{Binding MicrophoneName}" />

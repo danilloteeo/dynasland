@@ -3,6 +3,7 @@
                     xmlns:common="clr-namespace:Dynasland.Modules.Common;assembly=Dynasland.Modules">
 
     <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <!--
         Ícone vetorial próprio (chaves "vector:..." trocadas pelo GlyphContentConverter). Desenha como um glifo de fonte:
@@ -14,7 +15,17 @@
             <Canvas Width="24" Height="24">
                 <Path Data="{Binding Outline}" Fill="{x:Null}" StrokeThickness="1.6"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                      Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
+                      Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}">
+                    <Path.Style>
+                        <Style TargetType="Path">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Filled}" Value="True">
+                                    <Setter Property="Fill" Value="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Path.Style>
+                </Path>
                 <Path Data="{Binding Detail}" Fill="{x:Null}" StrokeThickness="1.6"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                       Stroke="{Binding (TextElement.Foreground), RelativeSource={RelativeSource Self}}" />
@@ -30,7 +41,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock x:Name="Glyph" Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+            <ContentControl x:Name="Glyph" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
                        Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Flow.Title}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
@@ -49,7 +60,7 @@
         </Grid>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Flow.HasFailed}" Value="True">
-                <Setter TargetName="Glyph" Property="Text" Value="&#xEA39;" />
+                <Setter TargetName="Glyph" Property="Content" Value="{Binding Source=vector:warning, Converter={StaticResource GlyphContent}}" />
                 <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource IslandCriticalBrush}" />
             </DataTrigger>
         </DataTemplate.Triggers>
@@ -58,7 +69,7 @@
     <!-- Conteúdos da própria aplicação exibidos na ilha (mesma convenção de chave dos módulos). -->
     <DataTemplate x:Key="Dynasland.App.ViewModels.UpdateAvailableContent:Compact">
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
+            <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
                        Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center" />
             <TextBlock Text="{Binding Flow.Percent, StringFormat={}{0}%}" Margin="8,0,0,0" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
                        Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
@@ -86,15 +97,15 @@
 
     <!-- Estado padrão (carregando / vazio / erro / aviso), compartilhado por todos os módulos. -->
     <DataTemplate x:Key="StatusGlyph">
-        <TextBlock x:Name="Glyph" Text="&#xE946;" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
+        <ContentControl x:Name="Glyph" Content="{Binding Source=vector:info, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="18"
                    Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
-            <TextBlock.RenderTransform>
+            <ContentControl.RenderTransform>
                 <RotateTransform />
-            </TextBlock.RenderTransform>
-        </TextBlock>
+            </ContentControl.RenderTransform>
+        </ContentControl>
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Kind}" Value="Loading">
-                <Setter TargetName="Glyph" Property="Text" Value="&#xE895;" />
+                <Setter TargetName="Glyph" Property="Content" Value="{Binding Source=vector:refresh, Converter={StaticResource GlyphContent}}" />
                 <DataTrigger.EnterActions>
                     <BeginStoryboard x:Name="Spin">
                         <Storyboard Timeline.DesiredFrameRate="30">
@@ -108,11 +119,11 @@
                 </DataTrigger.ExitActions>
             </DataTrigger>
             <DataTrigger Binding="{Binding Kind}" Value="Empty">
-                <Setter TargetName="Glyph" Property="Text" Value="&#xE8F4;" />
+                <Setter TargetName="Glyph" Property="Content" Value="{Binding Source=vector:info, Converter={StaticResource GlyphContent}}" />
                 <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource IslandTertiaryTextBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Kind}" Value="Error">
-                <Setter TargetName="Glyph" Property="Text" Value="&#xEA39;" />
+                <Setter TargetName="Glyph" Property="Content" Value="{Binding Source=vector:warning, Converter={StaticResource GlyphContent}}" />
                 <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource IslandCriticalBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Kind}" Value="Info">

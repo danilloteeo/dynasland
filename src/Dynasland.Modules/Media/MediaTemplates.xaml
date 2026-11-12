@@ -1,5 +1,7 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -8,7 +10,7 @@
         <Grid>
             <Border CornerRadius="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContentControl}}"
                     Background="{DynamicResource IslandSurfaceBrush}">
-                <TextBlock Text="{Binding MusicGlyph}"
+                <ContentControl Content="{Binding MusicGlyph, Converter={StaticResource GlyphContent}}"
                            FontFamily="{DynamicResource IslandIconFont}"
                            FontSize="14"
                            Foreground="{DynamicResource IslandSecondaryTextBrush}"
@@ -179,11 +181,11 @@
             </Grid>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,8,0,0">
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PreviousGlyph}" Command="{Binding PreviousCommand}"
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PreviousGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding PreviousCommand}"
                         IsEnabled="{Binding CanSkipPrevious}" ToolTip="Anterior" />
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PlayPauseGlyph}" Command="{Binding PlayPauseCommand}"
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding PlayPauseGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding PlayPauseCommand}"
                         IsEnabled="{Binding CanPlayPause}" Width="44" Height="44" FontSize="20" Margin="14,0" ToolTip="Reproduzir/pausar" />
-                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding NextGlyph}" Command="{Binding NextCommand}"
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding NextGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding NextCommand}"
                         IsEnabled="{Binding CanSkipNext}" ToolTip="Próxima" />
             </StackPanel>
 
@@ -197,7 +199,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding VolumeGlyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13" VerticalAlignment="Center"
+                <ContentControl Content="{Binding VolumeGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13" VerticalAlignment="Center"
                            Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="4,0,0,0" />
                 <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="10,0,4,0" VerticalAlignment="Center"
                         Maximum="100" Value="{Binding AppVolume, Mode=TwoWay, Delay=60}"

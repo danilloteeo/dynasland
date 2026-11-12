@@ -3,6 +3,7 @@ using Dynasland.App.Services;
 using Dynasland.Core.Activities;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.App.ViewModels;
 
@@ -11,7 +12,7 @@ public sealed partial class UpdateAvailableContent(UpdateFlow flow, Action dismi
 {
     public UpdateFlow Flow { get; } = flow;
 
-    public string Glyph => "";
+    public string Glyph => Glyphs.Download;
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {

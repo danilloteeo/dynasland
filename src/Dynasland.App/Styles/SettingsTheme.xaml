@@ -542,14 +542,15 @@
         <Setter Property="Height" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontFamily" Value="{StaticResource IslandIconFont}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="16" />
         <Setter Property="Foreground" Value="{DynamicResource SettingsSecondaryTextBrush}" />
         <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Back" Background="Transparent" CornerRadius="8">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Content="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource GlyphContent}}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -574,7 +575,7 @@
                 <ControlTemplate TargetType="ToggleButton">
                     <Border x:Name="Frame" Background="{DynamicResource SettingsButtonBrush}" BorderBrush="{DynamicResource SettingsButtonBorderBrush}"
                             BorderThickness="1" CornerRadius="8">
-                        <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IslandIconFont}" FontSize="10" Margin="0,0,10,0"
+                        <ContentControl Content="{Binding Source={x:Static common:VectorIcons.ChevronDown}, Converter={StaticResource GlyphContent}}" FontFamily="{StaticResource IslandIconFont}" FontSize="12" Margin="0,0,10,0" IsHitTestVisible="False"
                                    HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource SettingsSecondaryTextBrush}" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -660,13 +661,13 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="10">
-                        <TextBlock x:Name="Glyph" Text="&#xE70D;" FontFamily="{StaticResource IslandIconFont}" FontSize="12"
+                        <ContentControl x:Name="Glyph" Content="{Binding Source={x:Static common:VectorIcons.ChevronDown}, Converter={StaticResource GlyphContent}}" FontFamily="{StaticResource IslandIconFont}" FontSize="14" IsHitTestVisible="False"
                                    Foreground="{TemplateBinding Foreground}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
-                            <TextBlock.RenderTransform>
+                            <ContentControl.RenderTransform>
                                 <RotateTransform Angle="0" />
-                            </TextBlock.RenderTransform>
-                        </TextBlock>
+                            </ContentControl.RenderTransform>
+                        </ContentControl>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

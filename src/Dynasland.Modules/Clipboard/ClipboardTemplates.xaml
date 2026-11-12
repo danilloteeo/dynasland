@@ -1,5 +1,7 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary
+                    xmlns:common="clr-namespace:Dynasland.Modules.Common" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <common:GlyphContentConverter x:Key="GlyphContent" />
 
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -35,7 +37,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Width="32" Height="32" VerticalAlignment="Center">
-                <TextBlock Text="{Binding LatestGlyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
+                <ContentControl Content="{Binding LatestGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
                            Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 <Border CornerRadius="6" Visibility="{Binding HasLatestImage, Converter={StaticResource BoolToVisibility}}">
                     <Border.Background>
@@ -74,7 +76,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource IslandIconFont}" FontSize="12"
+                                <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="12"
                                            Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" />
                                 <Border Width="18" Height="18" CornerRadius="3" HorizontalAlignment="Left"
                                         Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVisibility}}">
