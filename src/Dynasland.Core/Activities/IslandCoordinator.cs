@@ -195,6 +195,20 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
         Publish();
     }
 
+    /// <summary>Clique num ícone da dock: abre (ou troca para) o painel interativo daquela atividade.</summary>
+    public void OpenActivity(string activityId, DateTimeOffset now)
+    {
+        if (_hidden || (_shown?.Id != activityId && !_live.ContainsKey(activityId)))
+        {
+            return;
+        }
+
+        _focusId = activityId;
+        _state = IslandState.Interactive;
+        _collapseAt = _pointerOver ? null : now + ExpandedDuration;
+        Publish();
+    }
+
     /// <summary>Fecha o estado interativo (ex.: clique fora da ilha); sem efeito nos outros estados.</summary>
     public void CollapseInteractive(DateTimeOffset now)
     {
@@ -580,6 +594,7 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
             pinned)
         {
             PageModules = pages.Count == 0 ? PageModuleList.Empty : new PageModuleList(pages.Select(ModuleOfPage)),
+            PageActivityIds = pages.Count == 0 ? PageModuleList.Empty : new PageModuleList(pages),
         };
         if (snapshot == Snapshot)
         {

@@ -568,4 +568,62 @@ public class IslandCoordinatorTests
     {
         public IslandDimensions? GetPreferredDimensions(IslandState state) => preferred;
     }
+
+    [Fact]
+    public void OpenActivity_focuses_a_live_activity_in_interactive()
+    {
+        _coordinator.Post(Live("music", module: "media"), At(0));
+        _coordinator.Post(Live("timer", module: "timer"), At(1));
+
+        _coordinator.OpenActivity("music", At(2));
+
+        Assert.Equal(IslandState.Interactive, _coordinator.Snapshot.State);
+        Assert.Equal("music", _coordinator.Snapshot.Focused?.Id);
+    }
+
+    [Fact]
+    public void OpenActivity_switches_the_focus_while_already_interactive()
+    {
+        _coordinator.Post(Live("music", module: "media"), At(0));
+        _coordinator.Post(Live("timer", module: "timer"), At(1));
+        _coordinator.OpenActivity("music", At(2));
+
+        _coordinator.OpenActivity("timer", At(3));
+
+        Assert.Equal(IslandState.Interactive, _coordinator.Snapshot.State);
+        Assert.Equal("timer", _coordinator.Snapshot.Focused?.Id);
+    }
+
+    [Fact]
+    public void OpenActivity_ignores_an_unknown_activity()
+    {
+        _coordinator.Post(Live("music", module: "media"), At(0));
+
+        _coordinator.OpenActivity("nao-existe", At(1));
+
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+    }
+
+    [Fact]
+    public void OpenActivity_does_nothing_while_hidden()
+    {
+        _coordinator.Post(Live("music", module: "media"), At(0));
+        _coordinator.SetHidden(true, At(1));
+
+        _coordinator.OpenActivity("music", At(2));
+
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+    }
+
+    [Fact]
+    public void Interactive_snapshot_exposes_the_activity_ids_of_the_pages()
+    {
+        _coordinator.Post(Live("music", module: "media"), At(0));
+        _coordinator.Post(Live("timer", module: "timer"), At(1));
+
+        _coordinator.OpenActivity("music", At(2));
+
+        Assert.Equal(_coordinator.Snapshot.PageCount, _coordinator.Snapshot.PageActivityIds.Count);
+        Assert.Contains("music", _coordinator.Snapshot.PageActivityIds);
+    }
 }

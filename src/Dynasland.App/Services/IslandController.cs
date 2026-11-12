@@ -61,6 +61,8 @@ public sealed class IslandController : IDisposable
 
     public void SelectPage(int index) => Run(c => c.SelectPage(index, Now));
 
+    public void OpenActivity(string activityId) => Run(c => c.OpenActivity(activityId, Now));
+
     public void PointerEntered() => Run(c => c.PointerEntered());
 
     public void PointerExited() => Run(c => c.PointerExited(Now));
