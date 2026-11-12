@@ -94,7 +94,7 @@
                     <Border x:Name="Chrome"
                             Background="{TemplateBinding Background}"
                             RenderTransformOrigin="0.5,0.5"
-                            CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource DoubleToCornerRadius}}">
+                            CornerRadius="10">
                         <Border.RenderTransform>
                             <ScaleTransform />
                         </Border.RenderTransform>

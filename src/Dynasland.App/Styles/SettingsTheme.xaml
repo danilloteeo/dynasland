@@ -49,9 +49,9 @@
 
     <Style x:Key="SettingsGroupHeader" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource IslandTextFont}" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource SettingsTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource SettingsTertiaryTextBrush}" />
         <Setter Property="Margin" Value="2,22,0,8" />
     </Style>
 
@@ -59,8 +59,8 @@
         <Setter Property="Background" Value="{DynamicResource SettingsCardBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SettingsBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Padding" Value="18,14" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="16,12" />
         <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
 
@@ -88,10 +88,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Chrome" Background="Transparent" CornerRadius="6" Padding="12,9">
+                    <Border x:Name="Chrome" Background="Transparent" CornerRadius="10" Padding="12,9">
                         <Grid>
-                            <Border x:Name="Indicator" Width="3" Height="16" CornerRadius="2" HorizontalAlignment="Left"
-                                    Margin="-8,0,0,0" Background="{DynamicResource SettingsAccentBrush}" Visibility="Collapsed" />
                             <StackPanel Orientation="Horizontal">
                                 <!-- Glifo de fonte no TextBlock; um Tag "vector:..." deixa o texto vazio e desenha o ícone vetorial
                                      (16 px, mas ocupando os 15 px de um glifo, para o texto alinhar com os outros itens). -->
@@ -110,8 +108,8 @@
                             <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SettingsNavHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SettingsNavHoverBrush}" />
-                            <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SettingsAccentBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource SettingsAccentTextBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -129,12 +127,16 @@
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" Background="Transparent">
-                        <TextBlock x:Name="Label" Text="Desligado" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center"
+                        <TextBlock x:Name="Label" Text="Desligado" Foreground="{DynamicResource SettingsTertiaryTextBrush}" VerticalAlignment="Center"
                                    Width="70" TextAlignment="Right" Margin="0,0,10,0" />
-                        <Border x:Name="Track" Width="40" Height="20" CornerRadius="10" BorderThickness="1"
-                                BorderBrush="{DynamicResource SettingsSecondaryTextBrush}" Background="Transparent">
-                            <Ellipse x:Name="Thumb" Width="12" Height="12" Fill="{DynamicResource SettingsSecondaryTextBrush}"
-                                     HorizontalAlignment="Left" Margin="4,0" />
+                        <Border x:Name="Track" Width="36" Height="20" CornerRadius="10" BorderThickness="1"
+                                BorderBrush="{DynamicResource SettingsBorderBrush}" Background="{DynamicResource SettingsTrackBrush}">
+                            <Ellipse x:Name="Thumb" Width="14" Height="14" Fill="{DynamicResource SettingsSecondaryTextBrush}"
+                                     HorizontalAlignment="Left" Margin="3,0,0,0">
+                                <Ellipse.RenderTransform>
+                                    <TranslateTransform X="0" />
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
                         </Border>
                     </StackPanel>
                     <ControlTemplate.Triggers>
@@ -142,8 +144,27 @@
                             <Setter TargetName="Track" Property="Background" Value="{DynamicResource SettingsAccentBrush}" />
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource SettingsAccentBrush}" />
                             <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource SettingsAccentTextBrush}" />
-                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
                             <Setter TargetName="Label" Property="Text" Value="Ligado" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Thumb" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                         To="16" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <BackEase EasingMode="EaseOut" Amplitude="0.45" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Thumb" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                         To="0" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4" />
@@ -297,7 +318,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Chrome" Background="{DynamicResource SettingsButtonBrush}" BorderBrush="{DynamicResource SettingsButtonBorderBrush}"
-                            BorderThickness="1" CornerRadius="5" Padding="14,6">
+                            BorderThickness="1" CornerRadius="8" Padding="14,6">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -318,7 +339,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Chrome" Background="{DynamicResource SettingsAccentBrush}" CornerRadius="5" Padding="14,6">
+                    <Border x:Name="Chrome" Background="{DynamicResource SettingsAccentBrush}" CornerRadius="8" Padding="14,6">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -371,13 +392,24 @@
                             <RepeatButton Style="{StaticResource SettingsSliderRepeat}" Background="{DynamicResource SettingsTrackBrush}" Command="Slider.IncreaseLarge" />
                         </Track.IncreaseRepeatButton>
                         <Track.Thumb>
-                            <Thumb Width="18" Height="18">
+                            <Thumb Width="16" Height="16">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="Thumb">
-                                        <Grid>
-                                            <Ellipse Fill="{DynamicResource SettingsCardBrush}" Stroke="{DynamicResource SettingsBorderBrush}" StrokeThickness="1" />
-                                            <Ellipse Margin="5" Fill="{DynamicResource SettingsAccentBrush}" />
-                                        </Grid>
+                                        <Ellipse x:Name="Knob" Fill="{DynamicResource SettingsAccentBrush}" Stroke="{DynamicResource SettingsCardBrush}"
+                                                 StrokeThickness="2" RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform>
+                                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                                            </Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Knob" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="1.15" ScaleY="1.15" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Thumb.Template>
                             </Thumb>
@@ -439,7 +471,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
                         <Grid>
                             <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                             <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Margin="{TemplateBinding Padding}" Padding="2,0,0,0"
@@ -500,12 +532,12 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Back" Background="Transparent" CornerRadius="5">
+                    <Border x:Name="Back" Background="Transparent" CornerRadius="10">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Back" Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}" />
+                            <Setter TargetName="Back" Property="Background" Value="{DynamicResource SettingsNavHoverBrush}" />
                             <Setter Property="Foreground" Value="{DynamicResource SettingsTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -525,7 +557,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Border x:Name="Frame" Background="{DynamicResource SettingsButtonBrush}" BorderBrush="{DynamicResource SettingsButtonBorderBrush}"
-                            BorderThickness="1" CornerRadius="5">
+                            BorderThickness="1" CornerRadius="8">
                         <TextBlock Text="&#xE70D;" FontFamily="{StaticResource IslandIconFont}" FontSize="10" Margin="0,0,10,0"
                                    HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource SettingsSecondaryTextBrush}" />
                     </Border>
