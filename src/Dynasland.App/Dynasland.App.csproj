@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\dynasland.ico" />
+    <Resource Include="Assets\Fonts\*.ttf" />
   </ItemGroup>
 
   <ItemGroup>
