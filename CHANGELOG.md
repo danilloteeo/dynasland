@@ -9,6 +9,14 @@
 - **Ilha em formato de dock**: um ícone por módulo na base da tela, com vidro translúcido; clicar num ícone abre o
   painel daquele módulo acima da dock. Esc ou clique fora fecham. Nova opção **Borda da tela** (embaixo ou em
   cima), além de monitor, posição, formato e distância. O padrão agora é embaixo, acima da barra de tarefas.
+- **Dock mais limpa**: em repouso nenhum ícone fica em destaque (a pílula branca é só para atividade de verdade), o
+  texto de repouso ganhou espaço próprio por opção e um separador fino, e os ícones têm mais contraste.
+- **Selos na dock**: anel de progresso da água do dia em volta do ícone e ponto de aviso para notificações novas
+  (some ao abrir o módulo).
+- **Mostrar na dock**: cada módulo tem um interruptor em Configurações › Módulos para sair da dock; uma atividade
+  em andamento sempre aparece.
+- **Notificações**: chegada com animação, ações no cartão (abrir, silenciar, dispensar), selo "+N na fila" com
+  botão de próximo e leitura mais longa (até 3 linhas e tempo proporcional ao texto).
 - **Ícones de contorno** (traço fino, pontas arredondadas) em toda a interface, no lugar dos glifos do Windows.
 - **Abas da ilha com o ícone de cada módulo**; volta aos pontos se algum módulo não tiver ícone ou se não couberem.
 - **Som animado** no volume (7 barras que oscilam; mudo vira uma linha), entrada e saída suaves da ilha e

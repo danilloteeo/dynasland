@@ -10,6 +10,7 @@ using Dynasland.Core.Modules;
 using Dynasland.Infrastructure.Database;
 using Dynasland.Infrastructure.Logging;
 using Dynasland.Infrastructure.Updates;
+using Dynasland.Modules.Common;
 using Dynasland.Modules.Notifications;
 using Microsoft.Extensions.Logging;
 
@@ -309,7 +310,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             var options = (info.Options ?? [])
                 .Select(option => new ModuleOptionViewModel(option, _moduleOptions.Get(info.Id, option), value => SetModuleOptionAsync(info.Id, option, value)))
                 .ToList();
-            Modules.Add(new ModuleSettingViewModel(info, options, SetModuleEnabledAsync));
+            var hidden = DockVisibility.Parse(_settings.Current.DockHiddenModules);
+            Modules.Add(new ModuleSettingViewModel(info, options, SetModuleEnabledAsync, SetModuleDockVisibleAsync, !hidden.Contains(info.Id)));
         }
 
         var active = infos.Count(m => m.IsRunning);
@@ -380,6 +382,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     // Ações -------------------------------------------------------------
+
+    /// <summary>Mostra ou esconde o ícone do módulo na dock (lista guardada nas configurações da ilha).</summary>
+    private async Task SetModuleDockVisibleAsync(string moduleId, bool visible)
+    {
+        try
+        {
+            await _settings.UpdateAsync(s => s with { DockHiddenModules = DockVisibility.With(s.DockHiddenModules, moduleId, visible) });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao salvar a visibilidade do módulo {Module} na dock.", moduleId);
+        }
+    }
 
     private async Task SetModuleEnabledAsync(string moduleId, bool enabled)
     {
@@ -605,10 +620,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 public sealed partial class ModuleSettingViewModel : ObservableObject
 {
     private readonly Func<string, bool, Task> _setEnabled;
+    private readonly Func<string, bool, Task> _setDockVisible;
 
-    public ModuleSettingViewModel(ModuleInfo info, IReadOnlyList<ModuleOptionViewModel> options, Func<string, bool, Task> setEnabled)
+    public ModuleSettingViewModel(
+        ModuleInfo info,
+        IReadOnlyList<ModuleOptionViewModel> options,
+        Func<string, bool, Task> setEnabled,
+        Func<string, bool, Task> setDockVisible,
+        bool showInDock)
     {
         _setEnabled = setEnabled;
+        _setDockVisible = setDockVisible;
+        _showInDock = showInDock;
         Id = info.Id;
         Name = info.DisplayName;
         Description = info.Description;
@@ -643,8 +666,16 @@ public sealed partial class ModuleSettingViewModel : ObservableObject
 
     public bool HasReason => !string.IsNullOrWhiteSpace(Reason);
 
+    /// <summary>Só módulos que têm ícone na dock oferecem a opção de mostrar ou esconder.</summary>
+    public bool CanShowInDock => PageIcons.For(Id) is not null && Id != PageIcons.AppModuleId;
+
+    public bool ShowDockRow => CanShowInDock && Status == ModuleStatus.Active;
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(StatusText), nameof(ShowOptions))]
+    private bool _showInDock;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText), nameof(ShowOptions), nameof(ShowDockRow))]
     private ModuleStatus _status;
 
     [ObservableProperty]
@@ -658,6 +689,8 @@ public sealed partial class ModuleSettingViewModel : ObservableObject
         ModuleStatus.Failed => "Falhou ao iniciar",
         _ => "Aplicando…",
     };
+
+    partial void OnShowInDockChanged(bool value) => _ = _setDockVisible(Id, value);
 
     partial void OnIsEnabledChanged(bool value)
     {

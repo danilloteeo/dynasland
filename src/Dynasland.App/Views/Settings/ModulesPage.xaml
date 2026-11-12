@@ -60,6 +60,24 @@
                                               IsChecked="{Binding IsEnabled}" IsEnabled="{Binding CanToggle}" />
                                 </Grid>
 
+                                <!-- Mostrar o ícone do módulo na dock. -->
+                                <Border BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,4" Margin="0,10,0,0"
+                                        Visibility="{Binding ShowDockRow, Converter={StaticResource BoolToVisibility}}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,16,0">
+                                            <TextBlock Text="Mostrar na dock" FontSize="13" Foreground="{DynamicResource SettingsTextBrush}" />
+                                            <TextBlock Text="O ícone do módulo na barra da ilha. Uma atividade em andamento sempre aparece."
+                                                       Style="{StaticResource CardDescription}" />
+                                        </StackPanel>
+                                        <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
+                                                  AutomationProperties.Name="Mostrar na dock" IsChecked="{Binding ShowInDock}" />
+                                    </Grid>
+                                </Border>
+
                                 <!-- Opções do módulo -->
                                 <controls:CollapsePanel x:Name="OptionsPanel" IsExpanded="False"
                                                         Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
