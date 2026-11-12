@@ -120,7 +120,7 @@
             <StackPanel Visibility="{Binding IsEditing, Converter={StaticResource InvertedBoolToVisibility}}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Content="Novo compromisso" Command="{Binding NewCommand}" />
-                    <TextBlock Text="{Binding SelectedDateTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,10,0" />
+                    <TextBlock Text="{Binding SelectedDateTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0" />
                 </DockPanel>
                 <TextBlock Text="Nenhum compromisso neste dia." Style="{StaticResource CardDescription}" Margin="0,14,0,0"
                            Visibility="{Binding HasDayEvents, Converter={StaticResource InvertedBoolToVisibility}}" />

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Dynasland.App.Controls"
              xmlns:hub="clr-namespace:Dynasland.App.ViewModels.Hub"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=hub:ClipboardPageViewModel}"
@@ -31,10 +32,14 @@
         </DockPanel>
 
         <DockPanel Grid.Row="1" Margin="0,18,0,12">
-            <RadioButton DockPanel.Dock="Right" Style="{StaticResource OptionRow}" Content="Favoritos" Margin="8,0,0,0" Padding="12,6"
-                         IsChecked="{Binding FavoritesOnly}" GroupName="ClipboardFilter" />
-            <RadioButton DockPanel.Dock="Right" Style="{StaticResource OptionRow}" Content="Todos" Margin="8,0,0,0" Padding="12,6"
-                         IsChecked="True" GroupName="ClipboardFilter" />
+            <controls:SegmentedControl DockPanel.Dock="Right" Width="190" Margin="12,0,0,0">
+                <UniformGrid Rows="1">
+                    <RadioButton Style="{StaticResource SegmentItem}" Content="Todos" AutomationProperties.Name="Todos"
+                                 IsChecked="True" GroupName="ClipboardFilter" />
+                    <RadioButton Style="{StaticResource SegmentItem}" Content="Favoritos" AutomationProperties.Name="Favoritos"
+                                 IsChecked="{Binding FavoritesOnly}" GroupName="ClipboardFilter" />
+                </UniformGrid>
+            </controls:SegmentedControl>
             <TextBox x:Name="Search" Style="{StaticResource SettingsTextBox}" Tag="Buscar no histórico…"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Buscar no histórico" />
         </DockPanel>

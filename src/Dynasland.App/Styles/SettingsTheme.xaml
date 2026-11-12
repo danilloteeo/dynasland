@@ -497,13 +497,14 @@
 
     <!-- Lista da Central: itens como linhas selecionáveis, sem o realce azul padrão. -->
     <Style x:Key="HubListItem" TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource SettingsTextBrush}" />
         <Setter Property="Padding" Value="10,8" />
         <Setter Property="Margin" Value="0,0,0,4" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Row" Background="{DynamicResource SettingsCardBrush}" CornerRadius="6" Padding="{TemplateBinding Padding}"
+                    <Border x:Name="Row" Background="{DynamicResource SettingsCardBrush}" CornerRadius="10" Padding="{TemplateBinding Padding}"
                             BorderBrush="Transparent" BorderThickness="1">
                         <ContentPresenter />
                     </Border>

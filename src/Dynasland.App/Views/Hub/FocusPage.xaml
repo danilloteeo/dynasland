@@ -13,7 +13,9 @@
         <converters:FractionToLengthConverter x:Key="BarHeight" Maximum="86" />
 
         <Style x:Key="StatNumber" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="26" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="MinHeight" Value="54" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
     </UserControl.Resources>

@@ -42,15 +42,15 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="244" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <Border Background="{DynamicResource SettingsSidebarBrush}">
             <DockPanel Margin="14,18">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,22">
-                    <Border Width="34" Height="16" CornerRadius="8" Background="Black" BorderBrush="#33FFFFFF" BorderThickness="1" VerticalAlignment="Center" />
-                    <TextBlock Text="Central" FontSize="17" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    <Border Width="30" Height="14" CornerRadius="7" Background="Black" BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="1" VerticalAlignment="Center" />
+                    <TextBlock Text="Central" FontSize="16" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel>
                     <RadioButton Style="{StaticResource NavButton}" Tag="&#xE77F;" Content="Área de transferência"
