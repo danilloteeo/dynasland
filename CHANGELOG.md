@@ -6,6 +6,14 @@
 - **Interface renovada**, inspirada no Volum: fundo preto puro, destaque branco, fonte Sora, bordas finas e
   componentes novos (interruptor, slider, segmentado com pílula deslizante, barra lateral em pílula).
   Vale para Configurações, Central e ilha. O azul fica só para a água.
+- **Ícones de contorno** (traço fino, pontas arredondadas) em toda a interface, no lugar dos glifos do Windows.
+- **Abas da ilha com o ícone de cada módulo**; volta aos pontos se algum módulo não tiver ícone ou se não couberem.
+- **Som animado** no volume (7 barras que oscilam; mudo vira uma linha), entrada e saída suaves da ilha e
+  cascata nas linhas do painel interativo.
+- Slider com bolinha branca de 10 px (halo ao arrastar), cartões com raio 14, rótulos de seção em caixa alta e
+  selo de contagem em "Aplicativos".
+- **Mascote em pixel art** na marca dos menus e nos estados vazios da Central.
+- **Novidades** em uma janela com páginas, mostrada uma vez depois de atualizar (`--novidades` mostra de novo).
 - Cor de destaque **Branco**, o novo padrão. Quem já escolheu outra cor mantém a dela. No tema claro o
   destaque branco vira quase preto para não sumir.
 - O texto sobre a cor de destaque agora usa sempre o de maior contraste (antes, destaques cinza ficavam

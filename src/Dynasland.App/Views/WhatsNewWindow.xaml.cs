@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using Dynasland.App.Services;
 using Dynasland.Core.Services;
 
 namespace Dynasland.App.Views;
@@ -12,9 +13,10 @@ public partial class WhatsNewWindow : Window
     private readonly IReadOnlyList<WhatsNewPage> _pages;
     private int _index;
 
-    public WhatsNewWindow(IReadOnlyList<WhatsNewPage> pages)
+    public WhatsNewWindow(IReadOnlyList<WhatsNewPage> pages, ThemeService theme)
     {
         InitializeComponent();
+        TitleBarTheme.Attach(this, theme);
         _pages = pages;
         Show(0, animate: false);
     }

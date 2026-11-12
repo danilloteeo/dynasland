@@ -144,7 +144,7 @@ public partial class App : Application
             return;
         }
 
-        var window = new WhatsNewWindow(pages);
+        var window = new WhatsNewWindow(pages, _host!.Services.GetRequiredService<ThemeService>());
         if (!forced)
         {
             window.Closed += (_, _) => _ = settings.UpdateAsync(s => s with { LastSeenVersion = current });
