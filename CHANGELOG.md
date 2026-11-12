@@ -1,5 +1,20 @@
 # Notas da versão
 
+## 1.6.0 — 2026-11-12
+
+### Novidades
+- **Interface renovada**, inspirada no Volum: fundo preto puro, destaque branco, fonte Sora, bordas finas e
+  componentes novos (interruptor, slider, segmentado com pílula deslizante, barra lateral em pílula).
+  Vale para Configurações, Central e ilha. O azul fica só para a água.
+- Cor de destaque **Branco**, o novo padrão. Quem já escolheu outra cor mantém a dela. No tema claro o
+  destaque branco vira quase preto para não sumir.
+- O texto sobre a cor de destaque agora usa sempre o de maior contraste (antes, destaques cinza ficavam
+  com letra branca difícil de ler).
+
+### Correções
+- Textos que ficavam ilegíveis ou cortados com a fonte nova: listas da Central, filtro de aplicativos das
+  notificações (mostrava o texto interno do objeto), cabeçalho da Agenda, cartões do Foco e atalhos longos.
+
 ## 1.5.0 — 2026-11-11
 
 ### Novidades
