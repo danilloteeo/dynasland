@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
              xmlns:converters="clr-namespace:Dynasland.App.Converters"
+             xmlns:controls="clr-namespace:Dynasland.App.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
     <UserControl.Resources>
@@ -33,6 +34,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="0,0,20,0">
                                         <StackPanel Orientation="Horizontal">
@@ -50,13 +52,18 @@
                                                    Foreground="{DynamicResource StatusUnavailableBrush}"
                                                    Visibility="{Binding HasReason, Converter={StaticResource BoolToVisibility}}" />
                                     </StackPanel>
-                                    <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
+                                    <ToggleButton Grid.Column="1" Style="{StaticResource ChevronToggle}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                                  AutomationProperties.Name="Mostrar opções"
+                                                  IsChecked="{Binding IsExpanded, ElementName=OptionsPanel, Mode=TwoWay}"
+                                                  Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}" />
+                                    <CheckBox Grid.Column="2" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center"
                                               IsChecked="{Binding IsEnabled}" IsEnabled="{Binding CanToggle}" />
                                 </Grid>
 
                                 <!-- Opções do módulo -->
-                                <ItemsControl ItemsSource="{Binding Options}" Focusable="False" Margin="0,10,0,0"
-                                              Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
+                                <controls:CollapsePanel x:Name="OptionsPanel" IsExpanded="False"
+                                                        Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
+                                <ItemsControl ItemsSource="{Binding Options}" Focusable="False" Margin="0,10,0,0">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type vm:ModuleOptionViewModel}">
                                             <Border BorderBrush="{DynamicResource SettingsBorderBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,4">
@@ -86,6 +93,7 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+                                </controls:CollapsePanel>
                             </StackPanel>
                         </Border>
                         <DataTemplate.Triggers>
