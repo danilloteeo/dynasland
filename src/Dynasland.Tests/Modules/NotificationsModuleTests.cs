@@ -49,7 +49,7 @@ public class NotificationsModuleTests : IDisposable
         _service.Receive(message);
         var shown = Assert.Single(_recorder.Posted);
         Assert.Equal(ActivityPriority.High, shown.Priority);
-        Assert.Equal(TimeSpan.FromSeconds(12), shown.Duration);
+        Assert.Equal(NotificationReading.Duration(TimeSpan.FromSeconds(12), message.Body.Length, highPriority: true), shown.Duration);
         Assert.Equal($"notification.{message.AppId}", shown.GroupKey);
 
         await _preferences.SetHistoryOnlyAsync(message.AppId, true);
@@ -74,8 +74,9 @@ public class NotificationsModuleTests : IDisposable
 
         var first = (NotificationContent)_recorder.Posted[0].Content;
         var second = (NotificationContent)_recorder.Posted[1].Content;
-        Assert.Equal(TimeSpan.FromSeconds(NotificationPreferences.DefaultDurationSeconds), first.Duration);
-        Assert.Equal(TimeSpan.FromSeconds(12), second.Duration);
+        var baseDuration = TimeSpan.FromSeconds(NotificationPreferences.DefaultDurationSeconds);
+        Assert.Equal(NotificationReading.Duration(baseDuration, first.Info.Body.Length, false), first.Duration);
+        Assert.Equal(NotificationReading.Duration(TimeSpan.FromSeconds(12), second.Info.Body.Length, false), second.Duration);
         Assert.Equal("Oi! Tudo bem?", first.ExpandedBody);
         Assert.Equal($"WhatsApp · {first.TimeText}", first.AppLine);
         Assert.NotSame(first.Countdown, second.Countdown);

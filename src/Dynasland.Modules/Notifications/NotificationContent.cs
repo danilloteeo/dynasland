@@ -21,7 +21,8 @@ public sealed partial class NotificationContent(
     bool showMessageText,
     Action<NotificationInfo> open,
     Action<NotificationInfo> dismiss,
-    Action<NotificationInfo> muteApp) : IActivityContent
+    Action<NotificationInfo> muteApp,
+    bool highPriority = false) : IActivityContent
 {
     private static readonly Brush NeutralBarBrush = Frozen(Color.FromArgb(0x59, 0xFF, 0xFF, 0xFF));
 
@@ -51,6 +52,15 @@ public sealed partial class NotificationContent(
     /// <summary>Texto em uma linha corrida, para caber nas duas linhas do cartão expandido.</summary>
     public string ExpandedBody => string.Join(' ', Body.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
+    /// <summary>Linhas que o corpo ocupa no cartão expandido (de 1 a 3).</summary>
+    public int BodyLines => NotificationReading.Lines(ExpandedBody);
+
+    /// <summary>Altura máxima do corpo no cartão expandido.</summary>
+    public double BodyMaxHeight => BodyLines * NotificationReading.LineHeight;
+
+    /// <summary>Mensagem importante: ganha borda na cor do aplicativo.</summary>
+    public bool IsHighPriority { get; } = highPriority;
+
     public string TimeText => Info.Time.ToLocalTime().ToString("HH:mm", CultureInfo.GetCultureInfo("pt-BR"));
 
     public string AppLine => $"{AppName} · {TimeText}";
@@ -76,7 +86,7 @@ public sealed partial class NotificationContent(
 
     public IslandDimensions? GetPreferredDimensions(IslandState state) => state switch
     {
-        IslandState.Expanded => new IslandDimensions(400, 92, 32),
+        IslandState.Expanded => new IslandDimensions(400, NotificationReading.Height(BodyLines), 32),
         IslandState.Interactive => new IslandDimensions(410, 170, 36),
         _ => null,
     };

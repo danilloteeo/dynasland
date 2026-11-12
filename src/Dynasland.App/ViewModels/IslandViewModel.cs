@@ -101,6 +101,14 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     /// <summary>Ícones da dock (um por módulo ligado ou com atividade).</summary>
     public ObservableCollection<DockItem> Dock { get; } = [];
 
+    /// <summary>Avisos esperando a vez; alimenta o selo "+N na fila" do cartão de notificação.</summary>
+    [ObservableProperty]
+    private int _queuedCount;
+
+    /// <summary>Pula o aviso na tela e mostra o próximo da fila.</summary>
+    [RelayCommand]
+    private void Skip() => _controller.SkipCurrent();
+
     /// <summary>Largura da dock no estado compacto.</summary>
     [ObservableProperty]
     private double _dockWidth = DockMetrics.MinimumWidth;
@@ -245,6 +253,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         }
 
         _lastSnapshot = snapshot;
+        QueuedCount = snapshot.QueuedCount;
         RebuildDock();
         var focused = snapshot.Focused;
         GroupBadge = snapshot.State != IslandState.Compact && snapshot.FocusedGroupCount > 1 ? $"+{snapshot.FocusedGroupCount - 1}" : string.Empty;

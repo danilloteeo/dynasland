@@ -96,7 +96,8 @@ public class ModuleOptionEffectsTests : IDisposable
         service.Receive(FakeNotificationService.Message(5, body: "senha do banco"));
 
         var activity = Assert.Single(_recorder.Posted);
-        Assert.Equal(TimeSpan.FromSeconds(12), activity.Duration);
+        // Texto oculto não conta para o tempo de leitura; prioridade alta ganha 2 s.
+        Assert.Equal(NotificationReading.Duration(TimeSpan.FromSeconds(12), 0, highPriority: true), activity.Duration);
         Assert.Equal(ActivityPriority.High, activity.Priority);
         Assert.Equal("Conteúdo oculto", Assert.IsType<NotificationContent>(activity.Content).Body);
     }

@@ -46,6 +46,9 @@ public partial class IslandWindow : Window
     /// <summary>Largura das ferramentas da dock no interativo (fixar, fechar, configurações).</summary>
     private const double DockToolsWidth = 80;
     private const double EnterMilliseconds = 300;
+
+    /// <summary>Quanto o cartão de aviso desliza ao entrar e sair, em DIPs.</summary>
+    private const double NoticeSlide = 14;
     private const double LeaveMilliseconds = 120;
     private const double EnterScale = 0.965;
     private const double EnterRise = 10;
@@ -604,10 +607,19 @@ public partial class IslandWindow : Window
             {
                 // O conteúdo aparece depois que a cápsula já ganhou espaço, evitando corte do texto.
                 Animate(layer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+                if (layer == ExpandedLayer)
+                {
+                    // Aviso: desliza a partir da dock (do lado da borda), com mola.
+                    SlideLayer(layer, Rise(NoticeSlide), 0, Scaled(EnterMilliseconds), SpringOut, resizeDuration * 0.4);
+                }
             }
             else
             {
                 Animate(layer, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+                if (layer == ExpandedLayer && layer.Opacity > 0.05)
+                {
+                    SlideLayer(layer, 0, Rise(NoticeSlide), Scaled(FadeOutMilliseconds), LeaveEase, TimeSpan.Zero);
+                }
             }
         }
 
@@ -681,6 +693,22 @@ public partial class IslandWindow : Window
         }
 
         return null;
+    }
+
+    /// <summary>Move a camada na vertical de <paramref name="from"/> até <paramref name="to"/> (DIPs).</summary>
+    private static void SlideLayer(ContentPresenter layer, double from, double to, TimeSpan duration, IEasingFunction easing, TimeSpan beginTime)
+    {
+        if (layer.RenderTransform is not TranslateTransform translate)
+        {
+            return;
+        }
+
+        translate.Y = from;
+        translate.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(from, to, new Duration(duration))
+        {
+            EasingFunction = easing,
+            BeginTime = beginTime,
+        }));
     }
 
     private void PlaySwap(ContentPresenter layer)

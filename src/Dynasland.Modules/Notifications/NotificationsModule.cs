@@ -95,10 +95,13 @@ public sealed class NotificationsModule(
         var decoded = ImageDecoder.Decode(info.AppLogo, LogoDecodeWidth);
         var logo = ImageDecoder.TrimTransparentMargin(decoded);
         var accent = _accents.GetOrAdd(info.AppId, _ => AccentColorExtractor.FromImage(logo));
-        var content = new NotificationContent(info, logo, IsLooseDrawing(decoded, logo), accent, decision.Duration, options.IsOn(ModuleId, ShowMessageText), Open, Dismiss, MuteApp);
+        var showText = options.IsOn(ModuleId, ShowMessageText);
+        // Mais texto, mais tempo na tela: a leitura não é cortada no meio.
+        var duration = NotificationReading.Duration(decision.Duration, showText ? info.Body.Length : 0, decision.HighPriority);
+        var content = new NotificationContent(info, logo, IsLooseDrawing(decoded, logo), accent, duration, showText, Open, Dismiss, MuteApp, decision.HighPriority);
         bus.PostActivity(new IslandActivity(ActivityIdFor(info.Id), ModuleId, ActivityKind.Transient, content)
         {
-            Duration = decision.Duration,
+            Duration = duration,
             Priority = decision.HighPriority ? ActivityPriority.High : ActivityPriority.Normal,
 
             // Várias mensagens seguidas do mesmo aplicativo aparecem como uma só, com "+N".

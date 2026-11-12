@@ -48,10 +48,19 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Fila de avisos: some quando não há ninguém esperando (QueuedCount, do view model da ilha). -->
+    <Style x:Key="NotificationQueueVisibility" TargetType="FrameworkElement">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding DataContext.QueuedCount, RelativeSource={RelativeSource AncestorType=Window}}" Value="0">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <DataTemplate x:Key="Dynasland.Modules.Notifications.NotificationContent:Expanded">
-        <Grid>
-            <!-- Brilho na cor do aplicativo, centrado no ícone; acompanha os cantos da cápsula. -->
-            <Border CornerRadius="31" IsHitTestVisible="False">
+        <Grid x:Name="Card" Background="Transparent">
+            <!-- Brilho na cor do aplicativo, centrado no ícone; acende ao chegar. -->
+            <Border x:Name="Glow" CornerRadius="31" IsHitTestVisible="False">
                 <Border.Background>
                     <RadialGradientBrush MappingMode="Absolute" Center="38,46" GradientOrigin="38,46" RadiusX="170" RadiusY="170">
                         <GradientStop Offset="0" Color="{Binding GlowColor}" />
@@ -60,12 +69,21 @@
                 </Border.Background>
             </Border>
 
-            <Grid Margin="16,0,22,0">
+            <!-- Mensagem importante: borda na cor do aplicativo. -->
+            <Border CornerRadius="30" Margin="1" BorderThickness="1.5" BorderBrush="{Binding AccentBrush}" IsHitTestVisible="False"
+                    Visibility="{Binding IsHighPriority, Converter={StaticResource BoolToVisibility}}" />
+
+            <Grid Margin="16,0,22,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ContentControl Width="44" Height="44" Content="{Binding}" ContentTemplate="{StaticResource NotificationLogo}" Focusable="False" />
+                <ContentControl x:Name="Logo" Width="44" Height="44" VerticalAlignment="Center" Content="{Binding}" ContentTemplate="{StaticResource NotificationLogo}"
+                                Focusable="False" RenderTransformOrigin="0.5,0.5">
+                    <ContentControl.RenderTransform>
+                        <ScaleTransform />
+                    </ContentControl.RenderTransform>
+                </ContentControl>
                 <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -73,15 +91,43 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding Headline}" FontFamily="{DynamicResource IslandTextFont}" FontSize="14" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="1" Text="{Binding AppLine}" Style="{StaticResource NotificationAppLine}" FontSize="11"
-                                   VerticalAlignment="Center" Margin="10,0,0,0" MaxWidth="125" TextTrimming="CharacterEllipsis" />
+                                   Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <!-- "Aplicativo · hora" dá lugar às ações quando o mouse está sobre o aviso. -->
+                        <Grid Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Height="24">
+                            <TextBlock x:Name="AppLineText" Text="{Binding AppLine}" Style="{StaticResource NotificationAppLine}" FontSize="11"
+                                       VerticalAlignment="Center" MaxWidth="125" TextTrimming="CharacterEllipsis" />
+                            <StackPanel x:Name="Actions" Orientation="Horizontal" HorizontalAlignment="Right" Opacity="0" IsHitTestVisible="False">
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="24" Height="24" FontSize="14" Command="{Binding OpenCommand}"
+                                        ToolTip="Abrir o aplicativo" Content="{Binding Source=vector:openfile, Converter={StaticResource GlyphContent}}" />
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="24" Height="24" FontSize="14" Command="{Binding MuteAppCommand}"
+                                        ToolTip="Silenciar este aplicativo" Content="{Binding Source=vector:bell, Converter={StaticResource GlyphContent}}"
+                                        Visibility="{Binding CanMuteApp, Converter={StaticResource BoolToVisibility}}" />
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="24" Height="24" FontSize="14" Command="{Binding DismissCommand}"
+                                        ToolTip="Dispensar" Content="{Binding Source=vector:close, Converter={StaticResource GlyphContent}}" />
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                     <TextBlock Text="{Binding ExpandedBody}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" LineHeight="16"
                                Foreground="{DynamicResource IslandSecondaryTextBrush}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
-                               MaxHeight="32" Margin="0,2,0,0" />
+                               MaxHeight="{Binding BodyMaxHeight}" Margin="0,2,0,0" />
                 </StackPanel>
             </Grid>
+
+            <!-- Pilha: duas bordas atrás do cartão, o selo "+N na fila" e o botão para pular. -->
+            <Border Height="2" CornerRadius="1" Margin="46,0,46,1" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                    Background="#26FFFFFF" Style="{StaticResource NotificationQueueVisibility}" />
+            <Border Height="2" CornerRadius="1" Margin="34,0,34,4" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                    Background="#40FFFFFF" Style="{StaticResource NotificationQueueVisibility}" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,12"
+                        Style="{StaticResource NotificationQueueVisibility}">
+                <Border CornerRadius="99" Padding="7,1" Background="{DynamicResource IslandSurfaceBrush}" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DataContext.QueuedCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=+{0} na fila}"
+                               FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                </Border>
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="22" Height="22" FontSize="12" Margin="4,0,0,0"
+                        Command="{Binding DataContext.SkipCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        ToolTip="Próximo aviso" Content="{Binding Source=vector:chevronright, Converter={StaticResource GlyphContent}}" />
+            </StackPanel>
 
             <!-- Tempo restante antes de a notificação sair da ilha. -->
             <Border Height="2" CornerRadius="1" Margin="34,0,34,7" VerticalAlignment="Bottom" IsHitTestVisible="False"
@@ -89,6 +135,33 @@
                 <Border CornerRadius="1" Background="{Binding AccentBrush}" common:CountdownBar.Span="{Binding Countdown}" />
             </Border>
         </Grid>
+        <DataTemplate.Triggers>
+            <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
+                <Setter TargetName="Actions" Property="Opacity" Value="1" />
+                <Setter TargetName="Actions" Property="IsHitTestVisible" Value="True" />
+                <Setter TargetName="AppLineText" Property="Opacity" Value="0" />
+            </Trigger>
+            <!-- Chegada: o logo salta e o brilho acende. -->
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded" SourceName="Card">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="Logo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         From="0.75" To="1" Duration="0:0:0.4">
+                            <DoubleAnimation.EasingFunction>
+                                <BackEase Amplitude="0.6" EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetName="Logo" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         From="0.75" To="1" Duration="0:0:0.4">
+                            <DoubleAnimation.EasingFunction>
+                                <BackEase Amplitude="0.6" EasingMode="EaseOut" />
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.6" />
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 
     <DataTemplate x:Key="Dynasland.Modules.Notifications.NotificationContent:Interactive">
