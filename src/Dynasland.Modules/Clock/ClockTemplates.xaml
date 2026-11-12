@@ -16,9 +16,6 @@
             </Grid.ColumnDefinitions>
             <!-- Data, clima ou próximo compromisso (Aparência › Ilha em repouso). -->
             <DockPanel x:Name="Info" VerticalAlignment="Center" Margin="0,0,10,0">
-                <ContentControl DockPanel.Dock="Left" Content="{Binding IdleGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="12" Margin="0,0,6,0"
-                           Foreground="{DynamicResource IslandAccentBrush}" VerticalAlignment="Center"
-                           Visibility="{Binding HasIdleGlyph, Converter={StaticResource BoolToVisibility}}" />
                 <TextBlock Text="{Binding IdleText}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
                            Foreground="{DynamicResource IslandSecondaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             </DockPanel>

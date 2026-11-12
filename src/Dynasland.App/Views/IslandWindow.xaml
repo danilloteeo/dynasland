@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Dynasland.App.ViewModels"
         xmlns:views="clr-namespace:Dynasland.App.Views"
+        xmlns:converters="clr-namespace:Dynasland.App.Converters"
         xmlns:common="clr-namespace:Dynasland.Modules.Common;assembly=Dynasland.Modules"
         xmlns:models="clr-namespace:Dynasland.Core.Models;assembly=Dynasland.Core"
         mc:Ignorable="d"
@@ -30,6 +31,7 @@
     -->
     <Window.Resources>
         <common:GlyphContentConverter x:Key="GlyphContent" />
+        <converters:RingDashConverter x:Key="RingDash" />
         <views:ActivityTemplateSelector x:Key="CompactTemplates" Mode="{x:Static models:IslandState.Compact}" />
         <views:ActivityTemplateSelector x:Key="ExpandedTemplates" Mode="{x:Static models:IslandState.Expanded}" />
         <views:ActivityTemplateSelector x:Key="InteractiveTemplates" Mode="{x:Static models:IslandState.Interactive}" />
@@ -47,7 +49,8 @@
             <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
         </Style>
 
-        <!-- Ícone da dock: botão redondo; o do módulo em foco vira pílula branca (como a atividade ativa do Volum). -->
+        <!-- Ícone da dock: botão redondo; o do módulo em foco vira pílula branca (como a atividade ativa do Volum).
+             Selos: anel fino de progresso (ex.: água do dia) e ponto de aviso (ex.: notificações novas). -->
         <Style x:Key="DockItemButton" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
@@ -56,18 +59,38 @@
             <Setter Property="Margin" Value="2,0" />
             <Setter Property="FontFamily" Value="{StaticResource IslandIconFont}" />
             <Setter Property="FontSize" Value="17" />
-            <Setter Property="Foreground" Value="{StaticResource IslandSecondaryTextBrush}" />
+            <Setter Property="Foreground" Value="#FFD6D6D6" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Pill" Background="Transparent" CornerRadius="18">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <Grid>
+                            <Border x:Name="Pill" Background="Transparent" CornerRadius="18">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <Ellipse x:Name="RingTrack" Stroke="#26FFFFFF" StrokeThickness="2" Visibility="Collapsed" IsHitTestVisible="False" />
+                            <Ellipse x:Name="Ring" Stroke="{StaticResource IslandFillBrush}" StrokeThickness="2" Visibility="Collapsed" IsHitTestVisible="False"
+                                     StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5"
+                                     StrokeDashArray="{Binding Badge.Progress, Converter={StaticResource RingDash}}">
+                                <Ellipse.RenderTransform>
+                                    <RotateTransform Angle="-90" />
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                            <Ellipse x:Name="Dot" Width="9" Height="9" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,3,0"
+                                     Fill="{StaticResource IslandCriticalBrush}" Stroke="#FF000000" StrokeThickness="1.5"
+                                     Visibility="Collapsed" IsHitTestVisible="False" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Pill" Property="Background" Value="{DynamicResource IslandSurfaceBrush}" />
-                                <Setter Property="Foreground" Value="{StaticResource IslandPrimaryTextBrush}" />
+                                <Setter Property="Foreground" Value="#FFFFFFFF" />
                             </Trigger>
+                            <DataTrigger Binding="{Binding Badge.Kind}" Value="Ring">
+                                <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="RingTrack" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Badge.Kind}" Value="Dot">
+                                <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsActive}" Value="True">
                                 <Setter TargetName="Pill" Property="Background" Value="{StaticResource IslandFillBrush}" />
                                 <Setter Property="Foreground" Value="#FF090909" />
@@ -220,6 +243,9 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <!-- Separador fino entre os ícones e o texto de repouso/atividade (só no compacto, com texto). -->
+                        <Border x:Name="DockSeparator" DockPanel.Dock="Left" Width="1" Height="18" Margin="8,0,2,0" Background="#33FFFFFF"
+                                VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0" />
                         <ContentPresenter x:Name="CompactLayer"
                                           Style="{StaticResource LayerStyle}"
                                           Content="{Binding CompactContent}"

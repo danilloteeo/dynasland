@@ -576,6 +576,7 @@ public partial class IslandWindow : Window
         var maxWidth = Width - IslandPlacementCalculator.EdgeMargin * 2;
         var width = Math.Min(maxWidth, compact ? dockWidth : Math.Max(target.Width, dockWidth));
         var radius = Math.Min(target.CornerRadius, height / 2);
+        DockSeparator.Opacity = compact && _viewModel.DockWidth > _viewModel.DockIconsWidth ? 1 : 0;
         if (!animate)
         {
             SetImmediate(IslandHost, WidthProperty, width);
