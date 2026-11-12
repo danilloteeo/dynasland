@@ -6,6 +6,7 @@ using Dynasland.Core.Activities;
 using Dynasland.Core.Interfaces;
 using Dynasland.Core.Layout;
 using Dynasland.Core.Models;
+using Dynasland.Core.Modules;
 using Dynasland.Modules.Common;
 
 namespace Dynasland.App.ViewModels;
@@ -17,6 +18,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     private readonly IIslandSettingsService _settings;
     private readonly IPrivacyIndicatorService _privacy;
     private readonly IUiDispatcher _ui;
+    private readonly IShortcutRegistry _shortcuts;
+    private IslandSnapshot _lastSnapshot = IslandSnapshot.Empty;
     private IActivityContent? _presented;
     private IslandState _presentedState;
     private bool _presentedVisible;
@@ -76,14 +79,17 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         SettingsWindowService settingsWindow,
         IIslandSettingsService settings,
         IPrivacyIndicatorService privacy,
-        IUiDispatcher ui)
+        IUiDispatcher ui,
+        IShortcutRegistry shortcuts)
     {
         _controller = controller;
         _settingsWindow = settingsWindow;
         _settings = settings;
         _privacy = privacy;
         _ui = ui;
+        _shortcuts = shortcuts;
         controller.Changed += OnSnapshotChanged;
+        shortcuts.Changed += OnShortcutsChanged;
         privacy.Changed += OnPrivacyChanged;
         Apply(controller.Snapshot);
         ApplyPrivacy(privacy.Current);
@@ -94,6 +100,36 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     /// <summary>Ponto verde: só no compacto, na borda direita da cápsula.</summary>
     public bool ShowCameraDot => CameraInUse && State == IslandState.Compact;
+
+    /// <summary>Ícones da dock (um por módulo ligado ou com atividade).</summary>
+    public ObservableCollection<DockItem> Dock { get; } = [];
+
+    /// <summary>Largura da dock no estado compacto.</summary>
+    [ObservableProperty]
+    private double _dockWidth = DockMetrics.MinimumWidth;
+
+    /// <summary>Borda da tela: decide para que lado a cápsula cresce (definida pela janela).</summary>
+    [ObservableProperty]
+    private IslandEdge _edge = IslandEdge.Bottom;
+
+    /// <summary>Clique num ícone da dock: abre a atividade do módulo, ou chama o atalho dele.</summary>
+    [RelayCommand]
+    private void OpenDockItem(DockItem? item)
+    {
+        if (item is null)
+        {
+            return;
+        }
+
+        if (item is { Kind: DockItemKind.Activity, ActivityId: { } activityId })
+        {
+            _controller.OpenActivity(activityId);
+        }
+        else if (_shortcuts.Shortcuts.FirstOrDefault(s => s.Id == item.ShortcutId) is { } shortcut)
+        {
+            shortcut.Invoke();
+        }
+    }
 
     /// <summary>Abas do rodapé; vazio quando há apenas uma.</summary>
     public ObservableCollection<PageTab> Pages { get; } = [];
@@ -165,6 +201,45 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     private void OnSnapshotChanged(object? sender, IslandSnapshot snapshot) => Apply(snapshot);
 
+    // O registro avisa de qualquer thread.
+    private void OnShortcutsChanged(object? sender, EventArgs e) => _ui.Post(RebuildDock);
+
+    private void RebuildDock()
+    {
+        var snapshot = _lastSnapshot;
+        var activities = new List<DockActivity>();
+        if (snapshot.Focused is { } focusedActivity)
+        {
+            activities.Add(new DockActivity(focusedActivity.Id, focusedActivity.ModuleId));
+        }
+
+        if (snapshot.Indicator is { } indicator && activities.All(a => a.ActivityId != indicator.Id))
+        {
+            activities.Add(new DockActivity(indicator.Id, indicator.ModuleId));
+        }
+
+        for (var i = 0; i < snapshot.PageActivityIds.Count && i < snapshot.PageModules.Count; i++)
+        {
+            if (activities.All(a => a.ActivityId != snapshot.PageActivityIds[i]))
+            {
+                activities.Add(new DockActivity(snapshot.PageActivityIds[i], snapshot.PageModules[i]));
+            }
+        }
+
+        var focusedModule = snapshot.State == IslandState.Compact ? snapshot.Indicator?.ModuleId : snapshot.Focused?.ModuleId;
+        var items = DockItems.Build(_shortcuts.Shortcuts, activities, focusedModule);
+        if (!items.SequenceEqual(Dock))
+        {
+            Dock.Clear();
+            foreach (var item in items)
+            {
+                Dock.Add(item);
+            }
+        }
+
+        DockWidth = DockMetrics.Width(Dock.Count, hasActivePill: snapshot.Indicator is not null);
+    }
+
     // O serviço avisa de uma thread do pool.
     private void OnPrivacyChanged(object? sender, PrivacyUsage usage) => _ui.Post(() => ApplyPrivacy(usage));
 
@@ -191,6 +266,8 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         }
 
         UpdatePages(snapshot);
+        _lastSnapshot = snapshot;
+        RebuildDock();
         var focused = snapshot.Focused;
         GroupBadge = snapshot.State != IslandState.Compact && snapshot.FocusedGroupCount > 1 ? $"+{snapshot.FocusedGroupCount - 1}" : string.Empty;
         CanDismissFocused = snapshot.State == IslandState.Interactive && focused is { CanDismiss: true };
@@ -250,5 +327,6 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
     {
         _controller.Changed -= OnSnapshotChanged;
         _privacy.Changed -= OnPrivacyChanged;
+        _shortcuts.Changed -= OnShortcutsChanged;
     }
 }
