@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Dynasland.App.Services;
 
-/// <summary>Posiciona a janela da ilha no topo do monitor configurado (centro, esquerda ou direita).</summary>
+/// <summary>Posiciona a janela da ilha na borda configurada do monitor (embaixo ou em cima; centro, esquerda ou direita).</summary>
 public sealed class IslandPlacementService(
     IMonitorService monitorService,
     IIslandSettingsService settings,
@@ -33,18 +33,19 @@ public sealed class IslandPlacementService(
 
         CurrentMonitor = monitor.DeviceName;
         var current = settings.Current;
-        var topMargin = IslandPlacementCalculator.Top(current.Shape, current.TopMargin) * monitor.Scale;
+        // A margem vale a partir da borda escolhida; a encaixada cola na borda (margem 0).
+        var margin = IslandPlacementCalculator.Top(current.Shape, current.TopMargin) * monitor.Scale;
 
-        // Primeiro movimento usa a largura estimada no DPI do monitor de destino.
-        // Se o monitor tiver outro DPI, o WPF redimensiona a janela (WM_DPICHANGED)
-        // e a posição é recalculada com a largura real.
+        // Primeiro movimento usa o tamanho estimado no DPI do monitor de destino; se o DPI for outro,
+        // o WPF redimensiona a janela (WM_DPICHANGED) e a posição é recalculada com o tamanho real.
         var estimatedWidth = (int)Math.Round(window.Width * monitor.Scale);
-        WindowInterop.MoveTopmost(hwnd, IslandPlacementCalculator.Place(monitor.WorkArea, estimatedWidth, current.Position, topMargin));
+        var estimatedHeight = (int)Math.Round(window.Height * monitor.Scale);
+        WindowInterop.MoveTopmost(hwnd, IslandPlacementCalculator.PlaceOnEdge(monitor.WorkArea, estimatedWidth, estimatedHeight, current.Position, current.Edge, margin));
 
-        var actualWidth = WindowInterop.GetBounds(hwnd).Width;
-        if (actualWidth > 0 && actualWidth != estimatedWidth)
+        var actual = WindowInterop.GetBounds(hwnd);
+        if (actual.Width > 0 && (actual.Width != estimatedWidth || actual.Height != estimatedHeight))
         {
-            WindowInterop.MoveTopmost(hwnd, IslandPlacementCalculator.Place(monitor.WorkArea, actualWidth, current.Position, topMargin));
+            WindowInterop.MoveTopmost(hwnd, IslandPlacementCalculator.PlaceOnEdge(monitor.WorkArea, actual.Width, actual.Height, current.Position, current.Edge, margin));
         }
     }
 }

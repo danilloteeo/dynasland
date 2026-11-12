@@ -183,6 +183,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private IslandShape _shape;
 
+    [ObservableProperty]
+    private IslandEdge _edge;
+
     // Aparência
     [ObservableProperty]
     private AppTheme _theme;
@@ -277,6 +280,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         TopMargin = s.TopMargin;
         Position = s.Position;
         Shape = s.Shape;
+        Edge = s.Edge;
         Theme = s.Theme;
         IslandThemeFollowsMedia = s.IslandThemeFollowsMedia;
         IdleDisplay = s.IdleDisplay;
@@ -425,6 +429,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnPositionChanged(IslandPosition value) => Save(s => s with { Position = value });
 
     partial void OnShapeChanged(IslandShape value) => Save(s => s with { Shape = value });
+
+    partial void OnEdgeChanged(IslandEdge value) => Save(s => s with { Edge = value });
 
     partial void OnThemeChanged(AppTheme value) => Save(s => s with { Theme = value });
 

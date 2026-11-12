@@ -20,8 +20,28 @@
 
     <StackPanel>
         <TextBlock Text="Monitores" Style="{StaticResource SettingsTitle}" />
-        <TextBlock Text="Em qual monitor a ilha aparece, em que lado do topo e com qual formato. A posição é recalculada sozinha ao mudar resolução, escala ou monitores." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
+        <TextBlock Text="Em qual monitor a ilha aparece, em que borda da tela, de que lado e com qual formato. A posição é recalculada sozinha ao mudar resolução, escala ou monitores." Style="{StaticResource SettingsSubtitle}" TextWrapping="Wrap" Margin="0,6,0,0" />
         <TextBlock Text="POSIÇÃO DA ILHA" Style="{StaticResource SettingsGroupHeader}" />
+        <Border Style="{StaticResource SettingsCard}">
+            <Grid Style="{StaticResource SettingRowGrid}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Borda da tela" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="A ilha fica nessa borda e o conteúdo abre para o lado oposto." Style="{StaticResource CardDescription}" />
+                </StackPanel>
+                <controls:SegmentedControl Grid.Column="1" VerticalAlignment="Center">
+                    <UniformGrid Rows="1">
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandEdge" Content="Embaixo" AutomationProperties.Name="Embaixo"
+                                     IsChecked="{Binding Edge, Converter={StaticResource EnumMatch}, ConverterParameter=Bottom}" />
+                        <RadioButton Style="{StaticResource SegmentItem}" GroupName="IslandEdge" Content="Em cima" AutomationProperties.Name="Em cima"
+                                     IsChecked="{Binding Edge, Converter={StaticResource EnumMatch}, ConverterParameter=Top}" />
+                    </UniformGrid>
+                </controls:SegmentedControl>
+            </Grid>
+        </Border>
         <Border Style="{StaticResource SettingsCard}">
             <Grid Style="{StaticResource SettingRowGrid}">
                 <Grid.ColumnDefinitions>
@@ -52,7 +72,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="Formato" Style="{StaticResource CardTitle}" />
-                    <TextBlock Text="Encaixada cola no topo, cantos de cima retos." Style="{StaticResource CardDescription}" />
+                    <TextBlock Text="Encaixada cola na borda, com os cantos retos desse lado." Style="{StaticResource CardDescription}" />
                 </StackPanel>
                 <controls:SegmentedControl Grid.Column="1" VerticalAlignment="Center">
                     <UniformGrid Rows="1">
@@ -64,7 +84,7 @@
                 </controls:SegmentedControl>
             </Grid>
         </Border>
-        <!-- A ilha encaixada não tem distância do topo. -->
+        <!-- A ilha encaixada não tem distância da borda. -->
         <Border Style="{StaticResource SettingsCard}"
                 IsEnabled="{Binding Shape, Converter={StaticResource EnumMatch}, ConverterParameter=Float}">
             <Grid Style="{StaticResource SettingRowGrid}">
@@ -73,7 +93,7 @@
                     <ColumnDefinition Width="260" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="Distância do topo" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Distância da borda" Style="{StaticResource CardTitle}" />
                     <TextBlock Text="{Binding TopMargin, StringFormat={}{0:0} px}" Style="{StaticResource CardDescription}" />
                 </StackPanel>
                 <Slider Grid.Column="1" Style="{StaticResource SettingsSlider}" Minimum="0" Maximum="60" VerticalAlignment="Center"
