@@ -497,6 +497,7 @@
 
     <!-- Lista da Central: itens como linhas selecionáveis, sem o realce azul padrão. -->
     <Style x:Key="HubListItem" TargetType="ListBoxItem">
+        <Setter Property="controls:RowCascade.Enabled" Value="True" />
         <Setter Property="Foreground" Value="{DynamicResource SettingsTextBrush}" />
         <Setter Property="Padding" Value="10,8" />
         <Setter Property="Margin" Value="0,0,0,4" />
