@@ -209,6 +209,19 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
         Publish();
     }
 
+    /// <summary>Pula o aviso que está na tela (estado expandido) e mostra o próximo da fila, ou volta ao compacto.</summary>
+    public void SkipCurrent(DateTimeOffset now)
+    {
+        if (_state != IslandState.Expanded || _shown is not { } shown)
+        {
+            return;
+        }
+
+        Record(shown, ActivityRecordState.Dismissed, now);
+        ShowNextOrCompact(now);
+        Publish();
+    }
+
     /// <summary>Fecha o estado interativo (ex.: clique fora da ilha); sem efeito nos outros estados.</summary>
     public void CollapseInteractive(DateTimeOffset now)
     {
@@ -595,6 +608,7 @@ public sealed class IslandCoordinator(Func<IslandSettings> settings)
         {
             PageModules = pages.Count == 0 ? PageModuleList.Empty : new PageModuleList(pages.Select(ModuleOfPage)),
             PageActivityIds = pages.Count == 0 ? PageModuleList.Empty : new PageModuleList(pages),
+            QueuedCount = _queue.Count,
         };
         if (snapshot == Snapshot)
         {

@@ -27,6 +27,9 @@ public sealed record IslandSnapshot(
     /// <summary>No estado interativo: o módulo de cada aba, na ordem das abas (identifica o ícone da aba); vazio fora dele.</summary>
     public PageModuleList PageModules { get; init; } = PageModuleList.Empty;
 
+    /// <summary>Avisos esperando a vez (fila de transitórias), para o selo "+N na fila".</summary>
+    public int QueuedCount { get; init; }
+
     /// <summary>No estado interativo: o id da atividade de cada aba, na mesma ordem de <see cref="PageModules"/>; vazio fora dele.</summary>
     public PageModuleList PageActivityIds { get; init; } = PageModuleList.Empty;
 

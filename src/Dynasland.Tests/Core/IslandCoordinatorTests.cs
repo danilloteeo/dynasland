@@ -626,4 +626,46 @@ public class IslandCoordinatorTests
         Assert.Equal(_coordinator.Snapshot.PageCount, _coordinator.Snapshot.PageActivityIds.Count);
         Assert.Contains("music", _coordinator.Snapshot.PageActivityIds);
     }
+
+    [Fact]
+    public void Snapshot_counts_the_transients_waiting_in_the_queue()
+    {
+        _coordinator.Post(Transient("a"), At(0));
+        _coordinator.Post(Transient("b"), At(0.1));
+        _coordinator.Post(Transient("c"), At(0.2));
+
+        Assert.Equal("a", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(2, _coordinator.Snapshot.QueuedCount);
+    }
+
+    [Fact]
+    public void SkipCurrent_shows_the_next_queued_transient()
+    {
+        _coordinator.Post(Transient("a"), At(0));
+        _coordinator.Post(Transient("b"), At(0.1));
+
+        _coordinator.SkipCurrent(At(1));
+
+        Assert.Equal(IslandState.Expanded, _coordinator.Snapshot.State);
+        Assert.Equal("b", _coordinator.Snapshot.Focused?.Id);
+        Assert.Equal(0, _coordinator.Snapshot.QueuedCount);
+    }
+
+    [Fact]
+    public void SkipCurrent_without_a_queue_returns_to_compact()
+    {
+        _coordinator.Post(Transient("a"), At(0));
+
+        _coordinator.SkipCurrent(At(1));
+
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+    }
+
+    [Fact]
+    public void SkipCurrent_does_nothing_outside_the_expanded_state()
+    {
+        _coordinator.SkipCurrent(At(0));
+
+        Assert.Equal(IslandState.Compact, _coordinator.Snapshot.State);
+    }
 }
