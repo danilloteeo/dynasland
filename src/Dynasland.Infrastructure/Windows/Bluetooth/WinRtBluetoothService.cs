@@ -8,7 +8,8 @@ namespace Dynasland.Infrastructure.Windows.Bluetooth;
 /// <summary>
 /// Dispositivos Bluetooth pareados (clássico e de baixa energia) acompanhados por um DeviceWatcher do
 /// Windows: a propriedade <c>System.Devices.Aep.IsConnected</c> muda ao conectar e desconectar.
-/// A bateria vem da propriedade que o Windows mantém para fones e similares; nem todo dispositivo informa.
+/// A bateria vem da propriedade que o Windows mantém no nó do dispositivo: BTHENUM para fones (mãos-livres) e
+/// BTHLE para mouses e teclados de baixa energia (serviço GATT de bateria); nem todo dispositivo informa.
 /// </summary>
 public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger) : IBluetoothService
 {
@@ -17,6 +18,10 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
     private const string IsConnectedProperty = "System.Devices.Aep.IsConnected";
     private const string AepContainerProperty = "System.Devices.Aep.ContainerId";
     private const string ContainerProperty = "System.Devices.ContainerId";
+    private const string CodMajorProperty = "System.Devices.Aep.Bluetooth.Cod.Major";
+    private const string CodMinorProperty = "System.Devices.Aep.Bluetooth.Cod.Minor";
+    private const string AppearanceCategoryProperty = "System.Devices.Appearance.Category";
+    private const string AppearanceSubCategoryProperty = "System.Devices.Appearance.SubCategory";
 
     /// <summary>DEVPKEY_Bluetooth_Battery: porcentagem informada pelo perfil de mãos-livres.</summary>
     private const string BatteryProperty = "{104EA319-6EE2-4701-BD47-8DDBF425BBE5} 2";
@@ -38,7 +43,7 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
         {
             lock (_lock)
             {
-                return [.. _devices.Select(d => new BluetoothDeviceInfo(d.Key, d.Value.Name, d.Value.IsConnected))];
+                return [.. _devices.Select(d => new BluetoothDeviceInfo(d.Key, d.Value.Name, d.Value.IsConnected, d.Value.Kind))];
             }
         }
     }
@@ -53,7 +58,7 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
                 return false;
             }
 
-            var watcher = DeviceInformation.CreateWatcher(PairedSelector, [IsConnectedProperty, AepContainerProperty], DeviceInformationKind.AssociationEndpoint);
+            var watcher = DeviceInformation.CreateWatcher(PairedSelector, [IsConnectedProperty, AepContainerProperty, CodMajorProperty, CodMinorProperty, AppearanceCategoryProperty, AppearanceSubCategoryProperty], DeviceInformationKind.AssociationEndpoint);
             watcher.Added += OnAdded;
             watcher.Updated += OnUpdated;
             watcher.Removed += OnRemoved;
@@ -112,7 +117,7 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
         {
             // Os nós de dispositivo Bluetooth (BTHENUM) do mesmo aparelho compartilham o ContainerId.
             var nodes = await Task.Run(async () => await DeviceInformation.FindAllAsync(
-                "System.Devices.DeviceInstanceId:~<\"BTHENUM\"", [BatteryProperty, ContainerProperty], DeviceInformationKind.Device));
+                "(System.Devices.DeviceInstanceId:~<\"BTHENUM\" OR System.Devices.DeviceInstanceId:~<\"BTHLE\")", [BatteryProperty, ContainerProperty], DeviceInformationKind.Device));
             foreach (var node in nodes)
             {
                 if (node.Properties.TryGetValue(ContainerProperty, out var id) && id is Guid guid && guid == container
@@ -136,10 +141,14 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
 
     private void OnAdded(DeviceWatcher sender, DeviceInformation device)
     {
+        var name = string.IsNullOrWhiteSpace(device.Name) ? "Dispositivo Bluetooth" : device.Name;
         var entry = new Entry(
-            string.IsNullOrWhiteSpace(device.Name) ? "Dispositivo Bluetooth" : device.Name,
+            name,
             ReadConnected(device.Properties) ?? false,
-            device.Properties.TryGetValue(AepContainerProperty, out var container) && container is Guid id ? id : null);
+            device.Properties.TryGetValue(AepContainerProperty, out var container) && container is Guid id ? id : null,
+            BluetoothDeviceClassifier.Classify(
+                ReadNumber(device.Properties, CodMajorProperty), ReadNumber(device.Properties, CodMinorProperty),
+                ReadNumber(device.Properties, AppearanceCategoryProperty), ReadNumber(device.Properties, AppearanceSubCategoryProperty), name));
 
         bool announce;
         lock (_lock)
@@ -157,7 +166,7 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
 
         if (announce)
         {
-            Raise(new BluetoothDeviceInfo(device.Id, entry.Name, true));
+            Raise(new BluetoothDeviceInfo(device.Id, entry.Name, true, entry.Kind));
         }
     }
 
@@ -174,7 +183,7 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
             if (ReferenceEquals(sender, _watcher) && _devices.TryGetValue(update.Id, out var entry) && entry.IsConnected != connected)
             {
                 _devices[update.Id] = entry with { IsConnected = connected };
-                changed = new BluetoothDeviceInfo(update.Id, entry.Name, connected);
+                changed = new BluetoothDeviceInfo(update.Id, entry.Name, connected, entry.Kind);
             }
         }
 
@@ -221,5 +230,11 @@ public sealed class WinRtBluetoothService(ILogger<WinRtBluetoothService> logger)
     private static bool? ReadConnected(IReadOnlyDictionary<string, object> properties) =>
         properties.TryGetValue(IsConnectedProperty, out var value) && value is bool connected ? connected : null;
 
-    private sealed record Entry(string Name, bool IsConnected, Guid? ContainerId);
+    private static uint? ReadNumber(IReadOnlyDictionary<string, object> properties, string key) =>
+        properties.TryGetValue(key, out var value) && value is IConvertible convertible
+            && long.TryParse(convertible.ToString(System.Globalization.CultureInfo.InvariantCulture), out var number) && number >= 0
+            ? (uint)number
+            : null;
+
+    private sealed record Entry(string Name, bool IsConnected, Guid? ContainerId, BluetoothDeviceKind Kind);
 }

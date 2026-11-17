@@ -28,8 +28,93 @@ public interface ILyricsService
     Task<IReadOnlyList<LyricLine>?> GetAsync(string title, string artist, string? album, TimeSpan? duration, CancellationToken cancellationToken = default);
 }
 
+public enum BluetoothDeviceKind
+{
+    Other,
+    Mouse,
+    Keyboard,
+    Headset,
+    Gamepad,
+}
+
 /// <summary>Dispositivo Bluetooth pareado.</summary>
-public sealed record BluetoothDeviceInfo(string Id, string Name, bool IsConnected);
+public sealed record BluetoothDeviceInfo(string Id, string Name, bool IsConnected, BluetoothDeviceKind Kind = BluetoothDeviceKind.Other);
+
+/// <summary>Descobre o tipo do dispositivo pela classe Bluetooth clássica, pela aparência do BLE ou, na falta delas, pelo nome.</summary>
+public static class BluetoothDeviceClassifier
+{
+    private const uint AudioVideoMajor = 4;
+    private const uint PeripheralMajor = 5;
+    private const uint HidAppearanceCategory = 15;
+
+    /// <param name="major">Classe principal do dispositivo (Cod.Major).</param>
+    /// <param name="minor">Classe secundária de 6 bits (Cod.Minor).</param>
+    /// <param name="appearanceCategory">Categoria da aparência BLE (Appearance.Category).</param>
+    /// <param name="appearanceSub">Subcategoria da aparência BLE (Appearance.SubCategory).</param>
+    public static BluetoothDeviceKind Classify(uint? major, uint? minor, uint? appearanceCategory, uint? appearanceSub, string name)
+    {
+        if (major == AudioVideoMajor)
+        {
+            return BluetoothDeviceKind.Headset;
+        }
+
+        if (major == PeripheralMajor && minor is { } cod)
+        {
+            // Bits altos do campo secundário: 01 teclado, 10 apontador, 11 combo (teclado e mouse).
+            var kind = (cod >> 4) & 0b11;
+            var low = cod & 0b1111;
+            if (low is 1 or 2)
+            {
+                return BluetoothDeviceKind.Gamepad;
+            }
+
+            if (kind == 0b10)
+            {
+                return BluetoothDeviceKind.Mouse;
+            }
+
+            if (kind is 0b01 or 0b11)
+            {
+                return BluetoothDeviceKind.Keyboard;
+            }
+        }
+
+        if (appearanceCategory == HidAppearanceCategory)
+        {
+            return appearanceSub switch
+            {
+                1 => BluetoothDeviceKind.Keyboard,
+                2 => BluetoothDeviceKind.Mouse,
+                3 or 4 => BluetoothDeviceKind.Gamepad,
+                _ => FromName(name),
+            };
+        }
+
+        return FromName(name);
+    }
+
+    private static BluetoothDeviceKind FromName(string name)
+    {
+        if (Has(name, "mouse") || Has(name, "mx master") || Has(name, "trackpad"))
+        {
+            return BluetoothDeviceKind.Mouse;
+        }
+
+        if (Has(name, "keyboard") || Has(name, "teclado") || Has(name, "keys"))
+        {
+            return BluetoothDeviceKind.Keyboard;
+        }
+
+        if (Has(name, "headset") || Has(name, "headphone") || Has(name, "earbuds") || Has(name, "airpods") || Has(name, "fone"))
+        {
+            return BluetoothDeviceKind.Headset;
+        }
+
+        return Has(name, "controller") || Has(name, "gamepad") ? BluetoothDeviceKind.Gamepad : BluetoothDeviceKind.Other;
+    }
+
+    private static bool Has(string name, string part) => name.Contains(part, StringComparison.OrdinalIgnoreCase);
+}
 
 /// <summary>Dispositivos Bluetooth pareados: conexão, desconexão e bateria (quando o Windows informa).</summary>
 public interface IBluetoothService

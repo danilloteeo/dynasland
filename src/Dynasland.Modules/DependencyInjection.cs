@@ -49,6 +49,7 @@ public static class DependencyInjection
                      "Notifications/NotificationTemplates.xaml",
                      "Downloads/DownloadTemplates.xaml",
                      "Battery/BatteryTemplates.xaml",
+                     "Bluetooth/BluetoothTemplates.xaml",
                      "Timer/TimerTemplates.xaml",
                      "Clipboard/ClipboardTemplates.xaml",
                      "SystemMonitor/SystemMonitorTemplates.xaml",

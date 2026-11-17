@@ -195,6 +195,44 @@ public class NewFeaturesTests : IDisposable
         await module.StopAsync(CancellationToken.None);
     }
 
+    [Theory]
+    [InlineData(4u, 0u, null, null, "Fuxi-H6", BluetoothDeviceKind.Headset)]
+    [InlineData(5u, 0x20u, null, null, "X", BluetoothDeviceKind.Mouse)]
+    [InlineData(5u, 0x10u, null, null, "X", BluetoothDeviceKind.Keyboard)]
+    [InlineData(5u, 0x02u, null, null, "X", BluetoothDeviceKind.Gamepad)]
+    [InlineData(null, null, 15u, 2u, "X", BluetoothDeviceKind.Mouse)]
+    [InlineData(null, null, 15u, 1u, "X", BluetoothDeviceKind.Keyboard)]
+    [InlineData(null, null, null, null, "MX Master 3", BluetoothDeviceKind.Mouse)]
+    [InlineData(null, null, null, null, "Caixa de som", BluetoothDeviceKind.Other)]
+    public void Bluetooth_device_kind_is_classified(uint? major, uint? minor, uint? category, uint? sub, string name, BluetoothDeviceKind expected) =>
+        Assert.Equal(expected, BluetoothDeviceClassifier.Classify(major, minor, category, sub, name));
+
+    [Fact]
+    public async Task Bluetooth_panel_lists_connected_devices_with_battery()
+    {
+        var bluetooth = new FakeBluetooth
+        {
+            Battery = 55,
+            Connected = [new("a", "Mouse BLE", true, BluetoothDeviceKind.Mouse), new("b", "Fone", false, BluetoothDeviceKind.Headset)],
+        };
+        var shortcuts = new ShortcutRegistry();
+        var module = new BluetoothModule(bluetooth, _recorder.Bus, new FakeTimeProvider(), TestOptions.Create(), shortcuts, new InlineDispatcher());
+        await module.StartAsync(CancellationToken.None);
+
+        module.OpenPanel();
+        var panel = Assert.IsType<BluetoothDevicesContent>(Assert.Single(_recorder.Posted).Content);
+        panel.OnPresentationChanged(IslandState.Interactive);
+        await bluetooth.BatteryRead.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Delay(50);
+
+        var row = Assert.Single(panel.Devices);
+        Assert.Equal("Mouse BLE", row.Name);
+        Assert.Equal("55%", row.BatteryText);
+
+        panel.OnPresentationChanged(null);
+        await module.StopAsync(CancellationToken.None);
+    }
+
     [Fact]
     public async Task Bluetooth_module_is_unavailable_without_an_adapter()
     {
@@ -272,7 +310,9 @@ public class NewFeaturesTests : IDisposable
 
         public event EventHandler<BluetoothDeviceInfo>? ConnectionChanged;
 
-        public IReadOnlyList<BluetoothDeviceInfo> Devices => [];
+        public IReadOnlyList<BluetoothDeviceInfo> Connected { get; init; } = [];
+
+        public IReadOnlyList<BluetoothDeviceInfo> Devices => Connected;
 
         public Task<bool> StartAsync(CancellationToken cancellationToken = default) => Task.FromResult(HasAdapter);
 

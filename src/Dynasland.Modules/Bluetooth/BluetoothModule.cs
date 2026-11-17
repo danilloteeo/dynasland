@@ -1,7 +1,9 @@
 using Dynasland.Core.Activities;
 using Dynasland.Core.Events;
 using Dynasland.Core.Interfaces;
+using Dynasland.Core.Models;
 using Dynasland.Core.Modules;
+using Dynasland.Modules.Common;
 
 namespace Dynasland.Modules.Bluetooth;
 
@@ -9,11 +11,18 @@ namespace Dynasland.Modules.Bluetooth;
 /// Avisa quando um dispositivo Bluetooth pareado (fone, controle, caixa de som) conecta ou desconecta,
 /// com a bateria quando o Windows informa, e alerta quando ela está acabando.
 /// </summary>
-public sealed class BluetoothModule(IBluetoothService bluetooth, IEventBus bus, TimeProvider time, IModuleOptions options) : IIslandModule
+public sealed class BluetoothModule(
+    IBluetoothService bluetooth,
+    IEventBus bus,
+    TimeProvider time,
+    IModuleOptions options,
+    IShortcutRegistry? shortcuts = null,
+    IUiDispatcher? ui = null) : IIslandModule
 {
     public const string ModuleId = "bluetooth";
     public const string ActivityPrefix = "bluetooth.device.";
     public const string BatteryActivityPrefix = "bluetooth.battery.";
+    public const string PanelActivityId = "bluetooth.panel";
 
     private static readonly TimeSpan DisplayDuration = TimeSpan.FromSeconds(4);
 
@@ -23,11 +32,15 @@ public sealed class BluetoothModule(IBluetoothService bluetooth, IEventBus bus, 
     // A bateria só é publicada pelo Windows um pouco depois de a conexão se estabelecer.
     private static readonly TimeSpan BatteryReadDelay = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan BatteryCheckInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan PanelRefreshInterval = TimeSpan.FromSeconds(15);
 
     private readonly Lock _lock = new();
     private readonly Dictionary<string, (bool Connected, DateTimeOffset At)> _announced = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _lowBatteryWarned = new(StringComparer.OrdinalIgnoreCase);
     private ITimer? _batteryTimer;
+    private ITimer? _panelTimer;
+    private BluetoothDevicesContent? _panel;
+    private IDisposable? _shortcut;
 
     public static readonly ModuleOption AnnounceConnections = ModuleOption.Toggle(
         "announceConnections", "Avisar ao conectar e desconectar", "Mostra na ilha quando um dispositivo pareado conecta ou desconecta.");
@@ -58,21 +71,102 @@ public sealed class BluetoothModule(IBluetoothService bluetooth, IEventBus bus, 
         lock (_lock)
         {
             _batteryTimer = time.CreateTimer(_ => _ = CheckBatteriesAsync(), null, BatteryCheckInterval, BatteryCheckInterval);
+            _panel = new BluetoothDevicesContent(OnPresentationChanged);
         }
+
+        _shortcut = shortcuts?.Register(new IslandShortcut(PanelActivityId, ModuleId, Glyphs.Bluetooth, "Dispositivos", OpenPanel));
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         bluetooth.ConnectionChanged -= OnConnectionChanged;
+        _shortcut?.Dispose();
+        _shortcut = null;
         lock (_lock)
         {
             _batteryTimer?.Dispose();
             _batteryTimer = null;
+            _panelTimer?.Dispose();
+            _panelTimer = null;
+            _panel = null;
             _announced.Clear();
             _lowBatteryWarned.Clear();
         }
 
         await bluetooth.StopAsync();
+    }
+
+    public void OpenPanel()
+    {
+        if (_panel is { } panel)
+        {
+            bus.PostActivity(new IslandActivity(PanelActivityId, ModuleId, ActivityKind.Transient, panel) { OpenInteractive = true });
+        }
+    }
+
+    /// <summary>A bateria só é consultada enquanto o painel está visível.</summary>
+    private void OnPresentationChanged(IslandState? state)
+    {
+        lock (_lock)
+        {
+            var visible = state is IslandState.Interactive or IslandState.Expanded;
+            if (visible && _panelTimer is null && _panel is not null)
+            {
+                _panelTimer = time.CreateTimer(_ => _ = RefreshPanelAsync(), null, TimeSpan.Zero, PanelRefreshInterval);
+            }
+            else if (!visible && _panelTimer is not null)
+            {
+                _panelTimer.Dispose();
+                _panelTimer = null;
+            }
+        }
+    }
+
+    private async Task RefreshPanelAsync()
+    {
+        var panel = _panel;
+        if (panel is null)
+        {
+            return;
+        }
+
+        var threshold = (int)options.Get(ModuleId, LowBatteryThreshold);
+        var rows = new List<BluetoothDeviceRow>();
+        foreach (var device in bluetooth.Devices.Where(d => d.IsConnected).OrderBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            // O mesmo aparelho pode aparecer duas vezes (clássico e BLE): fica a linha que tem bateria.
+            int? battery = null;
+            try
+            {
+                battery = await bluetooth.GetBatteryAsync(device.Id);
+            }
+            catch (Exception)
+            {
+                // Sem leitura a linha aparece do mesmo jeito.
+            }
+
+            var existing = rows.FindIndex(r => string.Equals(r.Name, device.Name, StringComparison.OrdinalIgnoreCase));
+            if (existing >= 0)
+            {
+                if (battery is null || rows[existing].HasBattery)
+                {
+                    continue;
+                }
+
+                rows.RemoveAt(existing);
+            }
+
+            rows.Add(new BluetoothDeviceRow(device.Name, device.Kind, battery, threshold));
+        }
+
+        if (ui is null)
+        {
+            panel.Apply(rows);
+        }
+        else
+        {
+            ui.Post(() => panel.Apply(rows));
+        }
     }
 
     public static string ConnectionMessage(bool connected, int? battery) =>

@@ -39,6 +39,10 @@ public static class VectorIcons
 
     public const string Game = Prefix + "game";
 
+    public const string Mouse = Prefix + "mouse";
+
+    public const string Headphones = Prefix + "headphones";
+
     public const string Clock = Prefix + "clock";
 
     public const string Refresh = Prefix + "refresh";
@@ -191,6 +195,15 @@ public static class VectorIcons
         [Pulse] = new VectorIcon(
             Outline: "M22,12 H18 L15,21 L9,3 L6,12 H2",
             Detail: ""),
+        [Mouse] = new VectorIcon(
+            Outline: "M12,2 A6,6 0 0 1 18,8 V16 A6,6 0 0 1 6,16 V8 A6,6 0 0 1 12,2 Z",
+            Detail: "M12,2 V9 M6,9 H18"),
+        [Keyboard] = new VectorIcon(
+            Outline: "M4,5 H20 A2,2 0 0 1 22,7 V17 A2,2 0 0 1 20,19 H4 A2,2 0 0 1 2,17 V7 A2,2 0 0 1 4,5 Z",
+            Detail: "M6,9 H6.01 M10,9 H10.01 M14,9 H14.01 M18,9 H18.01 M7,15 H17"),
+        [Headphones] = new VectorIcon(
+            Outline: "M3,14 V12 A9,9 0 0 1 21,12 V14",
+            Detail: "M3,14 H6 V19 H5 A2,2 0 0 1 3,17 Z M21,14 H18 V19 H19 A2,2 0 0 0 21,17 Z"),
         [Game] = new VectorIcon(
             Outline: "M7,6 H17 A5,5 0 0 1 22,11 V13 A3,3 0 0 1 16.2,14 L15.5,12.5 H8.5 L7.8,14 A3,3 0 0 1 2,13 V11 A5,5 0 0 1 7,6 Z",
             Detail: "M7,9.5 V12.5 M5.5,11 H8.5 M16,10 H16.01 M18,12 H18.01"),
@@ -245,9 +258,6 @@ public static class VectorIcons
         [Ball] = new VectorIcon(
             Outline: "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12",
             Detail: "M2,12 H22 M12,2 V22 M5,5 C9,9 9,15 5,19 M19,5 C15,9 15,15 19,19"),
-        [Keyboard] = new VectorIcon(
-            Outline: "M4,5 H20 A2,2 0 0 1 22,7 V17 A2,2 0 0 1 20,19 H4 A2,2 0 0 1 2,17 V7 A2,2 0 0 1 4,5 Z",
-            Detail: "M6,9 H6.01 M10,9 H10.01 M14,9 H14.01 M18,9 H18.01 M8,15 H16"),
         [Storage] = new VectorIcon(
             Outline: "M21,5 A9,3 0 1 1 3,5 A9,3 0 1 1 21,5 Z",
             Detail: "M3,5 V19 A9,3 0 0 0 21,19 V5 M3,12 A9,3 0 0 0 21,12"),

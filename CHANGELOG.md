@@ -1,5 +1,15 @@
 # Notas da versão
 
+## Não publicada
+
+### Novidades
+- **Bateria de mouse, teclado e fone no módulo Bluetooth**: novo painel "Dispositivos" com os aparelhos
+  conectados, o ícone do tipo (mouse, teclado, fone, controle) e a % de bateria de cada um. A leitura agora também
+  inclui dispositivos Bluetooth de baixa energia (mouses e teclados sem fio), que antes ficavam de fora. Aparelho
+  que não informa a bateria aparece como "sem leitura". A bateria só é consultada com o painel aberto.
+- Não vale para mouse ou teclado com receptor USB 2.4 GHz, que não passam pelo Bluetooth.
+- O módulo Bluetooth continua desligado, como na 1.7.0, até ser registrado de novo.
+
 ## 1.7.0 — 2026-11-12
 
 ### Novidades
