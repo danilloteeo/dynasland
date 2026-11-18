@@ -1,5 +1,8 @@
 # Relatório final — Dynasland 0.1.0
 
+> **Documento histórico (versão 0.1.0).** Descreve o Dynasland de 2026-11-10; o aplicativo hoje se chama DynaIsland e
+> mudou muito (ver `CHANGELOG.md`, `README.md` e `docs/ARQUITETURA_NATIVA.md`).
+
 Ilha dinâmica para Windows 10/11 em C# / .NET 10 / WPF, conforme o escopo de `docs/master.md`.
 Arquitetura em camadas: `Core` (regras puras, sem Windows/WPF), `Infrastructure` (integrações com o
 Windows e SQLite), `Modules` (um módulo por funcionalidade, com view models e templates próprios) e `App`
