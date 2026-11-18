@@ -64,8 +64,9 @@ public partial class IslandEyes : UserControl
             return;
         }
 
-        OpenEyes.Visibility = IsListening ? Visibility.Collapsed : Visibility.Visible;
-        ClosedEyes.Visibility = IsListening ? Visibility.Visible : Visibility.Collapsed;
+        var closed = IsListening && IsAnimated;
+        OpenEyes.Visibility = closed ? Visibility.Collapsed : Visibility.Visible;
+        ClosedEyes.Visibility = closed ? Visibility.Visible : Visibility.Collapsed;
 
         Stop();
         if (!IsAnimated || !IsVisible)

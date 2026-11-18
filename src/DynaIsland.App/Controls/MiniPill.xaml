@@ -9,7 +9,7 @@
         <Grid Margin="10,0,12,0">
             <!-- O mesmo mascote da ilha (Task 9B) antes da hora. -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <controls:IslandEyes Margin="0,0,6,0" VerticalAlignment="Center" />
+                <controls:IslandEyes x:Name="Eyes" Margin="0,0,6,0" VerticalAlignment="Center" />
                 <TextBlock x:Name="Time" VerticalAlignment="Center" FontFamily="{StaticResource IslandTextFont}"
                            FontSize="11.5" FontWeight="Bold" Typography.NumeralAlignment="Tabular" Foreground="{StaticResource IslandPrimaryTextBrush}" />
             </StackPanel>

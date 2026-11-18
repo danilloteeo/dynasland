@@ -14,6 +14,7 @@ public partial class MiniPill : UserControl
     {
         InitializeComponent();
         Time.Text = DateTime.Now.ToString("HH:mm");
+        Eyes.IsAnimated = SystemParameters.ClientAreaAnimation;
     }
 
     /// <summary>Abre um pouco e volta, com desaceleração suave (sem efeito se as animações do Windows estão desligadas).</summary>

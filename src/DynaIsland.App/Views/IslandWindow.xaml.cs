@@ -258,7 +258,7 @@ public partial class IslandWindow : Window
     private bool _pillShown;
 
     /// <summary>Os olhos só se mexem com as animações ligadas e a pílula fechada à vista (ela some só por opacidade).</summary>
-    private void UpdateEyesAnimation() => Eyes.IsAnimated = _pillShown && _settings.Current.AnimationsEnabled;
+    private void UpdateEyesAnimation() => Eyes.IsAnimated = _pillShown && _settings.Current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
 
     /// <summary>
     /// A janela tem largura fixa; a cápsula se alinha ao lado da posição escolhida (a <see cref="IslandPlacementCalculator.EdgeMargin"/>
