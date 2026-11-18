@@ -14,7 +14,7 @@
                        Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
             <ProgressBar Grid.Column="1" Style="{DynamicResource IslandProgressBarStyle}" Height="6" Maximum="100"
                          Value="{Binding Level, Mode=OneWay}" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="2" Text="{Binding Percent}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+            <TextBlock Grid.Column="2" Text="{Binding Percent}" Typography.NumeralAlignment="Tabular" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
                        Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
         </Grid>
     </DataTemplate>
