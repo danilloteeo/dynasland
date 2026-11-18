@@ -187,7 +187,7 @@
                             Visibility="{Binding CanMuteApp, Converter={StaticResource BoolToVisibility}}"
                             ToolTip="Não mostrar mais notificações deste aplicativo na ilha" />
                     <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Dispensar" Command="{Binding DismissCommand}" Margin="8,0,0,0" />
-                    <Button Style="{DynamicResource IslandTextButtonStyle}" Content="Abrir" Command="{Binding OpenCommand}" Margin="8,0,0,0" />
+                    <Button Style="{DynamicResource IslandPrimaryButtonStyle}" Content="Abrir" Command="{Binding OpenCommand}" Margin="8,0,0,0" />
                 </StackPanel>
             </Grid>
         </Grid>
