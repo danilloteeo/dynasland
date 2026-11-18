@@ -11,6 +11,7 @@ internal static class NativeMethods
     public const long WS_EX_NOACTIVATE = 0x08000000;
 
     public const uint SWP_NOSIZE = 0x0001;
+    public const uint SWP_NOMOVE = 0x0002;
     public const uint SWP_NOACTIVATE = 0x0010;
     public const uint SWP_NOOWNERZORDER = 0x0200;
 

@@ -1,6 +1,6 @@
 # Notas da versão
 
-## Não publicada
+## 1.7.1 — 2026-11-18
 
 ### Novidades
 - **Bateria de mouse, teclado e fone no módulo Bluetooth**: novo painel "Dispositivos" com os aparelhos
@@ -9,6 +9,10 @@
   que não informa a bateria aparece como "sem leitura". A bateria só é consultada com o painel aberto.
 - Não vale para mouse ou teclado com receptor USB 2.4 GHz, que não passam pelo Bluetooth.
 - O módulo Bluetooth continua desligado, como na 1.7.0, até ser registrado de novo.
+
+### Correções
+- A ilha voltava a ficar atrás de outras janelas depois de clicar na barra de tarefas ou abrir o menu Iniciar.
+  Agora ela se coloca por cima de novo sempre que outra janela assume o primeiro plano.
 
 ## 1.7.0 — 2026-11-12
 

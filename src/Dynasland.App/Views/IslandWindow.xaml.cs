@@ -118,6 +118,7 @@ public partial class IslandWindow : Window
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         settings.Changed += OnSettingsChanged;
         fullscreen.Changed += OnFullscreenChanged;
+        fullscreen.ForegroundChanged += OnForegroundChanged;
         session.Changed += OnSessionChanged;
         _gamingSubscription = bus.Subscribe<GamingModeChangedEvent>(e => Dispatcher.BeginInvoke(() =>
         {
@@ -183,6 +184,7 @@ public partial class IslandWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _settings.Changed -= OnSettingsChanged;
         _fullscreen.Changed -= OnFullscreenChanged;
+        _fullscreen.ForegroundChanged -= OnForegroundChanged;
         _session.Changed -= OnSessionChanged;
         _outsideClicks.Dispose();
         _gamingSubscription.Dispose();
@@ -300,6 +302,14 @@ public partial class IslandWindow : Window
     private void ApplyPressFeedback() => IslandPressFeedback.SetIsEnabled(this, AnimationsAllowed);
 
     private void OnFullscreenChanged(object? sender, string? monitor) => UpdateVisibility();
+
+    private void OnForegroundChanged(object? sender, EventArgs e)
+    {
+        if (IsVisible)
+        {
+            WindowInterop.RaiseTopmost(new WindowInteropHelper(this).Handle);
+        }
+    }
 
     /// <summary>
     /// Bloqueio/suspensão ocultam a ilha; ao voltar, os monitores podem ter mudado (dock, resolução),

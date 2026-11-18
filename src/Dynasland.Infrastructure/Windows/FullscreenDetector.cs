@@ -34,6 +34,9 @@ public sealed class FullscreenDetector : IDisposable
 
     public event EventHandler<string?>? Changed;
 
+    /// <summary>Outro processo assumiu o primeiro plano (barra de tarefas, menu Iniciar, qualquer janela topmost).</summary>
+    public event EventHandler? ForegroundChanged;
+
     public void Start()
     {
         if (_foregroundHook != IntPtr.Zero)
@@ -95,6 +98,11 @@ public sealed class FullscreenDetector : IDisposable
         if (eventType == EventObjectLocationChange && (idObject != ObjIdWindow || hwnd != GetForegroundWindow()))
         {
             return;
+        }
+
+        if (eventType == EventSystemForeground)
+        {
+            ForegroundChanged?.Invoke(this, EventArgs.Empty);
         }
 
         Evaluate();

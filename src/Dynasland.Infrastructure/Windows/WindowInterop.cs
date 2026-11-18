@@ -24,6 +24,13 @@ public static class WindowInterop
             ? new PixelRect(rect.Left, rect.Top, rect.Right, rect.Bottom)
             : default;
 
+    /// <summary>
+    /// Volta a janela ao topo da faixa topmost sem mover nem ativar: outra janela topmost (barra de tarefas,
+    /// menu Iniciar) que assume o primeiro plano passa por cima dela.
+    /// </summary>
+    public static void RaiseTopmost(IntPtr hwnd) =>
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+
     /// <summary>Move a janela (pixels físicos) mantendo-a acima das demais e sem ativá-la.</summary>
     public static void MoveTopmost(IntPtr hwnd, PixelPoint position) =>
         SetWindowPos(hwnd, HWND_TOPMOST, position.X, position.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
