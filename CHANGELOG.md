@@ -1,6 +1,6 @@
 # Notas da versão
 
-## 1.9.0 — não publicada
+## 1.9.0 — 2026-11-18
 
 ### Novidades
 - Visual Vidro: a ilha passa a ser translúcida (70% de opacidade por padrão, ajustável de 50% a 100% em
