@@ -147,6 +147,42 @@
     return r;
   }
 
+  /** Barra deslizante: mostra o valor formatado e grava ao soltar e enquanto arrasta. */
+  function sliderRow(text, hint, path, min, max, step, format) {
+    var r = row(text, hint, null);
+    r.className = 'slider-row';
+    var wrap = el('div', 'slider');
+    var input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    var out = document.createElement('output');
+    wrap.append(input, out);
+    r.append(wrap);
+    function paint(v) {
+      out.textContent = format(v);
+      input.style.setProperty('--fill', String((v - min) / (max - min) * 100));
+    }
+    input.addEventListener('input', function () { paint(Number(input.value)); set(path, Number(input.value)); });
+    bind(function () { if (document.activeElement !== input) { input.value = String(get(path)); } paint(Number(get(path))); });
+    return r;
+  }
+
+  /** Prévia da pílula fechada: reage à opacidade e ao destaque. */
+  function preview() {
+    var box = el('div', 'preview');
+    var pill = el('div', 'preview-pill');
+    var wave = el('span', 'pv-wave');
+    [6, 12, 8].forEach(function (h) { var i = document.createElement('i'); i.style.height = h + 'px'; wave.append(i); });
+    var now = new Date();
+    var time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    pill.append(el('span', 'pv-side', '24°'), el('span', 'pv-time', time), wave);
+    box.append(pill);
+    bind(function () { pill.style.setProperty('--glass-a', String(get('IslandOpacity'))); });
+    return box;
+  }
+
   function button(text, onClick, cls) {
     var b = el('button', 'btn' + (cls ? ' ' + cls : ''), text);
     b.addEventListener('click', onClick);
@@ -271,6 +307,7 @@
 
     Appearance: function () {
       var swatches = el('div', 'swatches');
+      swatches.setAttribute('role', 'radiogroup');
       dynList('AccentOptions', swatches, function (a) { return a.Hex; }, function (i, p) {
         var b = el('button', 'swatch');
         b.setAttribute('role', 'radio');
@@ -281,13 +318,18 @@
         bind(function () { b.setAttribute('aria-checked', String(!!get(p + '.IsSelected'))); });
         return b;
       });
+      bind(function () { swatches.classList.toggle('muted', !!get('AccentFollowsWindows')); });
 
       var wrap = el('section', 'page');
       wrap.append(
         title('Aparência'),
-        group(label('Tema das janelas'), seg('Theme', [['System', 'Automático'], ['Dark', 'Escuro'], ['Light', 'Claro']])),
-        group(label('Cor de destaque'), swatches),
-        note('A ilha tem sempre o tamanho e o preto do Volum: 250 × 32 px fechada e 440 px de largura aberta.'));
+        preview(),
+        label('Ilha'),
+        group(sliderRow('Opacidade do vidro', 'Mais baixo deixa o fundo aparecer mais através da ilha.', 'IslandOpacity', 0.5, 1, 0.05, fmt.pct)),
+        label('Cor de destaque'),
+        group(
+          swatches,
+          row('Usar a cor do Windows', 'Acompanha a cor de destaque escolhida no Windows.', sw('AccentFollowsWindows'))));
       return wrap;
     },
 
@@ -298,7 +340,6 @@
         group(row('Animações', 'Desligadas, a ilha muda de tamanho sem movimento.', sw('AnimationsEnabled'))),
         group(
           stepRow('Velocidade', 'AnimationSpeed', 0.5, 2, 0.25, fmt.x),
-          stepRow('Intensidade da mola', 'AnimationIntensity', 0, 2, 0.25, fmt.pct),
           stepRow('Tempo de permanência expandida', 'ExpandedDurationSeconds', 2, 20, 1, fmt.sec)));
       return wrap;
     },
@@ -460,7 +501,7 @@
 
     About: function () {
       var head = el('div', 'about-head');
-      head.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15.5" fill="#090909" stroke="#fff" stroke-opacity=".27"/><rect x="6" y="12.5" width="20" height="7" rx="3.5" fill="#fff"/></svg>';
+      head.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15.5" fill="rgba(16,18,26,.7)" stroke="#fff" stroke-opacity=".3"/><rect x="6" y="12.5" width="20" height="7" rx="3.5" fill="#fff"/></svg>';
       var who = el('div');
       who.append(el('div', 'about-name', 'DynaIsland'), boundText('about-version', function () { return 'Versão ' + get('Version'); }));
       head.append(who);
@@ -481,7 +522,7 @@
       var wrap = el('section', 'page');
       wrap.append(
         title('Sobre'),
-        group(head, el('p', 'about-text', 'Uma ilha para o Windows: música, volume, água, avisos e muito mais num só lugar. Visual das janelas baseado no Volum (licença MIT).')),
+        group(head, el('p', 'about-text', 'Uma ilha para o Windows: música, volume, água, avisos e muito mais num só lugar.')),
         label('Atualizações'),
         group(
           row('Verificar atualizações automaticamente', null, sw('CheckForUpdates')),
@@ -509,7 +550,7 @@
 
   function buildNav() {
     var brand = el('div', 'nav-brand');
-    brand.innerHTML = '<svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15.5" fill="#090909" stroke="#fff" stroke-opacity=".27"/><rect x="6" y="12.5" width="20" height="7" rx="3.5" fill="#fff"/></svg>';
+    brand.innerHTML = '<svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15.5" fill="rgba(16,18,26,.7)" stroke="#fff" stroke-opacity=".3"/><rect x="6" y="12.5" width="20" height="7" rx="3.5" fill="#fff"/></svg>';
     brand.append(el('span', null, 'Configurações'));
     nav.append(brand);
     PAGES.forEach(function (p) {
@@ -535,22 +576,25 @@
     if (fromUser && state && state.Section !== name) { set('Section', name); }
   }
 
-  function applyScheme() {
-    var theme = state && state.Theme;
-    var dark = theme === 'Dark' || (theme !== 'Light' && !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches));
-    document.documentElement.dataset.scheme = dark ? 'dark' : 'light';
+  /** Destaque em uso: a cor do Windows (se pedida e disponível) ou a escolhida. */
+  function applyAccent() {
+    var accent = (state.AccentFollowsWindows && state.WindowsAccentHex) || state.AccentColor || '#9CC2FF';
+    document.documentElement.style.setProperty('--accent', accent);
   }
 
   function onState(data) {
     var previousSection = state && state.Section;
     state = data;
-    applyScheme();
+    applyAccent();
     if (page === null || (data.Section !== previousSection && data.Section !== page)) {
       openPage(builders[data.Section] ? data.Section : 'General', false);
     } else {
       runBinders();
     }
   }
+
+  // Fundo pedido pela janela: "acrylic" (Windows 11) ou "solid".
+  document.documentElement.dataset.backdrop = new URLSearchParams(location.search).get('backdrop') === 'acrylic' ? 'acrylic' : 'solid';
 
   buildNav();
   if (web) {
