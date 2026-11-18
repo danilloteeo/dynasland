@@ -193,6 +193,11 @@ button:focus-visible, input:focus-visible + span, .field:focus-visible { outline
 .preview-pill .pv-time { font-weight: 700; font-variant-numeric: tabular-nums; }
 .preview-pill .pv-wave { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
 .preview-pill .pv-wave i { display: block; width: 3px; border-radius: 1.5px; background: var(--accent); }
+.preview-pill .pv-left { display: inline-flex; align-items: center; gap: 8px; }
+.preview-pill .pv-eyes { display: inline-flex; gap: 4px; }
+.preview-pill .pv-eyes[hidden] { display: none; }
+.preview-pill .pv-eyes i { display: block; width: 6px; height: 8px; border-radius: 3px; background: #fff; animation: pv-blink 4.2s infinite; }
+@keyframes pv-blink { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(.1); } }
 
 /* Módulos e aplicativos */
 .mod-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 4px; }

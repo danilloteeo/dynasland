@@ -179,6 +179,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _accentFollowsWindows;
 
+    [ObservableProperty]
+    private bool _showIslandEyes;
+
     /// <summary>Destaque escolhido (#RRGGBB); a página usa para a prévia e para pintar os controles.</summary>
     [ObservableProperty]
     private string _accentColor = AccentColors.Default;
@@ -272,6 +275,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Shape = s.Shape;
         Edge = s.Edge;
         AccentFollowsWindows = s.AccentFollowsWindows;
+        ShowIslandEyes = s.ShowIslandEyes;
         AccentColor = s.AccentColor;
         IdleDisplay = s.IdleDisplay;
         IslandOpacity = s.IslandOpacity;
@@ -421,6 +425,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnEdgeChanged(IslandEdge value) => Save(s => s with { Edge = value });
 
     partial void OnAccentFollowsWindowsChanged(bool value) => Save(s => s with { AccentFollowsWindows = value });
+
+    partial void OnShowIslandEyesChanged(bool value) => Save(s => s with { ShowIslandEyes = value });
 
     partial void OnIdleDisplayChanged(IdleDisplay value) => Save(s => s with { IdleDisplay = value });
 

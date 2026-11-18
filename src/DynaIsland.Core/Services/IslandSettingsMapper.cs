@@ -25,6 +25,7 @@ public static partial class IslandSettingsMapper
         public const string AccentColor = "appearance.accent";
         // Chave nova no Vidro: o valor antigo (sempre 1,0, sem opção na interface) não é reaproveitado.
         public const string IslandOpacity = "appearance.glassOpacity";
+        public const string ShowIslandEyes = "appearance.islandEyes";
         public const string AccentFollowsWindows = "appearance.accentFollowsWindows";
         public const string ShadowIntensity = "appearance.shadow";
         public const string Roundness = "appearance.roundness";
@@ -77,6 +78,7 @@ public static partial class IslandSettingsMapper
                 : d.AccentColor,
             AccentFollowsWindows = ReadBool(values, Keys.AccentFollowsWindows, d.AccentFollowsWindows),
             IslandOpacity = ReadDouble(values, Keys.IslandOpacity, d.IslandOpacity, 0.5, 1),
+            ShowIslandEyes = ReadBool(values, Keys.ShowIslandEyes, d.ShowIslandEyes),
             ShadowIntensity = ReadDouble(values, Keys.ShadowIntensity, d.ShadowIntensity, 0, 1),
             Roundness = d.Roundness,
             CompactWidth = d.CompactWidth,
@@ -119,6 +121,7 @@ public static partial class IslandSettingsMapper
         [Keys.AccentColor] = s.AccentColor,
         [Keys.AccentFollowsWindows] = Format(s.AccentFollowsWindows),
         [Keys.IslandOpacity] = Format(s.IslandOpacity),
+        [Keys.ShowIslandEyes] = Format(s.ShowIslandEyes),
         [Keys.ShadowIntensity] = Format(s.ShadowIntensity),
         [Keys.Roundness] = Format(s.Roundness),
         [Keys.CompactWidth] = Format(s.CompactWidth),

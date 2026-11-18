@@ -106,6 +106,7 @@ public partial class IslandWindow : Window
 
         ApplyPositionAndShape(settings.Current);
         ApplyEdge(settings.Current.Edge);
+        ApplyEyes(settings.Current);
         ApplyLayers(viewModel.State, animate: false);
         ApplyPrivacyDot(MicrophoneDot, viewModel.ShowMicrophoneDot, animate: false);
         ApplyPrivacyDot(CameraDot, viewModel.ShowCameraDot, animate: false);
@@ -241,9 +242,17 @@ public partial class IslandWindow : Window
         UpdateVisibility();
         ApplyPositionAndShape(settings);
         ApplyEdge(settings.Edge);
+        ApplyEyes(settings);
         ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
         ApplyPressFeedback();
         RequestReposition();
+    }
+
+    /// <summary>Mascote: aparece conforme "Olhos na ilha" e só se mexe com as animações ligadas.</summary>
+    private void ApplyEyes(IslandSettings settings)
+    {
+        Eyes.Visibility = settings.ShowIslandEyes ? Visibility.Visible : Visibility.Collapsed;
+        Eyes.IsAnimated = settings.AnimationsEnabled;
     }
 
     /// <summary>

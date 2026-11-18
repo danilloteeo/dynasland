@@ -51,6 +51,16 @@ public class VidroSettingsTests
     }
 
     [Fact]
+    public void Island_eyes_are_on_by_default_and_round_trip()
+    {
+        Assert.True(IslandSettings.Default.ShowIslandEyes);
+
+        var values = IslandSettingsMapper.ToValues(IslandSettings.Default with { ShowIslandEyes = false });
+
+        Assert.False(IslandSettingsMapper.FromValues(values).ShowIslandEyes);
+    }
+
+    [Fact]
     public void Removed_theme_and_spring_keys_are_ignored()
     {
         var legacy = Read(

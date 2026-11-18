@@ -119,6 +119,9 @@ public sealed record IslandSettings
     /// <summary>Opacidade do vidro da ilha (0,5 a 1).</summary>
     public double IslandOpacity { get; init; } = 0.70;
 
+    /// <summary>Olhos na pílula fechada (o mascote): piscam, olham para os lados e "curtem" a música.</summary>
+    public bool ShowIslandEyes { get; init; } = true;
+
     /// <summary>Intensidade da sombra da ilha (0 a 1).</summary>
     public double ShadowIntensity { get; init; } = 0.5;
 

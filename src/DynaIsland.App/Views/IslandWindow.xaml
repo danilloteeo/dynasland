@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:DynaIsland.App.ViewModels"
         xmlns:views="clr-namespace:DynaIsland.App.Views"
+        xmlns:controls="clr-namespace:DynaIsland.App.Controls"
         xmlns:converters="clr-namespace:DynaIsland.App.Converters"
         xmlns:common="clr-namespace:DynaIsland.Modules.Common;assembly=DynaIsland.Modules"
         xmlns:models="clr-namespace:DynaIsland.Core.Models;assembly=DynaIsland.Core"
@@ -192,13 +193,16 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <!-- Esquerda: clima (ícone e temperatura). -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Visibility="{Binding HasWeather, Converter={StaticResource BoolToVisibility}}">
-                            <ContentControl Content="{Binding WeatherGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
-                                            Foreground="{StaticResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
-                            <TextBlock Text="{Binding WeatherTemp}" Margin="4,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                                       Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                        <!-- Esquerda: os olhos (mascote) e o clima. -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <controls:IslandEyes x:Name="Eyes" Margin="1,0,8,0" VerticalAlignment="Center" IsListening="{Binding MusicPlaying}" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                        Visibility="{Binding HasWeather, Converter={StaticResource BoolToVisibility}}">
+                                <ContentControl Content="{Binding WeatherGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
+                                                Foreground="{StaticResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
+                                <TextBlock Text="{Binding WeatherTemp}" Margin="4,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                           Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                            </StackPanel>
                         </StackPanel>
                         <TextBlock Grid.Column="1" Text="{Binding PillTime}" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}"
                                    FontSize="14" FontWeight="Bold" Typography.NumeralAlignment="Tabular" Foreground="{DynamicResource IslandPrimaryTextBrush}" />

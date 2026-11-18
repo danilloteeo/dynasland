@@ -177,9 +177,16 @@
     [6, 12, 8].forEach(function (h) { var i = document.createElement('i'); i.style.height = h + 'px'; wave.append(i); });
     var now = new Date();
     var time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-    pill.append(el('span', 'pv-side', '24°'), el('span', 'pv-time', time), wave);
+    var eyes = el('span', 'pv-eyes');
+    eyes.append(document.createElement('i'), document.createElement('i'));
+    var left = el('span', 'pv-left');
+    left.append(eyes, el('span', 'pv-side', '24°'));
+    pill.append(left, el('span', 'pv-time', time), wave);
     box.append(pill);
-    bind(function () { pill.style.setProperty('--glass-a', String(get('IslandOpacity'))); });
+    bind(function () {
+      pill.style.setProperty('--glass-a', String(get('IslandOpacity')));
+      show(eyes, !!get('ShowIslandEyes'));
+    });
     return box;
   }
 
@@ -325,7 +332,9 @@
         title('Aparência'),
         preview(),
         label('Ilha'),
-        group(sliderRow('Opacidade do vidro', 'Mais baixo deixa o fundo aparecer mais através da ilha.', 'IslandOpacity', 0.5, 1, 0.05, fmt.pct)),
+        group(
+          sliderRow('Opacidade do vidro', 'Mais baixo deixa o fundo aparecer mais através da ilha.', 'IslandOpacity', 0.5, 1, 0.05, fmt.pct),
+          row('Olhos na ilha', 'Dois olhinhos que piscam na pílula fechada e curtem a música.', sw('ShowIslandEyes'))),
         label('Cor de destaque'),
         group(
           swatches,
