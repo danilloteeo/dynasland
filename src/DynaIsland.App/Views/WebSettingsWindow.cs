@@ -29,16 +29,27 @@ public sealed class WebSettingsWindow : Window
         MinWidth = 760;
         MinHeight = 520;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        Background = new SolidColorBrush(Color.FromRgb(0x09, 0x09, 0x09));
         UseLayoutRounding = true;
         Content = _web;
-        _web.DefaultBackgroundColor = System.Drawing.Color.FromArgb(0x09, 0x09, 0x09);
+        // Windows 11: acrílico do sistema atrás da página transparente; antes disso, fundo escuro sólido.
+        Backdrop = WindowBackdrop.TryApply(this) ? "acrylic" : "solid";
+        if (Backdrop == "solid")
+        {
+            Background = new SolidColorBrush(Color.FromRgb(0x12, 0x15, 0x1F));
+        }
+
+        _web.DefaultBackgroundColor = Backdrop == "acrylic"
+            ? System.Drawing.Color.Transparent
+            : System.Drawing.Color.FromArgb(0x12, 0x15, 0x1F);
 
         TitleBarTheme.Attach(this, theme);
         Loaded += async (_, _) => await InitializeWebAsync();
     }
 
     public SettingsViewModel ViewModel { get; }
+
+    /// <summary>"acrylic" (Windows 11) ou "solid": a página ajusta o véu escuro por cima do fundo.</summary>
+    public string Backdrop { get; }
 
     protected override void OnClosed(EventArgs e)
     {
@@ -116,6 +127,6 @@ public sealed class WebSettingsWindow : Window
 
         _bridge = new SettingsBridge(ViewModel, json => core.PostWebMessageAsString(json), Dispatcher, name => _ = RunActionAsync(name));
         core.WebMessageReceived += (_, e) => _bridge?.Handle(e.TryGetWebMessageAsString());
-        core.Navigate($"https://{Host}/settings.html");
+        core.Navigate($"https://{Host}/settings.html?backdrop={Backdrop}");
     }
 }
