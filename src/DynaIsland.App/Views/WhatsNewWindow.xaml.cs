@@ -47,9 +47,10 @@ public partial class WhatsNewWindow : Window
         PageTitle.Text = _pages[index].Title;
         PageText.Text = _pages[index].Text;
         NextButton.Content = index == _pages.Count - 1 ? "Começar" : "Próximo";
+        animate &= SystemParameters.ClientAreaAnimation;
         RebuildDots(animate);
 
-        if (animate && SystemParameters.ClientAreaAnimation)
+        if (animate)
         {
             PageContent.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, SwapDuration) { EasingFunction = Ease });
             PageContent.RenderTransform.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(12, 0, SwapDuration) { EasingFunction = Ease });
