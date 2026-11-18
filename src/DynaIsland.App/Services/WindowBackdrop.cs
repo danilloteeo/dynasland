@@ -14,8 +14,16 @@ public static class WindowBackdrop
     private const int DwmwaSystemBackdropType = 38;
     private const int DwmsbtTransientWindow = 3;
 
-    /// <summary>O tipo de fundo do sistema existe a partir do Windows 11 22H2 (build 22621).</summary>
-    public static bool IsSupported => Environment.OSVersion.Version.Build >= 22621;
+    /// <summary>Build mínimo do tipo de fundo do sistema: Windows 11 22H2.</summary>
+    private const int MinimumBuild = 22621;
+
+    /// <summary>
+    /// Desligado até ser testado num Windows 11: não se sabe se o WebView2 (um HWND filho) deixa o acrílico
+    /// aparecer ou deixa a janela preta. Para religar, mude para <c>true</c>.
+    /// </summary>
+    private static readonly bool Enabled = false;
+
+    public static bool IsSupported => Enabled && Environment.OSVersion.Version.Build >= MinimumBuild;
 
     /// <summary>Liga o acrílico (agora ou quando o HWND existir). Devolve false sem mexer na janela se não houver suporte.</summary>
     public static bool TryApply(Window window)
