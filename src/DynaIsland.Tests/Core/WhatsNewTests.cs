@@ -33,6 +33,7 @@ public class WhatsNewTests
     [InlineData("1.6.0")]
     [InlineData("1.7.0")]
     [InlineData("1.8.1")]
+    [InlineData("1.9.0")]
     public void Every_published_note_page_is_complete(string version)
     {
         var pages = WhatsNew.For(version);

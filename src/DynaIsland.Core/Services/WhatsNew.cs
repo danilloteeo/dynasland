@@ -28,9 +28,18 @@ public static class WhatsNew
         new("Mais firme", "Os cliques fora da ilha e a tecla Esc agora são percebidos por um motor em C++ separado da interface, e a ilha volta para cima quando outra janela, como a barra de tarefas, passa na frente."),
     ];
 
+    private static readonly IReadOnlyList<WhatsNewPage> Notes190 =
+    [
+        new("Visual novo: Vidro", "A ilha ficou translúcida, com borda clara, brilho no topo e sombra macia. A opacidade se ajusta em Configurações › Aparência."),
+        new("A sua cor de destaque", "Escolha entre seis cores ou use a cor do Windows. Ela aparece nas barras, nos botões principais e nos interruptores."),
+        new("Movimento mais suave", "A ilha abre e fecha sem passar do ponto, e as páginas trocam deslizando de leve para o lado."),
+        new("A ilha tem olhos", "Dois olhinhos na pílula fechada piscam, olham para os lados e fecham curtindo quando toca música. Dá para desligar em Configurações › Aparência."),
+    ];
+
     /// <summary>As páginas da versão, ou vazio se ela não tem novidades a mostrar.</summary>
     public static IReadOnlyList<WhatsNewPage> For(string version) => version switch
     {
+        "1.9.0" => Notes190,
         "1.8.1" => Notes181,
         "1.7.0" => Notes170,
         "1.6.0" => Notes160,

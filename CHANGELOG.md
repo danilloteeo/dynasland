@@ -1,5 +1,31 @@
 # Notas da versão
 
+## 1.9.0 — não publicada
+
+### Novidades
+- Visual Vidro: a ilha passa a ser translúcida (70% de opacidade por padrão, ajustável de 50% a 100% em
+  Aparência), com borda clara, brilho no topo e sombra que não escurece o vidro. Encaixada no topo, a aresta de
+  cima fica sem borda.
+- Cor de destaque escolhida pelo usuário: azul-gelo (padrão), menta, limão, âmbar, rosa ou lavanda, ou a cor do
+  Windows. Ela aparece nas barras, nos botões principais, nas barrinhas da música e nos interruptores.
+- Configurações refeitas com uma folha de estilos própria: fundo escuro com degradê (o acrílico do Windows 11 está
+  pronto, mas desligado até ser testado), placas de vidro, prévia ao vivo da pílula e o controle de opacidade.
+- Mascote novo: dois olhos na pílula fechada, que piscam, olham para os lados e fecham curtindo a música
+  (Aparência › "Olhos na ilha", ligado por padrão).
+- Janela de Novidades no mesmo vidro, com uma mini pílula de olhos no lugar do mascote antigo.
+- Animações suaves: a ilha abre e fecha sem efeito de mola, o conteúdo aparece em fade e as páginas trocam
+  deslizando para o lado.
+- No aviso de notificação, o botão "Abrir" passou a ser a ação principal, na cor de destaque.
+
+### Removido
+- Temas coloridos da ilha, o fundo que seguia a capa da música, o tema claro das janelas e a opção "Intensidade
+  da mola". Configurações antigas desses itens são ignoradas sem erro.
+- CSS e mascote herdados do Volum.
+
+### Migração
+- Quem estava com o destaque branco (o padrão antigo) passa para o azul-gelo; cores escolhidas são mantidas.
+- A opacidade começa em 70% para todos (antes a cápsula era sempre opaca, sem opção).
+
 ## 1.8.1 — 2026-11-18
 
 ### Novidades
