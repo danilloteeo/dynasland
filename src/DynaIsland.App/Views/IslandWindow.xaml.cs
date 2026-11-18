@@ -27,14 +27,14 @@ public partial class IslandWindow : Window
         nameof(CornerSize),
         typeof(double),
         typeof(IslandWindow),
-        new PropertyMetadata(IslandLayout.Compact.CornerRadius));
+        new PropertyMetadata(IslandLayout.Compact.CornerRadius, (d, _) => ((IslandWindow)d).UpdateShadowClip()));
 
     /// <summary>Formato da ilha: encaixada deixa os cantos de cima da cápsula retos (IslandCornerRadiusConverter).</summary>
     public static readonly DependencyProperty ShapeProperty = DependencyProperty.Register(
         nameof(Shape),
         typeof(IslandShape),
         typeof(IslandWindow),
-        new PropertyMetadata(IslandShape.Float));
+        new PropertyMetadata(IslandShape.Float, (d, _) => ((IslandWindow)d).UpdateShadowClip()));
 
     private const double ExpandMilliseconds = 460;
     private const double CollapseMilliseconds = 340;
@@ -106,6 +106,7 @@ public partial class IslandWindow : Window
         _actions = actions;
 
         InitializeComponent();
+        IslandHost.SizeChanged += (_, _) => UpdateShadowClip();
         // O fundo animável vale só nesta janela (sobrepõe o recurso congelado da aplicação).
         Resources["IslandBackgroundBrush"] = theme.IslandBrush;
         DataContext = viewModel;
@@ -259,6 +260,8 @@ public partial class IslandWindow : Window
     private void ApplyPositionAndShape(IslandSettings settings)
     {
         Shape = settings.Shape;
+        // Encaixada: sem a aresta de cima (colada na borda do monitor, uma linha clara ali ficaria estranha).
+        GlassBorder.BorderThickness = settings.Shape == IslandShape.Notch ? new Thickness(1, 0, 1, 1) : new Thickness(1);
         UpdateEars(settings.Shape, settings.Edge);
         var edge = IslandPlacementCalculator.EdgeMargin;
         (IslandHost.HorizontalAlignment, IslandHost.Margin, IslandHost.RenderTransformOrigin) = settings.Position switch
@@ -607,6 +610,17 @@ public partial class IslandWindow : Window
 
     /// <summary>Altura da linha das bolinhas de página embaixo da ilha aberta.</summary>
     private const double DotsRowHeight = 22;
+
+    /// <summary>Recorta a sombra no formato atual da cápsula; roda a cada quadro da animação de tamanho.</summary>
+    private void UpdateShadowClip()
+    {
+        if (ShadowHost is null)
+        {
+            return;
+        }
+
+        ShadowHost.Clip = IslandShapeGeometry.ShadowClip(IslandHost.ActualWidth, IslandHost.ActualHeight, CornerSize, Shape == IslandShape.Notch);
+    }
 
     private void ApplyDimensions(IslandDimensions requested, bool animate)
     {
