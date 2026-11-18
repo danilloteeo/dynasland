@@ -12,7 +12,9 @@
   pronto, mas desligado até ser testado), placas de vidro, prévia ao vivo da pílula e o controle de opacidade.
 - Mascote novo: dois olhos na pílula fechada, que piscam, olham para os lados e fecham curtindo a música
   (Aparência › "Olhos na ilha", ligado por padrão).
-- Janela de Novidades no mesmo vidro, com uma mini pílula de olhos no lugar do mascote antigo.
+- Janela de Novidades com o visual escuro do Vidro (botão em pílula arredondada, pontos que viram barra e troca
+  suave de página) e uma mini pílula com olhos no lugar do mascote antigo.
+- Painel de música: capa com sombra e play/pausa num disco de vidro.
 - Animações suaves: a ilha abre e fecha sem efeito de mola, o conteúdo aparece em fade e as páginas trocam
   deslizando para o lado.
 - No aviso de notificação, o botão "Abrir" passou a ser a ação principal, na cor de destaque.
@@ -21,6 +23,7 @@
 - Temas coloridos da ilha, o fundo que seguia a capa da música, o tema claro das janelas e a opção "Intensidade
   da mola". Configurações antigas desses itens são ignoradas sem erro.
 - CSS e mascote herdados do Volum.
+- O cálculo da cor da capa, que alimentava o fundo colorido antigo da ilha.
 
 ### Migração
 - Quem estava com o destaque branco (o padrão antigo) passa para o azul-gelo; cores escolhidas são mantidas.
