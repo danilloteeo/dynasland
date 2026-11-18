@@ -120,7 +120,7 @@
         </Grid>
     </DataTemplate>
 
-    <!-- Botões do painel de água, como no Volum: pílula azul de 22px e botão de contorno. -->
+    <!-- Botões do painel de água: pílula azul de 22px e botão de contorno. -->
     <Style x:Key="WaterPillButton" TargetType="Button">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Cursor" Value="Hand" />

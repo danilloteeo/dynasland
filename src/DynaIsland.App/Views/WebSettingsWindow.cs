@@ -10,7 +10,7 @@ using Microsoft.Web.WebView2.Wpf;
 namespace DynaIsland.App.Views;
 
 /// <summary>
-/// Janela de configurações: uma página web (Web/settings.html, com o visual do Volum) dentro do WebView2.
+/// Janela de configurações: uma página web (Web/settings.html, com o visual de vidro escuro do Vidro) dentro do WebView2.
 /// A página conversa com o <see cref="SettingsViewModel"/> pela <see cref="SettingsBridge"/>.
 /// </summary>
 public sealed class WebSettingsWindow : Window

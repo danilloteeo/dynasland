@@ -10,7 +10,15 @@ namespace DynaIsland.App.Views;
 /// <summary>Novidades da versão, mostradas uma vez depois de atualizar.</summary>
 public partial class WhatsNewWindow : Window
 {
-    private static readonly IEasingFunction Ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+    private static readonly IEasingFunction Ease = CreateEase();
+
+    private static IEasingFunction CreateEase()
+    {
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        ease.Freeze();
+        return ease;
+    }
+
     private static readonly Duration SwapDuration = TimeSpan.FromMilliseconds(240);
 
     private readonly IReadOnlyList<WhatsNewPage> _pages;

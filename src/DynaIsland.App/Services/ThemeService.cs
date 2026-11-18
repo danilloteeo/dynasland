@@ -105,7 +105,7 @@ public sealed class ThemeService(IIslandSettingsService settings) : IDisposable
     /// <summary>Trocar a cor de destaque no Windows chega aqui; só importa quando o DynaIsland a acompanha.</summary>
     private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        if (settings.Current.AccentFollowsWindows)
+        if (settings.Current.AccentFollowsWindows && e.Category is UserPreferenceCategory.General or UserPreferenceCategory.Color)
         {
             _application?.Dispatcher.BeginInvoke(() => Apply(settings.Current));
         }

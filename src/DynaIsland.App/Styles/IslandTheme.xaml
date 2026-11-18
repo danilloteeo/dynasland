@@ -29,7 +29,6 @@
     <SolidColorBrush x:Key="IslandPressedBrush" Color="#3DFFFFFF" />
     <SolidColorBrush x:Key="IslandTrackBrush" Color="#2EFFFFFF" />
     <SolidColorBrush x:Key="IslandFillBrush" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="IslandOnFillTextBrush" Color="#FF111111" />
     <SolidColorBrush x:Key="IslandAccentBrush" Color="#FF9CC2FF" />
     <!-- Texto sobre o destaque (botão principal). -->
     <SolidColorBrush x:Key="IslandOnAccentTextBrush" Color="#FF0D1220" />
@@ -46,12 +45,6 @@
 
     <!-- Raio da cápsula + formato (encaixada = cantos de cima retos). -->
     <converters:IslandCornerRadiusConverter x:Key="IslandCornerRadius" />
-
-    <!-- Movimento: entrada com desaceleração suave, saída curta. -->
-    <Duration x:Key="EnterDuration">0:0:0.3</Duration>
-    <Duration x:Key="ExitDuration">0:0:0.12</Duration>
-    <ExponentialEase x:Key="SpringEase" Exponent="6" EasingMode="EaseOut" />
-    <BackEase x:Key="BounceEase" Amplitude="0.45" EasingMode="EaseOut" />
 
     <!--
         Resposta ao toque dos botões da ilha: encolhe a 0,9 ao pressionar e volta com um leve rebote ao soltar.
@@ -141,7 +134,7 @@
         </Setter>
     </Style>
 
-    <!-- Botão de texto (Abrir, Dispensar...): retângulo arredondado translúcido, como no Volum. -->
+    <!-- Botão de texto (Abrir, Dispensar...): pílula translúcida. -->
     <Style x:Key="IslandTextButtonStyle" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
         <Setter Property="Width" Value="NaN" />
         <Setter Property="Height" Value="30" />
