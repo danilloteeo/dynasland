@@ -146,7 +146,7 @@
                         </MultiBinding>
                     </Border.CornerRadius>
                     <Border.RenderTransform>
-                        <TranslateTransform Y="10" />
+                        <TranslateTransform x:Name="ShadowShift" Y="10" />
                     </Border.RenderTransform>
                     <Border.Effect>
                         <BlurEffect Radius="28" RenderingBias="Performance" />

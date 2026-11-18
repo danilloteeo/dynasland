@@ -293,10 +293,8 @@ public partial class IslandWindow : Window
         Stage.RenderTransformOrigin = new Point(0.5, bottom ? 1 : 0);
         IslandHost.RenderTransformOrigin = new Point(IslandHost.RenderTransformOrigin.X, bottom ? 1 : 0);
 
-        if (ShadowBorder.Effect is DropShadowEffect shadow)
-        {
-            shadow.Direction = bottom ? 90 : 270;
-        }
+        // A sombra cai para o lado de dentro da tela: para baixo na borda de cima, para cima na de baixo.
+        ShadowShift.Y = bottom ? -10 : 10;
     }
 
     /// <summary>Sinal do deslocamento de entrada/saída: a ilha vem do lado da borda onde está ancorada.</summary>
