@@ -18,7 +18,14 @@ public partial class IslandEyes : UserControl
     public static readonly DependencyProperty IsAnimatedProperty = DependencyProperty.Register(
         nameof(IsAnimated), typeof(bool), typeof(IslandEyes), new PropertyMetadata(true, (d, _) => ((IslandEyes)d).Refresh()));
 
-    private static readonly IEasingFunction Ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+    private static readonly IEasingFunction Ease = CreateEase();
+
+    private static IEasingFunction CreateEase()
+    {
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        ease.Freeze();
+        return ease;
+    }
 
     private readonly DispatcherTimer _blink;
     private readonly DispatcherTimer _glance;

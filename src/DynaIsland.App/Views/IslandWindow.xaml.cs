@@ -252,8 +252,13 @@ public partial class IslandWindow : Window
     private void ApplyEyes(IslandSettings settings)
     {
         Eyes.Visibility = settings.ShowIslandEyes ? Visibility.Visible : Visibility.Collapsed;
-        Eyes.IsAnimated = settings.AnimationsEnabled;
+        UpdateEyesAnimation();
     }
+
+    private bool _pillShown;
+
+    /// <summary>Os olhos só se mexem com as animações ligadas e a pílula fechada à vista (ela some só por opacidade).</summary>
+    private void UpdateEyesAnimation() => Eyes.IsAnimated = _pillShown && _settings.Current.AnimationsEnabled;
 
     /// <summary>
     /// A janela tem largura fixa; a cápsula se alinha ao lado da posição escolhida (a <see cref="IslandPlacementCalculator.EdgeMargin"/>
@@ -663,6 +668,8 @@ public partial class IslandWindow : Window
         var pill = _viewModel.IsClosedPill;
         CompactLayer.Visibility = pill ? Visibility.Collapsed : Visibility.Visible;
         var show = state == IslandState.Compact && pill;
+        _pillShown = show;
+        UpdateEyesAnimation();
         if (!animate)
         {
             SetImmediate(ClosedPill, OpacityProperty, show ? 1 : 0);
