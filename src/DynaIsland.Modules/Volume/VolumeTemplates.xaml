@@ -1,0 +1,133 @@
+<ResourceDictionary
+                    xmlns:common="clr-namespace:DynaIsland.Modules.Common" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <common:GlyphContentConverter x:Key="GlyphContent" />
+
+    <DataTemplate x:Key="DynaIsland.Modules.Volume.VolumeContent:Expanded">
+        <Grid Margin="18,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="28" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="44" />
+            </Grid.ColumnDefinitions>
+            <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" Style="{DynamicResource IslandProgressBarStyle}" Height="6" Maximum="100"
+                         Value="{Binding Level, Mode=OneWay}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding Percent}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <BooleanToVisibilityConverter x:Key="VolumeBoolToVisibility" />
+
+    <DataTemplate x:Key="DynaIsland.Modules.Volume.VolumeContent:Interactive">
+        <Grid Margin="16,12,16,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Volume por aplicativo (misturador do Windows): só quem está fazendo som. -->
+            <StackPanel Grid.Row="4" Margin="0,10,0,0" Visibility="{Binding HasApps, Converter={StaticResource VolumeBoolToVisibility}}">
+                <StackPanel Orientation="Horizontal" Margin="6,0,0,2">
+                    <TextBlock Text="APLICATIVOS" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5" FontWeight="SemiBold"
+                               Foreground="{DynamicResource IslandTertiaryTextBrush}" VerticalAlignment="Center" />
+                    <!-- Selo de contagem, como o do Volum: pílula de 99px. -->
+                    <Border CornerRadius="99" Padding="6,1" Margin="8,0,0,0" Background="{DynamicResource IslandSurfaceBrush}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Apps.Count}" FontFamily="{DynamicResource IslandTextFont}" FontSize="10.5"
+                                   Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                    </Border>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Apps}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Height="32">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="96" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="40" />
+                                </Grid.ColumnDefinitions>
+                                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" Command="{Binding ToggleMuteCommand}" ToolTip="Silenciar este aplicativo">
+                                    <common:WaveIcon IsMuted="{Binding IsMuted}" Level="{Binding Level}" />
+                                </Button>
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Margin="6,0,0,0"
+                                           Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Name}" />
+                                <Slider Grid.Column="2" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                        AutomationProperties.Name="{Binding Name}" Value="{Binding Level, Mode=TwoWay, Delay=40}" />
+                                <TextBlock Grid.Column="3" Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                           Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Ícone (mudo), rótulo e porcentagem na mesma linha; o slider vem logo abaixo, como no Volum. -->
+            <Grid Height="28">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Width="28" Height="28" FontSize="14" Command="{Binding ToggleMuteCommand}" ToolTip="Mudo"
+                        Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" />
+                <TextBlock Grid.Column="1" Text="Volume geral" ToolTip="{Binding DeviceName}" Margin="8,0" VerticalAlignment="Center"
+                           FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2" Text="{Binding Percent, StringFormat={}{0}%}" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"
+                           FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" />
+            </Grid>
+            <Slider Grid.Row="1" Style="{DynamicResource IslandSliderStyle}" Height="20" Margin="0,2,0,0" VerticalAlignment="Center" AutomationProperties.Name="Volume"
+                    Value="{Binding Level, Mode=TwoWay}" />
+
+            <!-- Microfone padrão -->
+            <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasMicrophone, Converter={StaticResource VolumeBoolToVisibility}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="44" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{DynamicResource IslandIconButtonStyle}" Content="{Binding MicrophoneGlyph, Converter={StaticResource GlyphContent}}" Command="{Binding ToggleMicrophoneMuteCommand}"
+                        ToolTip="Ligar/desligar o microfone" />
+                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                        AutomationProperties.Name="Volume do microfone" Value="{Binding MicrophoneLevel, Mode=TwoWay}" ToolTip="{Binding MicrophoneName}" />
+                <TextBlock Grid.Column="2" Text="{Binding MicrophonePercent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                           Foreground="{DynamicResource IslandSecondaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- Saídas: clicar torna padrão -->
+            <ScrollViewer Grid.Row="3" Margin="4,10,0,0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                          Visibility="{Binding HasDeviceChoice, Converter={StaticResource VolumeBoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Outputs}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button x:Name="Chip" Style="{DynamicResource IslandTextButtonStyle}" Command="{Binding Select}" Margin="0,0,6,0"
+                                    Padding="10,3" FontSize="11.5" MaxWidth="170" ToolTip="{Binding Name}">
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                                    <Setter TargetName="Chip" Property="Foreground" Value="{DynamicResource IslandAccentBrush}" />
+                                    <Setter TargetName="Chip" Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>

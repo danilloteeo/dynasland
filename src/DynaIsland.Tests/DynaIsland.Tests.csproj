@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(DynaIslandWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(DynaIslandMinWindows)</SupportedOSPlatformVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>DynaIsland.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DynaIsland.Core\DynaIsland.Core.csproj" />
+    <ProjectReference Include="..\DynaIsland.Infrastructure\DynaIsland.Infrastructure.csproj" />
+    <ProjectReference Include="..\DynaIsland.Modules\DynaIsland.Modules.csproj" />
+    <ProjectReference Include="..\DynaIsland.App\DynaIsland.App.csproj" />
+  </ItemGroup>
+
+</Project>

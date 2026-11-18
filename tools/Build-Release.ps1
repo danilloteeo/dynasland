@@ -1,11 +1,11 @@
 ﻿<#
 .SYNOPSIS
-    Gera os pacotes de uma versão do Dynasland em publish\:
-      - DynaslandSetup-<versão>.exe   instalador (Inno Setup, por usuário, sem administrador)
-      - Dynasland-<versão>-portable.zip  executável único, sem instalação
+    Gera os pacotes de uma versão do DynaIsland em publish\:
+      - DynaIslandSetup-<versão>.exe   instalador (Inno Setup, por usuário, sem administrador)
+      - DynaIsland-<versão>-portable.zip  executável único, sem instalação
 .DESCRIPTION
     A versão vem de <Version> em Directory.Build.props. Requer o .NET 10 SDK e o Inno Setup 6
-    (winget install JRSoftware.InnoSetup). Feche o Dynasland antes (os arquivos ficam travados).
+    (winget install JRSoftware.InnoSetup). Feche o DynaIsland antes (os arquivos ficam travados).
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\Build-Release.ps1
 #>
@@ -17,12 +17,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $publish = Join-Path $root 'publish'
-$project = Join-Path $root 'src\Dynasland.App\Dynasland.App.csproj'
+$project = Join-Path $root 'src\DynaIsland.App\DynaIsland.App.csproj'
 
 [xml]$props = Get-Content (Join-Path $root 'Directory.Build.props') -Encoding UTF8
 $version = $props.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 if (-not $version) { throw 'Version não encontrada em Directory.Build.props.' }
-Write-Host "Dynasland $version" -ForegroundColor Cyan
+Write-Host "DynaIsland $version" -ForegroundColor Cyan
 
 function Invoke-Step([string]$name, [scriptblock]$action) {
     Write-Host "==> $name" -ForegroundColor Cyan
@@ -31,11 +31,11 @@ function Invoke-Step([string]$name, [scriptblock]$action) {
 }
 
 if (-not $SkipTests) {
-    Invoke-Step 'Testes' { dotnet test (Join-Path $root 'Dynasland.sln') -c Release -nologo -v q }
+    Invoke-Step 'Testes' { dotnet test (Join-Path $root 'DynaIsland.sln') -c Release -nologo -v q }
 }
 
 # Instalador: pasta self-contained com ReadyToRun (inicia mais rápido, sem extração para %TEMP%).
-$appDir = Join-Path $publish 'Dynasland'
+$appDir = Join-Path $publish 'DynaIsland'
 if (Test-Path $appDir) { Remove-Item $appDir -Recurse -Force }
 Invoke-Step 'Publicação para o instalador' {
     dotnet publish $project -c Release -r win-x64 --self-contained -nologo -v q `
@@ -50,11 +50,11 @@ $iscc = @(
 if (-not $iscc) { throw 'Inno Setup 6 não encontrado (winget install JRSoftware.InnoSetup).' }
 
 Invoke-Step 'Instalador' {
-    & $iscc /Q "/DAppVersion=$version" "/DSourceDir=$appDir" "/DOutputDir=$publish" (Join-Path $root 'installer\Dynasland.iss')
+    & $iscc /Q "/DAppVersion=$version" "/DSourceDir=$appDir" "/DOutputDir=$publish" (Join-Path $root 'installer\DynaIsland.iss')
 }
 
 if (-not $SkipPortable) {
-    $portableDir = Join-Path $publish 'Dynasland-portable'
+    $portableDir = Join-Path $publish 'DynaIsland-portable'
     if (Test-Path $portableDir) { Remove-Item $portableDir -Recurse -Force }
     Invoke-Step 'Publicação portátil' {
         dotnet publish $project -c Release -r win-x64 --self-contained -nologo -v q `
@@ -62,7 +62,7 @@ if (-not $SkipPortable) {
             -p:EnableCompressionInSingleFile=true -p:DebugType=none -o $portableDir
     }
 
-    $zip = Join-Path $publish "Dynasland-$version-portable.zip"
+    $zip = Join-Path $publish "DynaIsland-$version-portable.zip"
     if (Test-Path $zip) { Remove-Item $zip -Force }
     Compress-Archive -Path (Join-Path $portableDir '*') -DestinationPath $zip
 }

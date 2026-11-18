@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-    Gera src/Dynasland.App/Assets/dynasland.ico (16 a 256 px, PNG embutido, com alfa).
+    Gera src/DynaIsland.App/Assets/dynaisland.ico (16 a 256 px, PNG embutido, com alfa).
     Desenho: cápsula preta com contorno claro e um ponto de atividade verde.
 #>
 param(
-    [string]$OutputPath = (Join-Path $PSScriptRoot '..\src\Dynasland.App\Assets\dynasland.ico')
+    [string]$OutputPath = (Join-Path $PSScriptRoot '..\src\DynaIsland.App\Assets\dynaisland.ico')
 )
 
 Add-Type -AssemblyName System.Drawing

@@ -1,0 +1,311 @@
+using System.Windows;
+using System.Windows.Threading;
+using DynaIsland.App.Services;
+using DynaIsland.App.ViewModels;
+using DynaIsland.App.ViewModels.Hub;
+using DynaIsland.App.Views;
+using DynaIsland.Core.Interfaces;
+using DynaIsland.Core.Modules;
+using DynaIsland.Core.Shortcuts;
+using DynaIsland.Infrastructure;
+using DynaIsland.Infrastructure.Database;
+using DynaIsland.Infrastructure.Logging;
+using DynaIsland.Infrastructure.Services;
+using DynaIsland.Infrastructure.Windows;
+using DynaIsland.Modules;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using DynaIsland.Modules.Common;
+using DynaIsland.Infrastructure.Updates;
+using DynaIsland.Core.Services;
+
+namespace DynaIsland.App;
+
+public partial class App : Application
+{
+    private const string ApplicationId = "DynaIsland";
+
+    private SingleInstanceManager? _singleInstance;
+    private IHost? _host;
+    private ILogger<App>? _logger;
+    private string _databasePath = DatabaseOptions.DefaultPath;
+
+    protected override async void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+
+        _singleInstance = new SingleInstanceManager(ApplicationId);
+        if (!_singleInstance.TryAcquire())
+        {
+            // Já existe uma instância: pede que ela mostre a ilha e encerra esta.
+            _singleInstance.SignalFirstInstance(e.Args);
+            Shutdown();
+            return;
+        }
+
+        RegisterGlobalExceptionHandlers();
+
+        // Antes de qualquer banco ou log: traz os dados de %LocalAppData%\Dynasland (nome até a 1.7.1).
+        // Se a cópia falhar, segue com a pasta antiga (intacta) e tenta de novo na próxima execução.
+        _databasePath = LegacyDataMigration.Run(DatabaseOptions.DefaultDirectory, DatabaseOptions.LegacyDirectory) == LegacyMigrationResult.Failed
+            ? DatabaseOptions.LegacyPath
+            : DatabaseOptions.DefaultPath;
+
+        try
+        {
+            _host = BuildHost();
+            _logger = _host.Services.GetRequiredService<ILogger<App>>();
+            _host.Services.GetRequiredService<IStartupRegistration>().MigrateLegacyEntry();
+
+            var settings = _host.Services.GetRequiredService<IIslandSettingsService>();
+            string? corruptedDatabaseBackup = null;
+            await Task.Run(async () =>
+            {
+                corruptedDatabaseBackup = await _host.Services.GetRequiredService<DatabaseRecovery>().MigrateOrRecoverAsync();
+                await settings.LoadAsync();
+                await _host.Services.GetRequiredService<IModuleOptions>().LoadAsync();
+                await _host.Services.GetRequiredService<IGlobalShortcutRegistry>().LoadAsync();
+
+                var storage = _host.Services.GetRequiredService<IStorageMaintenance>();
+                await storage.ApplyRetentionAsync();
+                await storage.WriteAutomaticBackupAsync();
+
+                // "Iniciar minimizado": abre com a ilha oculta (o usuário mostra pela bandeja).
+                if (settings.Current.StartHidden && settings.Current.IsVisible)
+                {
+                    await settings.UpdateAsync(s => s with { IsVisible = false });
+                }
+            });
+            MergeModuleTemplates(_host.Services);
+            _host.Services.GetRequiredService<ThemeService>().Initialize(this);
+
+            // A ilha (e o controlador que escuta o barramento) existe antes dos módulos iniciarem,
+            // para que nenhuma atividade publicada na partida seja perdida.
+            _host.Services.GetRequiredService<SessionStateService>().Start();
+            var island = _host.Services.GetRequiredService<IslandWindow>();
+            island.Start();
+
+            await _host.StartAsync();
+
+            // Último atalho da tela inicial da ilha, depois dos registrados pelos módulos.
+            var settingsWindow = _host.Services.GetRequiredService<SettingsWindowService>();
+            _host.Services.GetRequiredService<IShortcutRegistry>().Register(
+                new IslandShortcut("app.settings", "app", Glyphs.Settings, "Configurações", settingsWindow.Show));
+
+            _host.Services.GetRequiredService<IslandActions>().RegisterShortcuts();
+            _host.Services.GetRequiredService<HotkeyService>().Start();
+
+            var tray = _host.Services.GetRequiredService<TrayIconService>();
+            tray.ExitRequested += (_, _) => Shutdown();
+            tray.Initialize();
+
+            ShowWhatsNewIfNeeded(settings, e.Args);
+
+            HandleArguments(e.Args, isActivation: false);
+            _singleInstance.ActivationRequested += (_, args) => Dispatcher.BeginInvoke(() => HandleArguments(args, isActivation: true));
+
+            // Atualização pelo aplicativo: com o instalador iniciado, sai para ele trocar os arquivos.
+            _host.Services.GetRequiredService<UpdateFlow>().ExitRequested += (_, _) => Dispatcher.BeginInvoke(() => Shutdown());
+            _ = _host.Services.GetRequiredService<UpdateNotifier>().CheckAfterStartupAsync();
+
+            if (corruptedDatabaseBackup is not null)
+            {
+                _ = Dispatcher.BeginInvoke(() => MessageBox.Show(
+                    "O banco de dados de configurações estava danificado e foi recriado com os valores padrão.\n\n"
+                        + $"Uma cópia do arquivo antigo foi guardada em:\n{corruptedDatabaseBackup}",
+                    "DynaIsland",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning));
+            }
+
+            _logger.LogInformation("DynaIsland iniciado.");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogCritical(ex, "Falha ao iniciar o DynaIsland.");
+            MessageBox.Show(
+                $"Não foi possível iniciar o DynaIsland.\n\n{ex.Message}",
+                "DynaIsland",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown(1);
+        }
+    }
+
+    /// <summary>
+    /// Depois de atualizar, mostra as novidades da versão uma vez e registra que foram vistas.
+    /// <c>--novidades</c> mostra de novo (sem depender do registro e sem gravar), para conferir a janela.
+    /// </summary>
+    private void ShowWhatsNewIfNeeded(IIslandSettingsService settings, IReadOnlyList<string> args)
+    {
+        var current = GitHubUpdateChecker.CurrentVersion.ToString(3);
+        var forced = args.Any(a => a.Equals("--novidades", StringComparison.OrdinalIgnoreCase));
+        if (!forced && !WhatsNew.ShouldShow(settings.Current.LastSeenVersion, current))
+        {
+            return;
+        }
+
+        var pages = WhatsNew.For(current);
+        if (pages.Count == 0)
+        {
+            return;
+        }
+
+        var window = new WhatsNewWindow(pages, _host!.Services.GetRequiredService<ThemeService>());
+        if (!forced)
+        {
+            window.Closed += (_, _) => _ = settings.UpdateAsync(s => s with { LastSeenVersion = current });
+        }
+
+        window.Show();
+    }
+
+    /// <summary>
+    /// Argumentos de linha de comando, na partida ou repassados por uma segunda execução:
+    /// <c>--configuracoes</c>; sem argumentos, uma segunda execução apenas mostra a ilha.
+    /// </summary>
+    private void HandleArguments(IReadOnlyList<string> args, bool isActivation)
+    {
+        if (_host is null)
+        {
+            return;
+        }
+
+        var handled = false;
+        // --configuracoes abre a janela; --configuracoes=atalhos (nome da seção em inglês ou português) abre a página.
+        if (args.FirstOrDefault(a => a.StartsWith("--configuracoes", StringComparison.OrdinalIgnoreCase)) is { } settingsArg)
+        {
+            var name = settingsArg.Contains('=') ? settingsArg[(settingsArg.IndexOf('=') + 1)..] : null;
+            _host.Services.GetRequiredService<SettingsWindowService>().Show(ParseSection(name));
+            handled = true;
+        }
+
+#if DEBUG
+        if (args.FirstOrDefault(a => a.StartsWith("--demo=", StringComparison.OrdinalIgnoreCase)) is { } demoArg)
+        {
+            DemoMode.Run(_host.Services, demoArg["--demo=".Length..]);
+            handled = true;
+        }
+#endif
+
+        if (isActivation && !handled)
+        {
+            _ = _host.Services.GetRequiredService<IIslandSettingsService>().UpdateAsync(s => s with { IsVisible = true });
+        }
+    }
+
+    private static SettingsSection? ParseSection(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        if (Enum.TryParse<SettingsSection>(name, ignoreCase: true, out var section))
+        {
+            return section;
+        }
+
+        return name.ToLowerInvariant() switch
+        {
+            "geral" => SettingsSection.General,
+            "aparencia" or "aparência" => SettingsSection.Appearance,
+            "animacoes" or "animações" => SettingsSection.Animations,
+            "comportamento" => SettingsSection.Behavior,
+            "monitores" => SettingsSection.Monitors,
+            "modulos" or "módulos" => SettingsSection.Modules,
+            "notificacoes" or "notificações" => SettingsSection.Notifications,
+            "privacidade" => SettingsSection.Privacy,
+            "atalhos" => SettingsSection.Shortcuts,
+            "armazenamento" => SettingsSection.Storage,
+            "sobre" => SettingsSection.About,
+            _ => null,
+        };
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        if (_host is not null)
+        {
+            _host.Services.GetService<TrayIconService>()?.Dispose();
+            _host.StopAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+            _host.Dispose();
+        }
+
+        _singleInstance?.Dispose();
+        base.OnExit(e);
+    }
+
+    private void MergeModuleTemplates(IServiceProvider services)
+    {
+        foreach (var templates in services.GetServices<ModuleTemplates>())
+        {
+            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = templates.Source });
+        }
+    }
+
+    private IHost BuildHost()
+    {
+        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+        {
+            ApplicationName = ApplicationId,
+            ContentRootPath = AppContext.BaseDirectory,
+        });
+
+        builder.Logging.ClearProviders();
+        builder.Logging.AddDebug();
+        builder.Logging.AddProvider(new FileLoggerProvider(FileLoggerProvider.DefaultPath));
+
+        builder.Services.AddDynaIslandInfrastructure(new DatabaseOptions(_databasePath));
+        builder.Services.AddDynaIslandModules();
+        builder.Services.AddSingleton<IUiDispatcher>(new WpfUiDispatcher(Dispatcher));
+        builder.Services.AddHostedService<ModuleHostedService>();
+
+        builder.Services.AddSingleton<IslandController>();
+        builder.Services.AddSingleton<IslandPlacementService>();
+        builder.Services.AddSingleton<IslandViewModel>();
+        builder.Services.AddSingleton<IslandWindow>();
+        builder.Services.AddSingleton<TrayIconService>();
+        builder.Services.AddSingleton<IAlertSound, AlertSoundPlayer>();
+        builder.Services.AddSingleton<SettingsWindowService>();
+        builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.BehaviorSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.PrivacySettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.ShortcutsSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.StorageSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.WeatherSettingsViewModel>();
+        builder.Services.AddTransient<ViewModels.Settings.SpotifySettingsViewModel>();
+        builder.Services.AddSingleton<ThemeService>();
+        builder.Services.AddSingleton<FullscreenDetector>();
+        builder.Services.AddSingleton<UpdateFlow>();
+        builder.Services.AddSingleton<UpdateNotifier>();
+        builder.Services.AddSingleton<SessionStateService>();
+        builder.Services.AddSingleton<HotkeyService>();
+        builder.Services.AddSingleton<IRegionSelector>(_ => new RegionSelector(Dispatcher));
+        builder.Services.AddSingleton<IHubService>(sp => new HubWindowService(sp, Dispatcher));
+        builder.Services.AddSingleton<IslandActions>();
+        builder.Services.AddSingleton<ISessionStateService>(sp => sp.GetRequiredService<SessionStateService>());
+
+        return builder.Build();
+    }
+
+    private void RegisterGlobalExceptionHandlers()
+    {
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            _logger?.LogCritical(args.ExceptionObject as Exception, "Exceção não tratada.");
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            _logger?.LogError(args.Exception, "Exceção não observada em tarefa.");
+            args.SetObserved();
+        };
+    }
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        // Mantém o aplicativo vivo: um erro em um módulo não deve derrubar a ilha.
+        _logger?.LogError(e.Exception, "Exceção não tratada na thread de interface.");
+        e.Handled = true;
+    }
+}

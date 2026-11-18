@@ -1,0 +1,18 @@
+using DynaIsland.Core.Models;
+
+namespace DynaIsland.Core.Interfaces;
+
+public interface IIslandSettingsService
+{
+    IslandSettings Current { get; }
+
+    /// <summary>Disparado após uma alteração ser persistida. Pode ocorrer fora da thread de UI.</summary>
+    event EventHandler<IslandSettings>? Changed;
+
+    Task LoadAsync(CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(Func<IslandSettings, IslandSettings> update, CancellationToken cancellationToken = default);
+
+    /// <summary>Volta tudo ao padrão (apaga todas as configurações gravadas).</summary>
+    Task ResetAsync(CancellationToken cancellationToken = default);
+}

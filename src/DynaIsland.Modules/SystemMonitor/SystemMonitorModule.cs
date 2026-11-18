@@ -1,0 +1,221 @@
+using DynaIsland.Core.Activities;
+using DynaIsland.Core.Events;
+using DynaIsland.Core.Interfaces;
+using DynaIsland.Core.Models;
+using DynaIsland.Core.Modules;
+using DynaIsland.Modules.Common;
+using Microsoft.Extensions.Logging;
+
+namespace DynaIsland.Modules.SystemMonitor;
+
+/// <summary>
+/// Painel com CPU, memória, GPU, temperaturas e disco, aberto pelo atalho da tela inicial.
+/// A leitura completa (1 s) só acontece enquanto o painel está visível; em segundo plano há apenas
+/// uma verificação barata de memória e disco a cada 30 s para os avisos.
+/// </summary>
+public sealed class SystemMonitorModule(
+    ISystemMetricsService metrics,
+    IEventBus bus,
+    IUiDispatcher ui,
+    TimeProvider time,
+    IShortcutRegistry shortcuts,
+    IModuleOptions options,
+    ILogger<SystemMonitorModule> logger,
+    IIslandSettingsService? settings = null,
+    IGlanceRegistry? glances = null) : IIslandModule
+{
+    public const string ModuleId = "system";
+    public const string PanelActivityId = "system.panel";
+
+    /// <summary>Velocidade de rede para a ilha em repouso (só publicada com essa opção escolhida).</summary>
+    public const string NetworkGlanceId = "system.network";
+
+    private static readonly TimeSpan NetworkInterval = TimeSpan.FromSeconds(2);
+    private ITimer? _networkTimer;
+
+    private static readonly TimeSpan SampleInterval = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan AlertInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan AlertDisplayDuration = TimeSpan.FromSeconds(6);
+
+    private readonly Lock _lock = new();
+    private readonly SystemAlertPolicy _alertPolicy = new();
+    private SystemMonitorContent? _content;
+    private IDisposable? _shortcut;
+    private ITimer? _sampler;
+    private ITimer? _alertTimer;
+
+    public string Id => ModuleId;
+
+    public string DisplayName => "Monitor do sistema";
+
+    public string Description => "Uso de CPU, memória, GPU, temperaturas (quando disponíveis) e espaço em disco.";
+
+    public static readonly ModuleOption Alerts = ModuleOption.Toggle(
+        "alerts", "Avisos de memória e disco", "Avisa quando a memória fica quase cheia ou um disco fica com pouco espaço.");
+
+    public static readonly ModuleOption MemoryThreshold = ModuleOption.Slider(
+        "memoryThreshold", "Avisar com memória acima de", "Uso de memória que dispara o aviso (por pelo menos 1 minuto).", SystemAlertPolicy.MemoryThresholdPercent, 75, 98, 1, "%");
+
+    public static readonly ModuleOption DiskThreshold = ModuleOption.Slider(
+        "diskThreshold", "Avisar com disco abaixo de", "Espaço livre em uma unidade que dispara o aviso.", SystemAlertPolicy.DiskFreeThresholdPercent, 3, 25, 1, "% livres");
+
+    public IReadOnlyList<ModuleOption> Options => [Alerts, MemoryThreshold, DiskThreshold];
+
+    public static string AlertActivityId(SystemAlert alert) => $"system.alert.{alert.Key}";
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        lock (_lock)
+        {
+            _content = new SystemMonitorContent(OnPresentationChanged);
+            _alertTimer = time.CreateTimer(_ => CheckAlerts(), null, TimeSpan.FromSeconds(10), AlertInterval);
+        }
+
+        _shortcut = shortcuts.Register(new IslandShortcut("system.panel", ModuleId, Glyphs.Diagnostic, "Sistema", OpenPanel));
+        if (settings is not null)
+        {
+            settings.Changed += OnSettingsChanged;
+            UpdateNetworkGlance(settings.Current);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void OnSettingsChanged(object? sender, IslandSettings current) => UpdateNetworkGlance(current);
+
+    /// <summary>Mede a rede a cada 2 s somente enquanto a ilha em repouso está configurada para mostrá-la.</summary>
+    private void UpdateNetworkGlance(IslandSettings current)
+    {
+        var wanted = current.IdleDisplay == IdleDisplay.Network;
+        lock (_lock)
+        {
+            if (wanted && _networkTimer is null && _content is not null)
+            {
+                _networkTimer = time.CreateTimer(_ => PublishNetwork(), null, TimeSpan.Zero, NetworkInterval);
+            }
+            else if (!wanted && _networkTimer is not null)
+            {
+                _networkTimer.Dispose();
+                _networkTimer = null;
+                glances?.Remove(NetworkGlanceId);
+            }
+        }
+    }
+
+    private void PublishNetwork()
+    {
+        try
+        {
+            if (metrics.GetNetworkRate() is { } rate)
+            {
+                var text = $"↓ {TextFormat.Rate(rate.DownloadBytesPerSecond)}  ↑ {TextFormat.Rate(rate.UploadBytesPerSecond)}";
+                glances?.Set(new IslandGlance(NetworkGlanceId, string.Empty, text, Order: 9, IdleOnly: true));
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Falha ao ler a velocidade de rede.");
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        _shortcut?.Dispose();
+        _shortcut = null;
+        if (settings is not null)
+        {
+            settings.Changed -= OnSettingsChanged;
+        }
+
+        glances?.Remove(NetworkGlanceId);
+        lock (_lock)
+        {
+            _networkTimer?.Dispose();
+            _networkTimer = null;
+            _sampler?.Dispose();
+            _alertTimer?.Dispose();
+            _sampler = null;
+            _alertTimer = null;
+            _content = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public void OpenPanel()
+    {
+        if (_content is { } content)
+        {
+            bus.PostActivity(new IslandActivity(PanelActivityId, ModuleId, ActivityKind.Transient, content) { OpenInteractive = true });
+        }
+    }
+
+    private void OnPresentationChanged(IslandState? state)
+    {
+        lock (_lock)
+        {
+            var visible = state is IslandState.Interactive or IslandState.Expanded;
+            if (visible && _sampler is null && _content is not null)
+            {
+                _sampler = time.CreateTimer(_ => Sample(), null, TimeSpan.Zero, SampleInterval);
+            }
+            else if (!visible && _sampler is not null)
+            {
+                _sampler.Dispose();
+                _sampler = null;
+            }
+        }
+    }
+
+    private void Sample()
+    {
+        var content = _content;
+        if (content is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var sample = metrics.Sample();
+            ui.Post(() => content.Apply(sample));
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Falha ao ler métricas do sistema.");
+        }
+    }
+
+    private void CheckAlerts()
+    {
+        if (!options.IsOn(ModuleId, Alerts))
+        {
+            return;
+        }
+
+        IReadOnlyList<SystemAlert> alerts;
+        try
+        {
+            var memory = metrics.GetMemory();
+            var disks = metrics.GetDisks();
+            lock (_lock)
+            {
+                alerts = _alertPolicy.Evaluate(memory, disks, time.GetUtcNow(), options.Get(ModuleId, MemoryThreshold), options.Get(ModuleId, DiskThreshold));
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Falha na verificação de memória e disco.");
+            return;
+        }
+
+        foreach (var alert in alerts)
+        {
+            bus.PostActivity(new IslandActivity(AlertActivityId(alert), ModuleId, ActivityKind.Transient, new SystemAlertContent(alert))
+            {
+                Priority = alert.IsSevere ? ActivityPriority.High : ActivityPriority.Normal,
+                Duration = AlertDisplayDuration,
+            });
+        }
+    }
+}

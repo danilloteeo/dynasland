@@ -1,0 +1,1053 @@
+using System.ComponentModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
+using System.Windows.Threading;
+using DynaIsland.App.Controls;
+using DynaIsland.App.Services;
+using DynaIsland.App.ViewModels;
+using DynaIsland.Core.Activities;
+using DynaIsland.Core.Events;
+using DynaIsland.Core.Interfaces;
+using DynaIsland.Core.Layout;
+using DynaIsland.Core.Models;
+using DynaIsland.Core.Session;
+using DynaIsland.Infrastructure.Windows;
+
+namespace DynaIsland.App.Views;
+
+public partial class IslandWindow : Window
+{
+    public static readonly DependencyProperty CornerSizeProperty = DependencyProperty.Register(
+        nameof(CornerSize),
+        typeof(double),
+        typeof(IslandWindow),
+        new PropertyMetadata(IslandLayout.Compact.CornerRadius));
+
+    /// <summary>Formato da ilha: encaixada deixa os cantos de cima da cápsula retos (IslandCornerRadiusConverter).</summary>
+    public static readonly DependencyProperty ShapeProperty = DependencyProperty.Register(
+        nameof(Shape),
+        typeof(IslandShape),
+        typeof(IslandWindow),
+        new PropertyMetadata(IslandShape.Float));
+
+    private const double ExpandMilliseconds = 460;
+    private const double CollapseMilliseconds = 340;
+    private const double FadeOutMilliseconds = 120;
+    private const double SwapMilliseconds = 240;
+    private const double HoverMilliseconds = 160;
+    private const double HoverScale = 1.05;
+
+    private const double EnterMilliseconds = 300;
+
+    /// <summary>Quanto o cartão de aviso desliza ao entrar e sair, em DIPs.</summary>
+    private const double NoticeSlide = 14;
+    private const double LeaveMilliseconds = 120;
+    private const double EnterScale = 0.965;
+    private const double ContentEnterScale = 0.92;
+    private const double EnterRise = 10;
+    private const double LeaveScale = 0.98;
+    private const double LeaveRise = 4;
+    private const double SwapOffset = 6;
+    private const double GhostRise = -4;
+    private const double PrivacyDotFadeMs = 150;
+    private const double PulseMilliseconds = 600;
+    private const double PulseOpacity = 0.6;
+    private const double PulseScale = 1.04;
+
+    /// <summary>Republicar o mesmo aviso dentro deste intervalo (ex.: brilho ajustado várias vezes) não pulsa de novo.</summary>
+    private static readonly TimeSpan PulseRepeatWindow = TimeSpan.FromSeconds(2);
+
+    /// <summary>Altura do rodapé (abas e configurações), somada à do conteúdo no estado interativo.</summary>
+
+    // Overshoot na expansão (sensação de mola, ajustável em Animações) e desaceleração suave no recolhimento.
+    private const double BaseSpringAmplitude = 0.22;
+    private static readonly IEasingFunction NoSpringEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseInOut });
+    // Mola do Volum: cubic-bezier(.16, 1, .3, 1) na entrada; saída curta que acelera.
+    private static readonly IEasingFunction SpringOut = Frozen(new ExponentialEase { Exponent = 6, EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction LeaveEase = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseIn });
+    private static readonly IEasingFunction SoftEasing = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseOut });
+
+    private readonly IslandViewModel _viewModel;
+    private readonly IslandPlacementService _placement;
+    private readonly IIslandSettingsService _settings;
+    private readonly FullscreenDetector _fullscreen;
+    private readonly ISessionStateService _session;
+    private readonly IslandActions _actions;
+    private readonly OutsideClickWatcher _outsideClicks = new();
+    private DispatcherTimer? _pendingClick;
+    private bool _hiddenForGame;
+    private readonly IDisposable _gamingSubscription;
+    private readonly IDisposable _alertSubscription;
+    private Image? _ghost;
+    private string? _lastPulseId;
+    private long _lastPulseTicks;
+    private bool _repositionPending;
+    private bool _wantsVisible;
+    private IEasingFunction _expandEasing = NoSpringEasing;
+    private double _expandEasingIntensity = -1;
+    private IEasingFunction _collapseWidthEasing = CollapseEasing;
+    private double _collapseEasingIntensity = -1;
+
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus, ThemeService theme)
+    {
+        _viewModel = viewModel;
+        _placement = placement;
+        _settings = settings;
+        _fullscreen = fullscreen;
+        _session = session;
+        _actions = actions;
+
+        InitializeComponent();
+        // O fundo animável vale só nesta janela (sobrepõe o recurso congelado da aplicação).
+        Resources["IslandBackgroundBrush"] = theme.IslandBrush;
+        DataContext = viewModel;
+
+        ApplyPositionAndShape(settings.Current);
+        ApplyEdge(settings.Current.Edge);
+        ApplyLayers(viewModel.State, animate: false);
+        ApplyPrivacyDot(MicrophoneDot, viewModel.ShowMicrophoneDot, animate: false);
+        ApplyPrivacyDot(CameraDot, viewModel.ShowCameraDot, animate: false);
+        viewModel.PropertyChanging += OnViewModelPropertyChanging;
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        settings.Changed += OnSettingsChanged;
+        fullscreen.Changed += OnFullscreenChanged;
+        fullscreen.ForegroundChanged += OnForegroundChanged;
+        session.Changed += OnSessionChanged;
+        _gamingSubscription = bus.Subscribe<GamingModeChangedEvent>(e => Dispatcher.BeginInvoke(() =>
+        {
+            _hiddenForGame = e.Active && e.HideIsland;
+            UpdateVisibility();
+        }));
+        _alertSubscription = bus.Subscribe<ActivityPostedEvent>(e =>
+        {
+            if (IslandAlertPulse.ShouldPulse(e.Activity))
+            {
+                Dispatcher.BeginInvoke(() => PlayAlertPulse(e.Activity.Id));
+            }
+        });
+        ApplyPressFeedback();
+    }
+
+    public double CornerSize
+    {
+        get => (double)GetValue(CornerSizeProperty);
+        set => SetValue(CornerSizeProperty, value);
+    }
+
+    public IslandShape Shape
+    {
+        get => (IslandShape)GetValue(ShapeProperty);
+        set => SetValue(ShapeProperty, value);
+    }
+
+    /// <summary>Animações ligadas no DynaIsland e na opção do Windows "Animar controles e elementos dentro das janelas".</summary>
+    private bool AnimationsAllowed => _settings.Current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
+
+    private bool ShouldAnimate => IsVisible && AnimationsAllowed;
+
+    private double Speed => Math.Clamp(_settings.Current.AnimationSpeed, 0.25, 3);
+
+    /// <summary>Cria o HWND, aplica estilos Win32, posiciona e exibe (se configurado) sem roubar o foco.</summary>
+    public void Start()
+    {
+        new WindowInteropHelper(this).EnsureHandle();
+        _fullscreen.Start();
+        UpdateVisibility();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        var hwnd = new WindowInteropHelper(this).Handle;
+        WindowInterop.ApplyOverlayStyles(hwnd);
+        HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+        _placement.Place(this);
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        RequestReposition();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _viewModel.PropertyChanging -= OnViewModelPropertyChanging;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        _settings.Changed -= OnSettingsChanged;
+        _fullscreen.Changed -= OnFullscreenChanged;
+        _fullscreen.ForegroundChanged -= OnForegroundChanged;
+        _session.Changed -= OnSessionChanged;
+        _outsideClicks.Dispose();
+        _gamingSubscription.Dispose();
+        _alertSubscription.Dispose();
+        RemoveGhost();
+        base.OnClosed(e);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        switch (msg)
+        {
+            case WindowMessages.WM_MOUSEACTIVATE:
+                // Entrega o clique sem ativar a janela: o aplicativo em uso mantém o foco.
+                handled = true;
+                return new IntPtr(WindowMessages.MA_NOACTIVATE);
+
+            case WindowMessages.WM_DISPLAYCHANGE:
+                RequestReposition();
+                break;
+
+            case WindowMessages.WM_SETTINGCHANGE when wParam.ToInt64() == WindowMessages.SPI_SETWORKAREA:
+                RequestReposition();
+                break;
+
+            case WindowMessages.WM_SETTINGCHANGE:
+                // Ex.: "Animar controles e elementos dentro das janelas"; lido depois que o WPF atualiza o cache.
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, ApplyPressFeedback);
+                break;
+        }
+
+        return IntPtr.Zero;
+    }
+
+    /// <summary>Agrupa várias notificações de mudança de tela em um único reposicionamento.</summary>
+    private void RequestReposition()
+    {
+        if (_repositionPending)
+        {
+            return;
+        }
+
+        _repositionPending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            _repositionPending = false;
+            _placement.Place(this);
+        });
+    }
+
+    private void OnSettingsChanged(object? sender, IslandSettings settings)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnSettingsChanged(sender, settings));
+            return;
+        }
+
+        UpdateVisibility();
+        ApplyPositionAndShape(settings);
+        ApplyEdge(settings.Edge);
+        ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
+        ApplyPressFeedback();
+        RequestReposition();
+    }
+
+    /// <summary>
+    /// A janela tem largura fixa; a cápsula se alinha ao lado da posição escolhida (a <see cref="IslandPlacementCalculator.EdgeMargin"/>
+    /// da borda), então a borda ancorada fica parada enquanto a largura anima. O zoom do hover parte do mesmo canto.
+    /// </summary>
+    private void ApplyPositionAndShape(IslandSettings settings)
+    {
+        Shape = settings.Shape;
+        UpdateEars(settings.Shape, settings.Edge);
+        var edge = IslandPlacementCalculator.EdgeMargin;
+        (IslandHost.HorizontalAlignment, IslandHost.Margin, IslandHost.RenderTransformOrigin) = settings.Position switch
+        {
+            IslandPosition.Left => (HorizontalAlignment.Left, new Thickness(edge, 0, 0, 0), new Point(0, 0)),
+            IslandPosition.Right => (HorizontalAlignment.Right, new Thickness(0, 0, edge, 0), new Point(1, 0)),
+            _ => (HorizontalAlignment.Center, new Thickness(0), new Point(0.5, 0)),
+        };
+    }
+
+    /// <summary>
+    /// Borda de baixo: a cápsula cola embaixo da janela e cresce para cima, com a dock na base.
+    /// Borda de cima: cola em cima e cresce para baixo, com a dock no topo.
+    /// </summary>
+    /// <summary>As orelhas só existem com a ilha encaixada na borda de cima.</summary>
+    private void UpdateEars(IslandShape shape, IslandEdge edge)
+    {
+        var visible = shape == IslandShape.Notch && edge == IslandEdge.Top ? Visibility.Visible : Visibility.Collapsed;
+        EarLeft.Visibility = visible;
+        EarRight.Visibility = visible;
+    }
+
+    private void ApplyEdge(IslandEdge edge)
+    {
+        UpdateEars(Shape, edge);
+        var bottom = edge == IslandEdge.Bottom;
+        _viewModel.Edge = edge;
+        IslandHost.VerticalAlignment = bottom ? VerticalAlignment.Bottom : VerticalAlignment.Top;
+        Stage.RenderTransformOrigin = new Point(0.5, bottom ? 1 : 0);
+        IslandHost.RenderTransformOrigin = new Point(IslandHost.RenderTransformOrigin.X, bottom ? 1 : 0);
+
+        if (ShadowBorder.Effect is DropShadowEffect shadow)
+        {
+            shadow.Direction = bottom ? 90 : 270;
+        }
+    }
+
+    /// <summary>Sinal do deslocamento de entrada/saída: a ilha vem do lado da borda onde está ancorada.</summary>
+    private double Rise(double distance) => _viewModel.Edge == IslandEdge.Bottom ? distance : -distance;
+
+    /// <summary>A resposta ao toque dos botões (estilos da ilha) segue a mesma regra das demais animações.</summary>
+    private void ApplyPressFeedback() => IslandPressFeedback.SetIsEnabled(this, AnimationsAllowed);
+
+    private void OnFullscreenChanged(object? sender, string? monitor) => UpdateVisibility();
+
+    private void OnForegroundChanged(object? sender, EventArgs e)
+    {
+        if (IsVisible)
+        {
+            WindowInterop.RaiseTopmost(new WindowInteropHelper(this).Handle);
+        }
+    }
+
+    /// <summary>
+    /// Bloqueio/suspensão ocultam a ilha; ao voltar, os monitores podem ter mudado (dock, resolução),
+    /// então a posição é recalculada.
+    /// </summary>
+    private void OnSessionChanged(object? sender, SessionChangedEvent e)
+    {
+        UpdateVisibility();
+        if (!e.IsInterrupted)
+        {
+            RequestReposition();
+        }
+    }
+
+    /// <summary>
+    /// Visível se o usuário quer a ilha, a sessão está ativa (não bloqueada nem suspensa) e nenhum
+    /// aplicativo em tela cheia ocupa o monitor dela (quando "Ocultar em tela cheia" está ligado).
+    /// Essas ocultações temporárias não são gravadas.
+    /// </summary>
+    private void UpdateVisibility()
+    {
+        var settings = _settings.Current;
+        var coveredByFullscreen = settings.HideInFullscreen
+            && _fullscreen.FullscreenMonitor is { } fullscreenMonitor
+            && string.Equals(fullscreenMonitor, _placement.CurrentMonitor, StringComparison.OrdinalIgnoreCase);
+        ApplyVisibility(settings.IsVisible && !coveredByFullscreen && !_session.IsInterrupted && !_hiddenForGame);
+    }
+
+    private void ApplyVisibility(bool visible)
+    {
+        _wantsVisible = visible;
+        if (visible && !IsVisible)
+        {
+            SetStage(0, EnterScale, Rise(EnterRise));
+            Show();
+            _placement.Place(this);
+            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
+        }
+        else if (visible)
+        {
+            // Voltou a aparecer no meio da saída: retoma a entrada de onde estava.
+            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
+        }
+        else if (IsVisible && ShouldAnimate)
+        {
+            PlayStage(0, LeaveScale, Rise(LeaveRise), Scaled(LeaveMilliseconds), LeaveEase, () =>
+            {
+                if (!_wantsVisible && IsVisible)
+                {
+                    Hide();
+                }
+            });
+        }
+        else if (IsVisible)
+        {
+            Hide();
+        }
+
+        _viewModel.SetWindowVisible(visible);
+    }
+
+    private void SetStage(double opacity, double scale, double rise)
+    {
+        SetImmediate(Stage, OpacityProperty, opacity);
+        SetImmediate(StageScale, ScaleTransform.ScaleXProperty, scale);
+        SetImmediate(StageScale, ScaleTransform.ScaleYProperty, scale);
+        SetImmediate(StageShift, TranslateTransform.YProperty, rise);
+    }
+
+    /// <summary>Anima o palco até o estado dado; sem animação, vai direto. <paramref name="done"/> roda ao fim.</summary>
+    private void PlayStage(double opacity, double scale, double rise, TimeSpan duration, IEasingFunction easing, Action? done = null)
+    {
+        if (!ShouldAnimate)
+        {
+            SetStage(opacity, scale, rise);
+            done?.Invoke();
+            return;
+        }
+
+        Animate(Stage, OpacityProperty, opacity, duration, easing);
+        Animate(StageScale, ScaleTransform.ScaleXProperty, scale, duration, easing);
+        Animate(StageScale, ScaleTransform.ScaleYProperty, scale, duration, easing);
+        var shift = new DoubleAnimation(rise, new Duration(duration)) { EasingFunction = easing };
+        if (done is not null)
+        {
+            shift.Completed += (_, _) => done();
+        }
+        else
+        {
+            shift.Freeze();
+        }
+
+        StageShift.BeginAnimation(TranslateTransform.YProperty, shift);
+    }
+
+    /// <summary>Antes de trocar o conteúdo no mesmo estado, guarda uma imagem do atual para o cross-fade.</summary>
+    private void OnViewModelPropertyChanging(object? sender, PropertyChangingEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(IslandViewModel.ExpandedContent) when _viewModel.State == IslandState.Expanded:
+                CaptureGhost(ExpandedLayer);
+                break;
+
+            case nameof(IslandViewModel.InteractiveContent) when _viewModel.State == IslandState.Interactive:
+                CaptureGhost(InteractiveLayer);
+                break;
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(IslandViewModel.State):
+                ApplyLayers(_viewModel.State, ShouldAnimate);
+                UpdateOutsideClickWatcher();
+                break;
+
+            case nameof(IslandViewModel.IsClosedPill):
+                ApplyPill(_viewModel.State, ShouldAnimate, Scaled(ExpandMilliseconds));
+                break;
+
+            case nameof(IslandViewModel.Dimensions):
+            case nameof(IslandViewModel.HasPages):
+                ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
+                break;
+
+            case nameof(IslandViewModel.ShowMicrophoneDot):
+                ApplyPrivacyDot(MicrophoneDot, _viewModel.ShowMicrophoneDot, ShouldAnimate);
+                break;
+
+            case nameof(IslandViewModel.ShowCameraDot):
+                ApplyPrivacyDot(CameraDot, _viewModel.ShowCameraDot, ShouldAnimate);
+                break;
+
+            // Troca de conteúdo sem mudar de estado (outra notificação, alternância entre atividades).
+            case nameof(IslandViewModel.ExpandedContent) when _viewModel.State == IslandState.Expanded:
+                PlaySwap(ExpandedLayer);
+                break;
+
+            case nameof(IslandViewModel.InteractiveContent) when _viewModel.State == IslandState.Interactive:
+                PlaySwap(InteractiveLayer);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Mostra ou oculta um indicador de privacidade com um fade curto. Oculto, sai do layout ao fim do fade,
+    /// para o outro ponto ficar centralizado sozinho.
+    /// </summary>
+    private void ApplyPrivacyDot(UIElement dot, bool show, bool animate)
+    {
+        var target = show ? 1.0 : 0.0;
+        if (show)
+        {
+            dot.Visibility = Visibility.Visible;
+        }
+
+        if (!animate)
+        {
+            dot.BeginAnimation(OpacityProperty, null);
+            dot.Opacity = target;
+            dot.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            return;
+        }
+
+        var fade = new DoubleAnimation(target, TimeSpan.FromMilliseconds(PrivacyDotFadeMs / Speed));
+        if (!show)
+        {
+            fade.Completed += (_, _) =>
+            {
+                if (dot.Opacity == 0)
+                {
+                    dot.Visibility = Visibility.Collapsed;
+                }
+            };
+        }
+
+        dot.BeginAnimation(OpacityProperty, fade);
+    }
+
+    private void OnIslandMouseEnter(object sender, MouseEventArgs e)
+    {
+        _viewModel.OnPointerEntered();
+        if (_viewModel.State == IslandState.Compact)
+        {
+            AnimateHover(true);
+        }
+
+        FadePager(true);
+    }
+
+    private void OnIslandMouseLeave(object sender, MouseEventArgs e)
+    {
+        _viewModel.OnPointerExited();
+        AnimateHover(false);
+        FadePager(false);
+    }
+
+    /// <summary>Mostra as setas ‹ › e as bolinhas com o mouse sobre a ilha aberta e as esconde quando ele sai.</summary>
+    private void FadePager(bool visible)
+    {
+        if (_viewModel.State != IslandState.Interactive)
+        {
+            return;
+        }
+
+        var target = visible ? 1.0 : 0.0;
+        foreach (UIElement navigation in new UIElement[] { Pager, Dots })
+        {
+            if (!ShouldAnimate)
+            {
+                SetImmediate(navigation, OpacityProperty, target);
+            }
+            else
+            {
+                Animate(navigation, OpacityProperty, target, TimeSpan.FromMilliseconds(140), SoftEasing);
+            }
+        }
+    }
+
+    private void OnIslandMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        // Cliques em botões e sliders dos módulos não abrem/fecham a ilha.
+        if (IsInsideInteractiveControl(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var doubleClick = _settings.Current.DoubleClickAction;
+        if (doubleClick == DoubleClickAction.None)
+        {
+            AnimateHover(false);
+            _viewModel.ToggleInteractiveCommand.Execute(null);
+            return;
+        }
+
+        // Com ação de duplo clique, o clique simples espera o tempo de duplo clique do Windows.
+        if (_pendingClick is { IsEnabled: true })
+        {
+            _pendingClick.Stop();
+            _actions.Run(doubleClick);
+            return;
+        }
+
+        _pendingClick ??= CreatePendingClickTimer();
+        _pendingClick.Start();
+    }
+
+    private DispatcherTimer CreatePendingClickTimer()
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.Input, Dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(System.Windows.Forms.SystemInformation.DoubleClickTime),
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            AnimateHover(false);
+            _viewModel.ToggleInteractiveCommand.Execute(null);
+        };
+        return timer;
+    }
+
+    /// <summary>O gancho de "clique fora" só existe com a ilha aberta e a opção ligada.</summary>
+    private void UpdateOutsideClickWatcher()
+    {
+        if (_viewModel.State == IslandState.Interactive && _settings.Current.CollapseOnClickOutside && IsVisible)
+        {
+            _outsideClicks.Start(IsOverIsland, _viewModel.CollapseInteractive, _viewModel.CollapseInteractive);
+        }
+        else
+        {
+            _outsideClicks.Stop();
+        }
+    }
+
+    private bool IsOverIsland(int screenX, int screenY)
+    {
+        if (!IslandHost.IsVisible)
+        {
+            return false;
+        }
+
+        var topLeft = IslandHost.PointToScreen(new Point(0, 0));
+        var bottomRight = IslandHost.PointToScreen(new Point(IslandHost.ActualWidth, IslandHost.ActualHeight));
+        return screenX >= topLeft.X && screenX <= bottomRight.X && screenY >= topLeft.Y && screenY <= bottomRight.Y;
+    }
+
+    /// <summary>Altura da linha de data e hora no alto da ilha aberta (20 px do Volum mais a folga de cima).</summary>
+    private const double StatusRowHeight = 30;
+
+    /// <summary>Altura da linha das bolinhas de página embaixo da ilha aberta.</summary>
+    private const double DotsRowHeight = 22;
+
+    private void ApplyDimensions(IslandDimensions requested, bool animate)
+    {
+        var target = IslandAppearance.Adjust(requested, _viewModel.State, _settings.Current);
+        var interactive = _viewModel.State == IslandState.Interactive;
+
+        // Aberta, o painel do módulo ganha a data e a hora em cima e as bolinhas embaixo (só com mais de uma página).
+        var statusHeight = interactive ? StatusRowHeight : 0;
+        var dotsHeight = interactive && _viewModel.HasPages ? DotsRowHeight : 0;
+        StatusRow.Height = new GridLength(statusHeight);
+        DotsRow.Height = new GridLength(dotsHeight);
+
+        var height = target.Height + statusHeight + dotsHeight;
+        // Nunca mais larga que a janela (menos a folga das laterais), senão as bordas são cortadas.
+        var width = Math.Min(Width - IslandPlacementCalculator.EdgeMargin * 2, target.Width);
+        var radius = Math.Min(target.CornerRadius, height / 2);
+        if (!animate)
+        {
+            SetImmediate(IslandHost, WidthProperty, width);
+            SetImmediate(IslandHost, HeightProperty, height);
+            SetImmediate(this, CornerSizeProperty, radius);
+            return;
+        }
+
+        var growing = height >= IslandHost.Height;
+        var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
+        var easing = growing ? ExpandEasing() : CollapseEasing;
+
+        // Na retração só a largura tem mola; a altura segue suave.
+        Animate(IslandHost, WidthProperty, width, duration, growing ? easing : CollapseWidthEasing());
+        Animate(IslandHost, HeightProperty, height, duration, easing);
+        Animate(this, CornerSizeProperty, radius, duration, easing);
+    }
+
+    /// <summary>
+    /// Pílula fechada (hora, clima, onda): aparece só no compacto quando o indicador é o relógio ou a música. O conteúdo
+    /// compacto dos módulos fica de fora nesse caso, para a hora nunca sumir.
+    /// </summary>
+    private void ApplyPill(IslandState state, bool animate, TimeSpan resizeDuration)
+    {
+        var pill = _viewModel.IsClosedPill;
+        CompactLayer.Visibility = pill ? Visibility.Collapsed : Visibility.Visible;
+        var show = state == IslandState.Compact && pill;
+        if (!animate)
+        {
+            SetImmediate(ClosedPill, OpacityProperty, show ? 1 : 0);
+        }
+        else if (show)
+        {
+            Animate(ClosedPill, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+        }
+        else
+        {
+            Animate(ClosedPill, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+        }
+    }
+
+    private DispatcherTimer? _statusTimer;
+
+    /// <summary>Mantém a data e a hora do alto da ilha em dia enquanto ela está aberta.</summary>
+    private void UpdateStatusClock(bool open)
+    {
+        if (!open)
+        {
+            _statusTimer?.Stop();
+            return;
+        }
+
+        _viewModel.UpdateStatusClock();
+        _statusTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, (_, _) => _viewModel.UpdateStatusClock(), Dispatcher);
+        _statusTimer.Start();
+    }
+
+    private void ApplyLayers(IslandState state, bool animate)
+    {
+        var active = LayerFor(state);
+        var resizeDuration = Scaled(state == IslandState.Compact ? CollapseMilliseconds : ExpandMilliseconds);
+
+        foreach (var layer in new[] { CompactLayer, ExpandedLayer, InteractiveLayer })
+        {
+            var isActive = layer == active;
+            layer.IsHitTestVisible = isActive;
+
+            if (!animate)
+            {
+                SetImmediate(layer, OpacityProperty, isActive ? 1 : 0);
+            }
+            else if (isActive)
+            {
+                // O conteúdo aparece depois que a cápsula já ganhou espaço, evitando corte do texto.
+                Animate(layer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+                if (layer != CompactLayer)
+                {
+                    ScaleLayerIn(layer, resizeDuration * 0.4);
+                }
+
+                if (layer == ExpandedLayer)
+                {
+                    // Aviso: desliza a partir da dock (do lado da borda), com mola.
+                    SlideLayer(layer, Rise(NoticeSlide), 0, Scaled(EnterMilliseconds), SpringOut, resizeDuration * 0.4);
+                }
+            }
+            else
+            {
+                Animate(layer, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+                if (layer == ExpandedLayer && layer.Opacity > 0.05)
+                {
+                    SlideLayer(layer, 0, Rise(NoticeSlide), Scaled(FadeOutMilliseconds), LeaveEase, TimeSpan.Zero);
+                }
+            }
+        }
+
+        ApplyPill(state, animate, resizeDuration);
+
+        // Data e hora, setas e bolinhas só existem na ilha aberta; aparecem junto com o painel.
+        var interactive = state == IslandState.Interactive;
+        Pager.IsHitTestVisible = interactive;
+        Dots.IsHitTestVisible = interactive;
+        foreach (UIElement chrome in new UIElement[] { StatusBar, Pager, Dots })
+        {
+            // As setas e as bolinhas só aparecem com o mouse sobre a ilha; a data e a hora ficam sempre à vista.
+            var target = !interactive ? 0 : (chrome == Pager || chrome == Dots) && !IslandHost.IsMouseOver ? 0 : 1;
+            if (!animate)
+            {
+                SetImmediate(chrome, OpacityProperty, target);
+            }
+            else if (interactive)
+            {
+                Animate(chrome, OpacityProperty, target, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
+            }
+            else
+            {
+                Animate(chrome, OpacityProperty, 0, Scaled(FadeOutMilliseconds), null);
+            }
+        }
+
+        UpdateStatusClock(interactive);
+
+        // As linhas de cima e de baixo mudam a altura total mesmo quando o painel mantém o mesmo tamanho.
+        ApplyDimensions(_viewModel.Dimensions, animate);
+
+        if (interactive && animate)
+        {
+            CascadeRows(InteractiveLayer, resizeDuration * 0.4);
+        }
+
+        if (state != IslandState.Compact)
+        {
+            AnimateHover(false);
+        }
+    }
+
+    /// <summary>
+    /// Entrada em cascata das linhas do painel interativo (como a lista do Volum): depois do layout, cada filho
+    /// direto do painel raiz do modelo surge em ordem de leitura, 30 ms depois do anterior.
+    /// </summary>
+    private void CascadeRows(ContentPresenter layer, TimeSpan extraDelay)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (FindRootPanel(layer) is not { } panel)
+            {
+                return;
+            }
+
+            var rows = panel.Children.OfType<FrameworkElement>()
+                .Select((element, order) => (element, order))
+                .OrderBy(r => panel is Grid ? Grid.GetRow(r.element) : 0)
+                .ThenBy(r => panel is Grid ? Grid.GetColumn(r.element) : 0)
+                .ThenBy(r => r.order)
+                .Select(r => r.element)
+                .ToList();
+            for (var i = 0; i < rows.Count; i++)
+            {
+                RowCascade.Play(rows[i], i, extraDelay);
+            }
+        }, DispatcherPriority.Loaded);
+    }
+
+    private static Panel? FindRootPanel(DependencyObject parent)
+    {
+        for (var depth = 0; depth < 6 && VisualTreeHelper.GetChildrenCount(parent) > 0; depth++)
+        {
+            parent = VisualTreeHelper.GetChild(parent, 0);
+            if (parent is Panel panel && panel.Children.Count > 1)
+            {
+                return panel;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Move a camada na vertical de <paramref name="from"/> até <paramref name="to"/> (DIPs).</summary>
+    private static void SlideLayer(ContentPresenter layer, double from, double to, TimeSpan duration, IEasingFunction easing, TimeSpan beginTime)
+    {
+        if (TranslateOf(layer) is not { } translate)
+        {
+            return;
+        }
+
+        translate.Y = from;
+        translate.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(from, to, new Duration(duration))
+        {
+            EasingFunction = easing,
+            BeginTime = beginTime,
+        }));
+    }
+
+    private void PlaySwap(ContentPresenter layer)
+    {
+        if (!ShouldAnimate)
+        {
+            RemoveGhost();
+            return;
+        }
+
+        var duration = Scaled(SwapMilliseconds);
+        if (layer == InteractiveLayer)
+        {
+            CascadeRows(layer, TimeSpan.Zero);
+        }
+
+        layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
+        TranslateOf(layer)?.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(SwapOffset, 0, duration) { EasingFunction = SoftEasing }));
+
+        FadeOutGhost(duration);
+    }
+
+    private static TranslateTransform? TranslateOf(ContentPresenter layer) => layer.RenderTransform switch
+    {
+        TranslateTransform translate => translate,
+        TransformGroup group => group.Children.OfType<TranslateTransform>().FirstOrDefault(),
+        _ => null,
+    };
+
+    private static ScaleTransform? ScaleOf(ContentPresenter layer) =>
+        (layer.RenderTransform as TransformGroup)?.Children.OfType<ScaleTransform>().FirstOrDefault();
+
+    /// <summary>O conteúdo do módulo cresce de 0,92 a 1 ao entrar, junto com a abertura da cápsula.</summary>
+    private void ScaleLayerIn(ContentPresenter layer, TimeSpan beginTime)
+    {
+        if (ScaleOf(layer) is not { } scale)
+        {
+            return;
+        }
+
+        scale.ScaleX = scale.ScaleY = ContentEnterScale;
+        var grow = Frozen(new DoubleAnimation(ContentEnterScale, 1, new Duration(Scaled(EnterMilliseconds)))
+        {
+            EasingFunction = SpringOut,
+            BeginTime = beginTime,
+        });
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+    }
+
+    /// <summary>
+    /// Fotografa a camada (ainda com o conteúdo antigo) e põe a imagem logo acima dela. Um fantasma anterior,
+    /// de uma troca ainda em andamento, é descartado antes.
+    /// </summary>
+    private void CaptureGhost(ContentPresenter layer)
+    {
+        RemoveGhost();
+        if (!ShouldAnimate || layer.Content is null || layer.Opacity <= 0.01)
+        {
+            return;
+        }
+
+        var width = layer.ActualWidth;
+        var height = layer.ActualHeight;
+        if (width < 1 || height < 1)
+        {
+            return;
+        }
+
+        // A imagem já sai com a opacidade atual da camada (troca no meio de outra), então o fantasma começa em 1.
+        _ghost = new Image
+        {
+            Source = IslandSnapshotImage.Capture(layer, width, height),
+            Width = width,
+            Height = height,
+            Stretch = Stretch.Fill,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false,
+            RenderTransform = new TranslateTransform(),
+        };
+        ContentGrid.Children.Insert(ContentGrid.Children.IndexOf(layer) + 1, _ghost);
+    }
+
+    /// <summary>O fantasma esmaece e sobe um pouco enquanto o conteúdo novo entra por baixo dele.</summary>
+    private void FadeOutGhost(TimeSpan duration)
+    {
+        if (_ghost is not { } ghost)
+        {
+            return;
+        }
+
+        // Sem congelar: o Completed é inscrito antes de a animação começar.
+        var fade = new DoubleAnimation(0, duration) { EasingFunction = SoftEasing };
+        fade.Completed += (_, _) =>
+        {
+            if (_ghost == ghost)
+            {
+                RemoveGhost();
+            }
+        };
+        ghost.BeginAnimation(OpacityProperty, fade);
+        ghost.RenderTransform.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(0, GhostRise, duration) { EasingFunction = SoftEasing }));
+    }
+
+    private void RemoveGhost()
+    {
+        if (_ghost is not { } ghost)
+        {
+            return;
+        }
+
+        _ghost = null;
+        ghost.BeginAnimation(OpacityProperty, null);
+        ghost.RenderTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ghost.Source = null;
+        ContentGrid.Children.Remove(ghost);
+    }
+
+    /// <summary>Um aviso importante chegou: o anel de acento pulsa uma vez ao redor da cápsula.</summary>
+    private void PlayAlertPulse(string activityId)
+    {
+        var now = Environment.TickCount64;
+        var repeated = activityId == _lastPulseId && now - _lastPulseTicks < PulseRepeatWindow.TotalMilliseconds;
+        _lastPulseId = activityId;
+        _lastPulseTicks = now;
+
+        if (repeated || !ShouldAnimate || !IslandHost.IsVisible)
+        {
+            return;
+        }
+
+        var duration = Scaled(PulseMilliseconds);
+        AlertRing.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(PulseOpacity, 0, duration) { EasingFunction = SoftEasing }));
+        var grow = Frozen(new DoubleAnimation(1, PulseScale, duration) { EasingFunction = SoftEasing });
+        AlertRingScale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+        AlertRingScale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+    }
+
+    private void AnimateHover(bool hovering)
+    {
+        var scale = hovering ? HoverScale : 1.0;
+
+        if (!ShouldAnimate)
+        {
+            SetImmediate(HoverScaleTransform, ScaleTransform.ScaleXProperty, scale);
+            SetImmediate(HoverScaleTransform, ScaleTransform.ScaleYProperty, scale);
+            return;
+        }
+
+        var duration = Scaled(HoverMilliseconds);
+        Animate(HoverScaleTransform, ScaleTransform.ScaleXProperty, scale, duration, SoftEasing);
+        Animate(HoverScaleTransform, ScaleTransform.ScaleYProperty, scale, duration, SoftEasing);
+    }
+
+    private bool IsInsideInteractiveControl(DependencyObject? element)
+    {
+        while (element is not null && element != IslandHost)
+        {
+            if (element is ButtonBase or RangeBase or Thumb)
+            {
+                return true;
+            }
+
+            element = element is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(element)
+                : LogicalTreeHelper.GetParent(element);
+        }
+
+        return false;
+    }
+
+    private ContentPresenter LayerFor(IslandState state) => state switch
+    {
+        IslandState.Expanded => ExpandedLayer,
+        IslandState.Interactive => InteractiveLayer,
+        _ => CompactLayer,
+    };
+
+    private TimeSpan Scaled(double milliseconds) => TimeSpan.FromMilliseconds(milliseconds / Speed);
+
+    private static void Animate(
+        IAnimatable target,
+        DependencyProperty property,
+        double to,
+        TimeSpan duration,
+        IEasingFunction? easing,
+        TimeSpan beginTime = default)
+    {
+        target.BeginAnimation(property, Frozen(new DoubleAnimation(to, new Duration(duration))
+        {
+            EasingFunction = easing,
+            BeginTime = beginTime,
+        }));
+    }
+
+    private static void SetImmediate(DependencyObject target, DependencyProperty property, double value)
+    {
+        ((IAnimatable)target).BeginAnimation(property, null);
+        target.SetValue(property, value);
+    }
+
+    /// <summary>Easing da expansão conforme a intensidade configurada (0 = sem efeito de mola).</summary>
+    private IEasingFunction ExpandEasing()
+    {
+        var intensity = _settings.Current.AnimationIntensity;
+        if (intensity != _expandEasingIntensity)
+        {
+            _expandEasingIntensity = intensity;
+            _expandEasing = intensity <= 0.01
+                ? NoSpringEasing
+                : Frozen(new BackEase { Amplitude = BaseSpringAmplitude * intensity, EasingMode = EasingMode.EaseOut });
+        }
+
+        return _expandEasing;
+    }
+
+    /// <summary>Mola da largura ao recolher: metade da amplitude da expansão (0 = sem efeito de mola).</summary>
+    private IEasingFunction CollapseWidthEasing()
+    {
+        var intensity = _settings.Current.AnimationIntensity;
+        if (intensity != _collapseEasingIntensity)
+        {
+            _collapseEasingIntensity = intensity;
+            _collapseWidthEasing = intensity <= 0.01
+                ? CollapseEasing
+                : Frozen(new BackEase { Amplitude = BaseSpringAmplitude * 0.5 * intensity, EasingMode = EasingMode.EaseOut });
+        }
+
+        return _collapseWidthEasing;
+    }
+
+    private static T Frozen<T>(T freezable) where T : Freezable
+    {
+        freezable.Freeze();
+        return freezable;
+    }
+}

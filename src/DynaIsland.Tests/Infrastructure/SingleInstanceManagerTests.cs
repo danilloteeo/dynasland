@@ -1,0 +1,84 @@
+using DynaIsland.Infrastructure.Services;
+
+namespace DynaIsland.Tests.Infrastructure;
+
+public class SingleInstanceManagerTests
+{
+    private static string UniqueId() => "DynaIslandTest." + Guid.NewGuid().ToString("N");
+
+    [Fact]
+    public void Second_instance_is_rejected_while_first_is_alive()
+    {
+        var id = UniqueId();
+        using var first = new SingleInstanceManager(id);
+        using var second = new SingleInstanceManager(id);
+
+        Assert.True(first.TryAcquire());
+        Assert.False(RunOnOtherThread(second.TryAcquire));
+    }
+
+    [Fact]
+    public void Instance_can_be_acquired_again_after_dispose()
+    {
+        var id = UniqueId();
+        using (var first = new SingleInstanceManager(id))
+        {
+            Assert.True(first.TryAcquire());
+        }
+
+        using var again = new SingleInstanceManager(id);
+        Assert.True(again.TryAcquire());
+    }
+
+    [Fact]
+    public void Signal_from_second_instance_reaches_first()
+    {
+        var id = UniqueId();
+        using var first = new SingleInstanceManager(id);
+        using var activated = new ManualResetEventSlim();
+        first.ActivationRequested += (_, args) =>
+        {
+            if (args.Count == 0)
+            {
+                activated.Set();
+            }
+        };
+        Assert.True(first.TryAcquire());
+
+        using var second = new SingleInstanceManager(id);
+        Assert.True(second.SignalFirstInstance());
+
+        Assert.True(activated.Wait(TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public void Arguments_from_second_instance_reach_first()
+    {
+        var id = UniqueId();
+        using var first = new SingleInstanceManager(id);
+        IReadOnlyList<string>? received = null;
+        using var activated = new ManualResetEventSlim();
+        first.ActivationRequested += (_, args) =>
+        {
+            received = args;
+            activated.Set();
+        };
+        Assert.True(first.TryAcquire());
+
+        using var second = new SingleInstanceManager(id);
+        Assert.True(second.SignalFirstInstance(["--central", "--configuracoes"]));
+
+        Assert.True(activated.Wait(TimeSpan.FromSeconds(5)));
+        Assert.Equal(["--central", "--configuracoes"], received);
+    }
+
+    // Mutex é reentrante na mesma thread; a segunda instância precisa de outra thread para simular outro processo.
+    private static bool RunOnOtherThread(Func<bool> action)
+    {
+        var result = false;
+        var thread = new Thread(() => result = action());
+        thread.Start();
+        thread.Join();
+        return result;
+    }
+}

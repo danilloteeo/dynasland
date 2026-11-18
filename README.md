@@ -1,4 +1,4 @@
-# Dynasland
+# DynaIsland
 
 Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NET 10 / WPF: uma cápsula
 no topo da tela que mostra o que está acontecendo — música, volume, notificações, downloads, timers,
@@ -11,13 +11,13 @@ gravações — e vira uma central de controles com um clique.
 
 Baixe em [Releases](https://github.com/danilloteeo/dynasland/releases):
 
-- **`DynaslandSetup-<versão>.exe`** (recomendado): instala só para o seu usuário, sem pedir administrador,
-  em `%LocalAppData%\Programs\Dynasland`. Cria atalho no Menu Iniciar (e, se marcado, na Área de Trabalho)
+- **`DynaIslandSetup-<versão>.exe`** (recomendado): instala só para o seu usuário, sem pedir administrador,
+  em `%LocalAppData%\Programs\DynaIsland`. Cria atalho no Menu Iniciar (e, se marcado, na Área de Trabalho)
   e oferece "Iniciar com o Windows". Instalar uma versão nova por cima mantém as configurações; o
-  Dynasland aberto é fechado automaticamente. Desinstale por Configurações › Aplicativos — a
-  desinstalação pergunta se deve apagar também as configurações e os históricos (`%LocalAppData%\Dynasland`).
-- **`Dynasland-<versão>-portable.zip`**: um único `Dynasland.exe`, sem instalação (os dados ficam no
-  mesmo `%LocalAppData%\Dynasland`).
+  DynaIsland aberto é fechado automaticamente. Desinstale por Configurações › Aplicativos — a
+  desinstalação pergunta se deve apagar também as configurações e os históricos (`%LocalAppData%\DynaIsland`).
+- **`DynaIsland-<versão>-portable.zip`**: um único `DynaIsland.exe`, sem instalação (os dados ficam no
+  mesmo `%LocalAppData%\DynaIsland`).
 
 O Windows SmartScreen pode avisar na primeira execução (os arquivos não são assinados digitalmente):
 clique em **Mais informações › Executar assim mesmo**.
@@ -67,14 +67,14 @@ Todos podem ser trocados ou desligados em Configurações › Atalhos (outras a�
 - A ilha nunca rouba o foco do programa em uso, deixa passar os cliques fora da cápsula e se esconde em
   tela cheia (opcional), com o PC bloqueado ou suspenso.
 - **Ícone na bandeja**: clique abre as configurações; o menu mostra/oculta a ilha, escolhe o monitor e sai.
-- Linha de comando (também funciona com o Dynasland já aberto):
-  `Dynasland.exe --central[=agenda|notificacoes|foco|capturas]` e `--configuracoes[=atalhos|privacidade|...]`.
+- Linha de comando (também funciona com o DynaIsland já aberto):
+  `DynaIsland.exe --central[=agenda|notificacoes|foco|capturas]` e `--configuracoes[=atalhos|privacidade|...]`.
 
 Mais detalhes no [guia de uso](docs/GUIA_DE_USO.md).
 
 ## Privacidade e dados
 
-Tudo fica neste computador, em `%LocalAppData%\Dynasland` (banco SQLite `dynasland.db`, cópia automática
+Tudo fica neste computador, em `%LocalAppData%\DynaIsland` (banco SQLite `dynaisland.db`, cópia automática
 das configurações e logs). Nada é enviado a servidores, exceto a consulta de versão ao GitHub (se ligada)
 e as coordenadas da cidade escolhida para a previsão do tempo. Os históricos têm limites configuráveis e
 podem ser apagados em Configurações › Privacidade e › Armazenamento, onde também é possível exportar e
@@ -88,12 +88,12 @@ importar as configurações.
 ## Compilar, testar e executar
 
 ```powershell
-dotnet build Dynasland.sln
-dotnet test Dynasland.sln
-dotnet run --project src/Dynasland.App
+dotnet build DynaIsland.sln
+dotnet test DynaIsland.sln
+dotnet run --project src/DynaIsland.App
 ```
 
-Feche o Dynasland antes de compilar (os DLLs ficam travados enquanto ele roda). Os testes de captura e
+Feche o DynaIsland antes de compilar (os DLLs ficam travados enquanto ele roda). Os testes de captura e
 gravação reais da tela só rodam com `DYNASLAND_CAPTURE_TESTS=1`.
 
 ## Gerar uma versão (instalador e portátil)
@@ -105,24 +105,24 @@ powershell -ExecutionPolicy Bypass -File tools\Build-Release.ps1
 ```
 
 O script lê a versão de `<Version>` em `Directory.Build.props`, roda os testes e gera em `publish\` o
-instalador (`installer\Dynasland.iss`, publicação self-contained com ReadyToRun) e o zip portátil
+instalador (`installer\DynaIsland.iss`, publicação self-contained com ReadyToRun) e o zip portátil
 (executável único). Para publicar, crie um Release `v<versão>` no GitHub com os dois arquivos: a
 verificação de atualizações compara a versão instalada com o Release mais recente do repositório
-configurado em `DynaslandUpdateRepository`.
+configurado em `DynaIslandUpdateRepository`.
 
 ## Arquitetura
 
 ```
 src/
-  Dynasland.Core/            Regras puras, sem Windows/WPF: atividades e IslandCoordinator (máquina de
+  DynaIsland.Core/            Regras puras, sem Windows/WPF: atividades e IslandCoordinator (máquina de
                              estados da ilha), eventos, contratos dos serviços, módulos, atalhos, layout
-  Dynasland.Infrastructure/  Windows e dados: SQLite (migrações, repositórios, recuperação), Core Audio,
+  DynaIsland.Infrastructure/  Windows e dados: SQLite (migrações, repositórios, recuperação), Core Audio,
                              DDC/CI, GSMTC, notificações, área de transferência, captura e gravação,
                              detecção de jogos e FPS, clima (Open-Meteo), métricas, instância única
-  Dynasland.Modules/         Um módulo por pasta (lógica + view models + DataTemplates da ilha)
-  Dynasland.App/             WPF + MVVM (CommunityToolkit.Mvvm) + Generic Host/DI: janela da ilha,
+  DynaIsland.Modules/         Um módulo por pasta (lógica + view models + DataTemplates da ilha)
+  DynaIsland.App/             WPF + MVVM (CommunityToolkit.Mvvm) + Generic Host/DI: janela da ilha,
                              Central, Configurações (uma página por categoria), bandeja, atalhos globais
-  Dynasland.Tests/           xUnit: regras do Core, integração com SQLite/Win32 e módulos com dublês
+  DynaIsland.Tests/           xUnit: regras do Core, integração com SQLite/Win32 e módulos com dublês
 installer/                   Script do instalador (Inno Setup)
 tools/                       Build-Release.ps1 e geração do ícone
 docs/                        Especificação, guia de uso, diagnóstico e relatórios
@@ -144,13 +144,13 @@ Usuário (clique, hover, roda, atalhos) ─────────────�
 
 ### Criando um módulo
 
-1. Implemente `IIslandModule` em `Dynasland.Modules/<Nome>/`. O módulo não conhece a janela: publica
+1. Implemente `IIslandModule` em `DynaIsland.Modules/<Nome>/`. O módulo não conhece a janela: publica
    atividades com `IEventBus.PostActivity(...)` e atualiza seus view models via `IUiDispatcher`.
 2. Crie o conteúdo implementando `IActivityContent` e um `ResourceDictionary` com DataTemplates de chave
    `"{NomeCompletoDoTipo}:{Compact|Expanded|Interactive}"`.
 3. Declare opções em `IIslandModule.Options` (aparecem sozinhas nas configurações), atalhos da tela inicial
    em `IShortcutRegistry`, atalhos globais em `IGlobalShortcutRegistry` e informações rápidas em `IGlanceRegistry`.
-4. Registre o módulo e o dicionário em `Dynasland.Modules/DependencyInjection.cs`.
+4. Registre o módulo e o dicionário em `DynaIsland.Modules/DependencyInjection.cs`.
 
 O `ModuleManager` persiste ativo/inativo, isola falhas (um módulo que falha aparece como erro na ilha e
 nas configurações) e remove as atividades de um módulo parado.

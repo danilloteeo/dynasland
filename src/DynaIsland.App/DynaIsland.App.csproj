@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(DynaIslandWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(DynaIslandMinWindows)</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <!-- Apenas para System.Windows.Forms.NotifyIcon (ícone da bandeja), já incluso no runtime do Windows Desktop. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>DynaIsland.App</RootNamespace>
+    <AssemblyName>DynaIsland</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\dynaisland.ico</ApplicationIcon>
+    <!-- WFO0003 sugere configurar DPI via API do WinForms; num app WPF o manifest (PerMonitorV2) é o mecanismo correto. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Evita ambiguidades (Application, MessageBox, Color...) entre WPF e WinForms. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\dynaisland.ico" />
+    <Resource Include="Assets\Fonts\*.ttf" />
+  </ItemGroup>
+
+  <!-- Páginas web das janelas (WebView2): copiadas para a pasta Web ao lado do executável. CSS derivado do Volum (MIT). -->
+  <ItemGroup>
+    <Content Include="Web\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DynaIsland.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DynaIsland.Core\DynaIsland.Core.csproj" />
+    <ProjectReference Include="..\DynaIsland.Infrastructure\DynaIsland.Infrastructure.csproj" />
+    <ProjectReference Include="..\DynaIsland.Modules\DynaIsland.Modules.csproj" />
+  </ItemGroup>
+
+</Project>

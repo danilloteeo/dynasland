@@ -1,0 +1,79 @@
+<ResourceDictionary
+                    xmlns:common="clr-namespace:DynaIsland.Modules.Common" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <common:GlyphContentConverter x:Key="GlyphContent" />
+
+    <DataTemplate x:Key="DynaIsland.Modules.Brightness.BrightnessContent:Expanded">
+        <Grid Margin="18,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="28" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="44" />
+            </Grid.ColumnDefinitions>
+            <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" Style="{DynamicResource IslandProgressBarStyle}" Height="6" Maximum="100"
+                         Value="{Binding Level, Mode=OneWay}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding Percent}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                       Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="DynaIsland.Modules.Brightness.BrightnessContent:Interactive">
+        <Grid Margin="22,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid>
+                <TextBlock Text="Brilho" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Foreground="{DynamicResource IslandSecondaryTextBrush}" />
+                <TextBlock Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" />
+            </Grid>
+            <Grid Grid.Row="1" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="16"
+                           Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="14,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="Brilho"
+                        Value="{Binding Level, Mode=TwoWay}" />
+            </Grid>
+        </Grid>
+    </DataTemplate>
+
+
+    <!-- Painel: um slider por tela. -->
+    <DataTemplate x:Key="DynaIsland.Modules.Brightness.BrightnessPanelContent:Interactive">
+        <StackPanel Margin="20,14">
+            <TextBlock Text="Brilho" FontFamily="{DynamicResource IslandTextFont}" FontSize="12" Foreground="{DynamicResource IslandSecondaryTextBrush}" Margin="0,0,0,6" />
+            <ItemsControl ItemsSource="{Binding Displays}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.ColumnSpan="3" Text="{Binding Name}" FontFamily="{DynamicResource IslandTextFont}" FontSize="11.5"
+                                       Foreground="{DynamicResource IslandTertiaryTextBrush}" Margin="30,0,0,0" TextTrimming="CharacterEllipsis" />
+                            <ContentControl Grid.Row="1" Content="{Binding Glyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="15"
+                                       Foreground="{DynamicResource IslandPrimaryTextBrush}" VerticalAlignment="Center" Width="22" />
+                            <Slider Grid.Row="1" Grid.Column="1" Style="{DynamicResource IslandSliderStyle}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    Value="{Binding Level, Mode=TwoWay}" AutomationProperties.Name="{Binding Name, StringFormat=Brilho de {0}}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Percent, StringFormat={}{0}%}" FontFamily="{DynamicResource IslandTextFont}" FontSize="12.5"
+                                       FontWeight="SemiBold" Foreground="{DynamicResource IslandPrimaryTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </DataTemplate>
+
+</ResourceDictionary>

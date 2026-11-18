@@ -72,7 +72,7 @@ function New-WizardImage([int]$scale, [string]$name) {
     $center.Alignment = [System.Drawing.StringAlignment]::Center
     $white = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 245, 245, 247))
     $muted = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 150, 150, 156))
-    $g.DrawString('Dynasland', $font, $white, (New-Object System.Drawing.RectangleF 0, ($h * 0.47), $w, ($h * 0.1)), $center)
+    $g.DrawString('DynaIsland', $font, $white, (New-Object System.Drawing.RectangleF 0, ($h * 0.47), $w, ($h * 0.1)), $center)
     $g.DrawString('Ilha dinâmica para Windows', $small, $muted, (New-Object System.Drawing.RectangleF 0, ($h * 0.545), $w, ($h * 0.1)), $center)
     $font.Dispose(); $small.Dispose(); $white.Dispose(); $muted.Dispose()
     Save-Png $bmp $g $name

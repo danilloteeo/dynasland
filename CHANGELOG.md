@@ -1,5 +1,16 @@
 # Notas da versão
 
+## 1.8.0 — não publicada
+
+### Mudanças
+- **O aplicativo passa a se chamar DynaIsland** (antes, Dynasland). Mudam o nome na janela, na bandeja, no menu
+  Iniciar, o executável (`DynaIsland.exe`) e a pasta de dados (`%LocalAppData%\DynaIsland`).
+- Quem atualiza não perde nada: na primeira execução o DynaIsland **copia** a pasta antiga `Dynasland`
+  (banco, histórico, atualizações), que continua intacta, e mantém "Iniciar com o Windows" ligado se estava.
+  Se a cópia falhar, o aplicativo segue usando a pasta antiga e tenta de novo na próxima vez.
+- O instalador continua com o nome `DynaslandSetup-*.exe` nesta versão, para que as versões 1.7.x consigam
+  se atualizar pelo botão da ilha. O repositório do GitHub e o identificador do instalador não mudam.
+
 ## 1.7.1 — 2026-11-18
 
 ### Novidades

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(DynaIslandWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>$(DynaIslandMinWindows)</SupportedOSPlatformVersion>
+    <!-- WPF apenas para os DataTemplates de cada módulo; a lógica dos módulos não depende de UI. -->
+    <UseWPF>true</UseWPF>
+    <RootNamespace>DynaIsland.Modules</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DynaIsland.Core\DynaIsland.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DynaIsland.Tests" />
+  </ItemGroup>
+
+</Project>
