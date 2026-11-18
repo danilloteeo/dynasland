@@ -20,9 +20,18 @@ public static class WhatsNew
         new("Cotações, placar e teclas", "Três módulos novos: dólar, euro e bitcoin em reais, o placar da NBA do dia e um aviso rápido ao ligar o Caps Lock ou o Num Lock."),
     ];
 
+    // A 1.8.0 saiu sem páginas; quem atualiza dela (ou da 1.7.x) vê estas.
+    private static readonly IReadOnlyList<WhatsNewPage> Notes181 =
+    [
+        new("Agora é DynaIsland", "O Dynasland mudou de nome. O programa, o ícone da bandeja e o Menu Iniciar passam a mostrar DynaIsland; o jeito de usar é o mesmo."),
+        new("Seus dados foram mantidos", "As configurações e os históricos foram copiados para a pasta nova (%LocalAppData%\\DynaIsland). A pasta antiga, Dynasland, ficou intacta: pode apagá-la quando quiser."),
+        new("Mais firme", "Os cliques fora da ilha e a tecla Esc agora são percebidos por um motor em C++ separado da interface, e a ilha volta para cima quando outra janela, como a barra de tarefas, passa na frente."),
+    ];
+
     /// <summary>As páginas da versão, ou vazio se ela não tem novidades a mostrar.</summary>
     public static IReadOnlyList<WhatsNewPage> For(string version) => version switch
     {
+        "1.8.1" => Notes181,
         "1.7.0" => Notes170,
         "1.6.0" => Notes160,
         _ => [],

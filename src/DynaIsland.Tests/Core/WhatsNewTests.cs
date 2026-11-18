@@ -29,6 +29,28 @@ public class WhatsNewTests
         Assert.All(pages, p => Assert.False(string.IsNullOrWhiteSpace(p.Title) || string.IsNullOrWhiteSpace(p.Text)));
     }
 
+    [Theory]
+    [InlineData("1.6.0")]
+    [InlineData("1.7.0")]
+    [InlineData("1.8.1")]
+    public void Every_published_note_page_is_complete(string version)
+    {
+        var pages = WhatsNew.For(version);
+
+        Assert.NotEmpty(pages);
+        Assert.All(pages, p => Assert.False(string.IsNullOrWhiteSpace(p.Title) || string.IsNullOrWhiteSpace(p.Text)));
+    }
+
+    [Fact]
+    public void Renamed_release_is_shown_to_users_coming_from_the_old_name()
+    {
+        Assert.True(WhatsNew.ShouldShow("1.7.0", "1.8.1"));
+        Assert.True(WhatsNew.ShouldShow("1.7.1", "1.8.1"));
+        Assert.True(WhatsNew.ShouldShow(null, "1.8.1"));
+        Assert.False(WhatsNew.ShouldShow("1.8.1", "1.8.1"));
+        Assert.Empty(WhatsNew.For("1.8.0")); // saiu sem páginas: nada a mostrar nela
+    }
+
     [Fact]
     public void Last_seen_version_round_trips_through_the_settings_mapper()
     {

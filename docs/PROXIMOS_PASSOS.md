@@ -1,7 +1,7 @@
 # Próximos passos
 
-Estado em 2026-11-18: **v1.8.0 publicada** — renome para DynaIsland, motor nativo em C++ e migração dos dados da pasta
-antiga. Histórico das versões em `CHANGELOG.md`; arquitetura nativa em `docs/ARQUITETURA_NATIVA.md`.
+Estado em 2026-11-18: **v1.8.0 publicada** (renome para DynaIsland, motor nativo em C++, migração dos dados da pasta
+antiga); **v1.8.1 preparada** (janela de novidades sobre o novo nome, documentação). Histórico das versões em `CHANGELOG.md`; arquitetura nativa em `docs/ARQUITETURA_NATIVA.md`.
 
 ## Validar no uso real (não testado manualmente)
 
@@ -17,8 +17,6 @@ antiga. Histórico das versões em `CHANGELOG.md`; arquitetura nativa em `docs/A
 
 - **MSIX** com certificado: identidade de pacote para receber notificações por evento (sem a verificação
   a cada 1,5 s) e, de quebra, assinatura que evita o aviso do SmartScreen.
-- Páginas de "novidades" (`WhatsNew.cs`) explicando o novo nome: a 1.8.0 saiu sem elas, então quem atualiza do
-  Dynasland não vê aviso nenhum. Entram numa 1.8.x.
 - Assinatura digital do instalador e da `DynaIslandEngine.dll`.
 - Renomear também o instalador (`DynaIslandSetup-*`), a pasta de instalação e o repositório, quando não houver mais
   instalações 1.7.x que dependam do nome antigo para se atualizar.

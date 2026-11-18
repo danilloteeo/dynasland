@@ -4,7 +4,7 @@ Ilha dinâmica (estilo Dynamic Island) para Windows 10 e Windows 11, em C# / .NE
 em C++: uma pílula no topo da tela que mostra o que está acontecendo — música, volume, notificações, clima,
 cotações — e abre painéis de controle com um clique.
 
-> Versão **1.8.0** (o aplicativo se chamava Dynasland até a 1.7.1). [Guia de uso](docs/GUIA_DE_USO.md) ·
+> Versão **1.8.1** (o aplicativo se chamava Dynasland até a 1.7.1). [Guia de uso](docs/GUIA_DE_USO.md) ·
 > [Notas da versão](CHANGELOG.md) · [Arquitetura nativa](docs/ARQUITETURA_NATIVA.md)
 
 ## Instalar

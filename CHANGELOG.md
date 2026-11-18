@@ -1,5 +1,15 @@
 # Notas da versão
 
+## 1.8.1 — 2026-11-18
+
+### Novidades
+- Depois de atualizar, uma janela mostra as novidades sobre o novo nome (a 1.8.0 saiu sem ela): o aplicativo
+  agora é DynaIsland, os dados foram copiados para a pasta nova e a antiga ficou intacta.
+
+### Correções
+- Documentação revista: README, guia de uso e próximos passos descrevem o DynaIsland 1.8.x (módulos e atalhos
+  reais, atualização a partir do Dynasland, motor nativo e como compilá-lo).
+
 ## 1.8.0 — 2026-11-18
 
 ### Novidades
