@@ -1,6 +1,6 @@
 # Notas da versão
 
-## 1.8.0 — não publicada
+## 1.8.0 — 2026-11-18
 
 ### Novidades
 - **Motor nativo em C++** (`DynaIslandEngine.dll`): os ganchos globais de mouse e teclado (clique fora e Esc fecham o
