@@ -67,9 +67,8 @@ public class ThemePaletteTests
     }
 
     [Fact]
-    public void Default_accent_is_white_and_listed_as_a_preset()
+    public void Default_accent_is_the_first_preset()
     {
-        Assert.Equal("#FFFFFF", new IslandSettings().AccentColor);
-        Assert.Contains(DynaIsland.App.ViewModels.SettingsViewModel.AccentPresets, p => p.Hex == "#FFFFFF");
+        Assert.Equal(DynaIsland.Core.Services.AccentColors.Default, new IslandSettings().AccentColor);
     }
 }

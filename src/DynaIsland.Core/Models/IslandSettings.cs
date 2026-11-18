@@ -153,10 +153,13 @@ public sealed record IslandSettings
     public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.TimeOnly;
 
     /// <summary>Cor de destaque em hexadecimal (#RRGGBB).</summary>
-    public string AccentColor { get; init; } = "#FFFFFF";
+    public string AccentColor { get; init; } = Services.AccentColors.Default;
 
-    /// <summary>Opacidade do fundo da ilha (0,5 a 1).</summary>
-    public double IslandOpacity { get; init; } = 1.0;
+    /// <summary>O destaque segue a cor de destaque do Windows (clareada) em vez de <see cref="AccentColor"/>.</summary>
+    public bool AccentFollowsWindows { get; init; }
+
+    /// <summary>Opacidade do vidro da ilha (0,5 a 1).</summary>
+    public double IslandOpacity { get; init; } = 0.70;
 
     /// <summary>Intensidade da sombra da ilha (0 a 1).</summary>
     public double ShadowIntensity { get; init; } = 0.5;

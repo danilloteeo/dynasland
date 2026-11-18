@@ -27,7 +27,9 @@ public static partial class IslandSettingsMapper
         public const string IslandThemeFollowsMedia = "appearance.islandThemeFollowsMedia";
         public const string IdleDisplay = "appearance.idleDisplay";
         public const string AccentColor = "appearance.accent";
-        public const string IslandOpacity = "appearance.opacity";
+        // Chave nova no Vidro: o valor antigo (sempre 1,0, sem opção na interface) não é reaproveitado.
+        public const string IslandOpacity = "appearance.glassOpacity";
+        public const string AccentFollowsWindows = "appearance.accentFollowsWindows";
         public const string ShadowIntensity = "appearance.shadow";
         public const string Roundness = "appearance.roundness";
         public const string CompactWidth = "appearance.compactWidth";
@@ -82,7 +84,10 @@ public static partial class IslandSettingsMapper
             IslandThemeFollowsMedia = ReadBool(values, Keys.IslandThemeFollowsMedia, d.IslandThemeFollowsMedia),
             // Como no modelo, o repouso é só a dock: o texto ao lado dos ícones não é mais uma opção.
             IdleDisplay = IdleDisplay.TimeOnly,
-            AccentColor = accent is not null && IsHexColor(accent) ? accent.ToUpperInvariant() : d.AccentColor,
+            AccentColor = accent is not null && IsHexColor(accent) && !string.Equals(accent, AccentColors.LegacyDefault, StringComparison.OrdinalIgnoreCase)
+                ? accent.ToUpperInvariant()
+                : d.AccentColor,
+            AccentFollowsWindows = ReadBool(values, Keys.AccentFollowsWindows, d.AccentFollowsWindows),
             IslandOpacity = ReadDouble(values, Keys.IslandOpacity, d.IslandOpacity, 0.5, 1),
             ShadowIntensity = ReadDouble(values, Keys.ShadowIntensity, d.ShadowIntensity, 0, 1),
             Roundness = d.Roundness,
@@ -128,6 +133,7 @@ public static partial class IslandSettingsMapper
         [Keys.IslandThemeFollowsMedia] = Format(s.IslandThemeFollowsMedia),
         [Keys.IdleDisplay] = s.IdleDisplay.ToString(),
         [Keys.AccentColor] = s.AccentColor,
+        [Keys.AccentFollowsWindows] = Format(s.AccentFollowsWindows),
         [Keys.IslandOpacity] = Format(s.IslandOpacity),
         [Keys.ShadowIntensity] = Format(s.ShadowIntensity),
         [Keys.Roundness] = Format(s.Roundness),
