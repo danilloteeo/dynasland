@@ -339,7 +339,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Chrome" Background="{DynamicResource SettingsAccentBrush}" CornerRadius="8" Padding="14,6">
+                    <Border x:Name="Chrome" Background="{DynamicResource SettingsAccentBrush}" CornerRadius="999" Padding="14,6">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>

@@ -50,7 +50,9 @@
         <Border Background="{DynamicResource SettingsSidebarBrush}">
             <DockPanel Margin="14,18">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Height="52" Margin="8,0,0,6">
-                    <controls:PixelMascot Width="28" Height="14" VerticalAlignment="Center" TextElement.Foreground="{DynamicResource SettingsTextBrush}" />
+                    <Viewbox Width="28" Height="8" VerticalAlignment="Center">
+                        <controls:MiniPill />
+                    </Viewbox>
                     <TextBlock Text="Central" FontSize="14" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel>
