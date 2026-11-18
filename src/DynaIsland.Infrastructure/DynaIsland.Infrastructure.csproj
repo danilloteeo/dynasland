@@ -19,6 +19,17 @@
     <ProjectReference Include="..\DynaIsland.Core\DynaIsland.Core.csproj" />
   </ItemGroup>
 
+  <!--
+    Motor nativo (C++): gerado por tools\Build-NativeEngine.ps1. Se ainda nao foi compilado, o aplicativo
+    funciona sem ele (NativeEngineService fica indisponivel e os ganchos em C# assumem).
+  -->
+  <PropertyGroup>
+    <NativeEngineDll>$(MSBuildThisFileDirectory)..\NativeEngine\build\bin\Release\DynaIslandEngine.dll</NativeEngineDll>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(NativeEngineDll)')">
+    <None Include="$(NativeEngineDll)" Link="DynaIslandEngine.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="DynaIsland.Tests" />
     <AssemblyMetadata Include="UpdateRepository" Value="$(DynaIslandUpdateRepository)" />

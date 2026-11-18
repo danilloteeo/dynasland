@@ -6,6 +6,7 @@ using DynaIsland.Core.Shortcuts;
 using DynaIsland.Infrastructure.Database;
 using DynaIsland.Infrastructure.Database.Migrations;
 using DynaIsland.Infrastructure.Lyrics;
+using DynaIsland.Infrastructure.Native;
 using DynaIsland.Infrastructure.Windows.Bluetooth;
 using DynaIsland.Infrastructure.Repositories;
 using DynaIsland.Infrastructure.Spotify;
@@ -86,6 +87,7 @@ public static class DependencyInjection
         services.AddSingleton<IGlobalShortcutRegistry, GlobalShortcutRegistry>();
         services.AddSingleton<IModuleOptions, ModuleOptionsService>();
         services.AddSingleton<IStartupRegistration, StartupRegistration>();
+        services.AddSingleton<INativeEngine, NativeEngineService>();
         services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
         services.AddSingleton<IUpdateInstaller>(sp => new UpdateInstaller(
             new HttpClient { Timeout = TimeSpan.FromMinutes(30), DefaultRequestHeaders = { { "User-Agent", "DynaIsland" } } },

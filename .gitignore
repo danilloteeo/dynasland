@@ -9,3 +9,6 @@ artifacts/
 
 # Mockups do brainstorming
 .superpowers/
+
+# Motor nativo (C++)
+src/NativeEngine/build/

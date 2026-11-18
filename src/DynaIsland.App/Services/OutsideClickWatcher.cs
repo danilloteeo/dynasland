@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
+using DynaIsland.Core.Interfaces;
 
 namespace DynaIsland.App.Services;
 
@@ -9,6 +10,10 @@ namespace DynaIsland.App.Services;
 /// de baixo nível (<c>WH_MOUSE_LL</c>, <c>WH_KEYBOARD_LL</c>) instalados só durante o estado interativo. A janela da ilha não recebe foco,
 /// então "perder o foco" não serve para isso.
 /// </summary>
+/// <remarks>
+/// Com o motor nativo disponível, os ganchos rodam na thread dele e a interface só recebe os eventos já prontos;
+/// sem ele (DLL ausente), os mesmos ganchos são instalados aqui, na thread da interface.
+/// </remarks>
 public sealed class OutsideClickWatcher : IDisposable
 {
     private const int WhMouseLl = 14;
@@ -28,8 +33,12 @@ public sealed class OutsideClickWatcher : IDisposable
     private Func<int, int, bool>? _isInside;
     private Action? _onOutsideClick;
 
-    public OutsideClickWatcher()
+    private readonly INativeEngine _engine;
+    private volatile bool _nativeActive;
+
+    public OutsideClickWatcher(INativeEngine engine)
     {
+        _engine = engine;
         _callback = HookCallback;
         _keyCallback = KeyCallback;
         _dispatcher = Dispatcher.CurrentDispatcher;
@@ -42,9 +51,21 @@ public sealed class OutsideClickWatcher : IDisposable
         _isInside = isInside;
         _onOutsideClick = onOutsideClick;
         _onEscape = onEscape;
-        if (_hook != IntPtr.Zero)
+        if (_hook != IntPtr.Zero || _nativeActive)
         {
             return;
+        }
+
+        if (_engine.IsAvailable)
+        {
+            _engine.EventReceived += OnNativeEvent;
+            _nativeActive = _engine.SetInputHooks(true);
+            if (_nativeActive)
+            {
+                return;
+            }
+
+            _engine.EventReceived -= OnNativeEvent;
         }
 
         using var module = Process.GetCurrentProcess().MainModule;
@@ -55,6 +76,13 @@ public sealed class OutsideClickWatcher : IDisposable
 
     public void Stop()
     {
+        if (_nativeActive)
+        {
+            _nativeActive = false;
+            _engine.EventReceived -= OnNativeEvent;
+            _engine.SetInputHooks(false);
+        }
+
         if (_hook != IntPtr.Zero)
         {
             UnhookWindowsHookEx(_hook);
@@ -69,6 +97,33 @@ public sealed class OutsideClickWatcher : IDisposable
     }
 
     public void Dispose() => Stop();
+
+    /// <summary>Roda na thread de entrega do motor: só enfileira o trabalho na interface e volta.</summary>
+    private void OnNativeEvent(NativeEvent e)
+    {
+        switch (e.Type)
+        {
+            case NativeEventType.MouseDown:
+                _dispatcher.BeginInvoke(() =>
+                {
+                    if (_nativeActive && _isInside is { } isInside && !isInside(e.X, e.Y))
+                    {
+                        _onOutsideClick?.Invoke();
+                    }
+                });
+                break;
+
+            case NativeEventType.EscapeDown:
+                _dispatcher.BeginInvoke(() =>
+                {
+                    if (_nativeActive)
+                    {
+                        _onEscape?.Invoke();
+                    }
+                });
+                break;
+        }
+    }
 
     private IntPtr HookCallback(int code, IntPtr wParam, IntPtr lParam)
     {

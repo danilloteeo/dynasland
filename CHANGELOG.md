@@ -2,6 +2,12 @@
 
 ## 1.8.0 — não publicada
 
+### Novidades
+- **Motor nativo em C++** (`DynaIslandEngine.dll`): os ganchos globais de mouse e teclado (clique fora e Esc fecham o
+  painel da ilha) e o aviso de troca de janela em primeiro plano passam a rodar numa thread própria, fora da interface.
+  Se a interface engasgar, o Windows não derruba mais o gancho e a ilha continua percebendo os cliques. Se a DLL faltar,
+  o aplicativo usa a implementação anterior em C#. Veja `docs/ARQUITETURA_NATIVA.md`.
+
 ### Mudanças
 - **O aplicativo passa a se chamar DynaIsland** (antes, Dynasland). Mudam o nome na janela, na bandeja, no menu
   Iniciar, o executável (`DynaIsland.exe`) e a pasta de dados (`%LocalAppData%\DynaIsland`).

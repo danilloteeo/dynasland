@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using DynaIsland.Core.Interfaces;
 
 namespace DynaIsland.Infrastructure.Windows;
 
@@ -24,10 +25,21 @@ public sealed class FullscreenDetector : IDisposable
     };
 
     private readonly WinEventProc _callback;
+    private readonly INativeEngine? _engine;
+    private SynchronizationContext? _context;
+    private bool _nativeForeground;
     private IntPtr _foregroundHook;
     private IntPtr _locationHook;
 
-    public FullscreenDetector() => _callback = OnWinEvent;
+    /// <param name="engine">
+    /// Motor nativo: quando disponível, os eventos de primeiro plano vêm dele (thread própria) em vez de um gancho
+    /// instalado aqui. A posição/tamanho da janela ativa continua sendo acompanhada neste processo.
+    /// </param>
+    public FullscreenDetector(INativeEngine? engine = null)
+    {
+        _callback = OnWinEvent;
+        _engine = engine;
+    }
 
     /// <summary>Monitor (nome do dispositivo) ocupado por um aplicativo em tela cheia; <c>null</c> se nenhum.</summary>
     public string? FullscreenMonitor { get; private set; }
@@ -39,19 +51,35 @@ public sealed class FullscreenDetector : IDisposable
 
     public void Start()
     {
-        if (_foregroundHook != IntPtr.Zero)
+        if (_foregroundHook != IntPtr.Zero || _nativeForeground)
         {
             return;
         }
 
         const uint flags = WinEventOutOfContext | WinEventSkipOwnProcess;
-        _foregroundHook = SetWinEventHook(EventSystemForeground, EventSystemForeground, IntPtr.Zero, _callback, 0, 0, flags);
+        _context = SynchronizationContext.Current;
+        if (_engine is { IsAvailable: true } && _context is not null)
+        {
+            _nativeForeground = true;
+            _engine.EventReceived += OnNativeEvent;
+        }
+        else
+        {
+            _foregroundHook = SetWinEventHook(EventSystemForeground, EventSystemForeground, IntPtr.Zero, _callback, 0, 0, flags);
+        }
+
         _locationHook = SetWinEventHook(EventObjectLocationChange, EventObjectLocationChange, IntPtr.Zero, _callback, 0, 0, flags);
         Evaluate();
     }
 
     public void Dispose()
     {
+        if (_nativeForeground)
+        {
+            _nativeForeground = false;
+            _engine!.EventReceived -= OnNativeEvent;
+        }
+
         if (_foregroundHook != IntPtr.Zero)
         {
             UnhookWinEvent(_foregroundHook);
@@ -106,6 +134,24 @@ public sealed class FullscreenDetector : IDisposable
         }
 
         Evaluate();
+    }
+
+    /// <summary>Roda na thread de entrega do motor: leva o tratamento para a thread da interface.</summary>
+    private void OnNativeEvent(NativeEvent e)
+    {
+        if (e.Type != NativeEventType.ForegroundChanged || !_nativeForeground)
+        {
+            return;
+        }
+
+        _context!.Post(_ =>
+        {
+            if (_nativeForeground)
+            {
+                ForegroundChanged?.Invoke(this, EventArgs.Empty);
+                Evaluate();
+            }
+        }, null);
     }
 
     private void Evaluate()

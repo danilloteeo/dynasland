@@ -80,7 +80,7 @@ public partial class IslandWindow : Window
     private readonly FullscreenDetector _fullscreen;
     private readonly ISessionStateService _session;
     private readonly IslandActions _actions;
-    private readonly OutsideClickWatcher _outsideClicks = new();
+    private readonly OutsideClickWatcher _outsideClicks;
     private DispatcherTimer? _pendingClick;
     private bool _hiddenForGame;
     private readonly IDisposable _gamingSubscription;
@@ -95,8 +95,9 @@ public partial class IslandWindow : Window
     private IEasingFunction _collapseWidthEasing = CollapseEasing;
     private double _collapseEasingIntensity = -1;
 
-    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus, ThemeService theme)
+    public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus, ThemeService theme, INativeEngine nativeEngine)
     {
+        _outsideClicks = new OutsideClickWatcher(nativeEngine);
         _viewModel = viewModel;
         _placement = placement;
         _settings = settings;

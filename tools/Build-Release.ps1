@@ -30,6 +30,9 @@ function Invoke-Step([string]$name, [scriptblock]$action) {
     if ($LASTEXITCODE -ne 0) { throw "$name falhou (código $LASTEXITCODE)." }
 }
 
+# Antes dos testes e da publicação: a DLL (build\bin\Release) é copiada para a saída do .NET pelo csproj da Infrastructure.
+Invoke-Step 'Motor nativo (C++)' { & (Join-Path $PSScriptRoot 'Build-NativeEngine.ps1') -Configuration Release; $global:LASTEXITCODE = 0 }
+
 if (-not $SkipTests) {
     Invoke-Step 'Testes' { dotnet test (Join-Path $root 'DynaIsland.sln') -c Release -nologo -v q }
 }
