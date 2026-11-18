@@ -14,19 +14,25 @@
     <!-- Segoe Fluent Icons no Windows 11; Segoe MDL2 Assets (mesmos códigos) no Windows 10. -->
     <FontFamily x:Key="IslandIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-    <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="IslandEdgeBrush" Color="#17FFFFFF" />
-    <SolidColorBrush x:Key="IslandPrimaryTextBrush" Color="#FFF5F5F7" />
-    <SolidColorBrush x:Key="IslandSecondaryTextBrush" Color="#99F5F5F7" />
-    <SolidColorBrush x:Key="IslandTertiaryTextBrush" Color="#66F5F5F7" />
-    <SolidColorBrush x:Key="IslandSurfaceBrush" Color="#1CFFFFFF" />
-    <SolidColorBrush x:Key="IslandHoverBrush" Color="#24FFFFFF" />
-    <SolidColorBrush x:Key="IslandPressedBrush" Color="#38FFFFFF" />
-    <SolidColorBrush x:Key="IslandTrackBrush" Color="#33FFFFFF" />
-    <SolidColorBrush x:Key="IslandFillBrush" Color="#FFF5F5F7" />
-    <!-- Texto sobre IslandFillBrush (botão principal claro). -->
+    <!-- Vidro: valores iniciais; o ThemeService troca fundo e destaque em tempo de execução. -->
+    <SolidColorBrush x:Key="IslandBackgroundBrush" Color="#B310121A" />
+    <!-- Borda do vidro: 30% de branco no topo (o brilho), descendo a 17% nos primeiros 14 px. -->
+    <LinearGradientBrush x:Key="IslandGlassBorderBrush" MappingMode="Absolute" StartPoint="0,0" EndPoint="0,14">
+        <GradientStop Color="#4DFFFFFF" Offset="0" />
+        <GradientStop Color="#2BFFFFFF" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="IslandPrimaryTextBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="IslandSecondaryTextBrush" Color="#9EFFFFFF" />
+    <SolidColorBrush x:Key="IslandTertiaryTextBrush" Color="#73FFFFFF" />
+    <SolidColorBrush x:Key="IslandSurfaceBrush" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="IslandHoverBrush" Color="#2EFFFFFF" />
+    <SolidColorBrush x:Key="IslandPressedBrush" Color="#3DFFFFFF" />
+    <SolidColorBrush x:Key="IslandTrackBrush" Color="#2EFFFFFF" />
+    <SolidColorBrush x:Key="IslandFillBrush" Color="#FFFFFFFF" />
     <SolidColorBrush x:Key="IslandOnFillTextBrush" Color="#FF111111" />
-    <SolidColorBrush x:Key="IslandAccentBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="IslandAccentBrush" Color="#FF9CC2FF" />
+    <!-- Texto sobre o destaque (botão principal). -->
+    <SolidColorBrush x:Key="IslandOnAccentTextBrush" Color="#FF0D1220" />
     <SolidColorBrush x:Key="IslandWaterBrush" Color="#FF0084FF" />
     <SolidColorBrush x:Key="IslandWarningBrush" Color="#FFFF9F0A" />
     <SolidColorBrush x:Key="IslandCriticalBrush" Color="#FFFF453A" />
@@ -41,7 +47,7 @@
     <!-- Raio da cápsula + formato (encaixada = cantos de cima retos). -->
     <converters:IslandCornerRadiusConverter x:Key="IslandCornerRadius" />
 
-    <!-- Movimento do Volum: entrada longa com desaceleração forte, saída curta, salto nos toques. -->
+    <!-- Movimento: entrada com desaceleração suave, saída curta. -->
     <Duration x:Key="EnterDuration">0:0:0.3</Duration>
     <Duration x:Key="ExitDuration">0:0:0.12</Duration>
     <ExponentialEase x:Key="SpringEase" Exponent="6" EasingMode="EaseOut" />
@@ -101,7 +107,7 @@
                     <Border x:Name="Chrome"
                             Background="{TemplateBinding Background}"
                             RenderTransformOrigin="0.5,0.5"
-                            CornerRadius="10">
+                            CornerRadius="999">
                         <Border.RenderTransform>
                             <ScaleTransform />
                         </Border.RenderTransform>
@@ -146,7 +152,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="999" Padding="{TemplateBinding Padding}"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform />
@@ -178,18 +184,15 @@
         </Setter>
     </Style>
 
-    <!--
-        Ação principal (Bebi, Abrir...): fundo claro e texto escuro. Hover/press mudam a opacidade em vez do
-        fundo, porque os pincéis translúcidos de hover deixariam o texto escuro sobre quase preto.
-    -->
+    <!-- Ação principal (Bebi, Abrir...): preenchida com a cor de destaque e texto escuro. Hover/press mudam a opacidade. -->
     <Style x:Key="IslandPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource IslandTextButtonStyle}">
-        <Setter Property="Background" Value="{StaticResource IslandFillBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource IslandOnFillTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource IslandAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource IslandOnAccentTextBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="999" Padding="{TemplateBinding Padding}"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform />
@@ -224,16 +227,21 @@
         </Setter>
     </Style>
 
+    <!-- Botão em disco de vidro (play/pausa): círculo com fundo translúcido. -->
+    <Style x:Key="IslandDiscButtonStyle" TargetType="Button" BasedOn="{StaticResource IslandIconButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource IslandSurfaceBrush}" />
+    </Style>
+
     <Style x:Key="IslandProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="4" />
         <Setter Property="Minimum" Value="0" />
-        <Setter Property="Foreground" Value="{StaticResource IslandFillBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource IslandAccentBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ProgressBar">
                     <Grid>
-                        <Border x:Name="PART_Track" Background="{StaticResource IslandTrackBrush}" CornerRadius="2" />
-                        <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="2" HorizontalAlignment="Left" />
+                        <Border x:Name="PART_Track" Background="{StaticResource IslandTrackBrush}" CornerRadius="999" />
+                        <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="999" HorizontalAlignment="Left" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -248,27 +256,20 @@
                 <ControlTemplate TargetType="RepeatButton">
                     <!-- Área de clique alta e trilho fino desenhado no centro. -->
                     <Grid Background="Transparent">
-                        <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}" />
+                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <!-- Trecho preenchido do slider: some em degradê (~9%) na ponta esquerda e chega ao branco na bolinha, como no Volum. -->
+    <!-- Trecho preenchido do slider: cor de destaque sólida. -->
     <Style x:Key="IslandSliderFillButtonStyle" TargetType="RepeatButton" BasedOn="{StaticResource IslandSliderRepeatButtonStyle}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
                     <Grid Background="Transparent">
-                        <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}">
-                            <Border.OpacityMask>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#17000000" Offset="0" />
-                                    <GradientStop Color="#FF000000" Offset="1" />
-                                </LinearGradientBrush>
-                            </Border.OpacityMask>
-                        </Border>
+                        <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -289,7 +290,7 @@
                     <Track x:Name="PART_Track" VerticalAlignment="Stretch">
                         <Track.DecreaseRepeatButton>
                             <RepeatButton Style="{StaticResource IslandSliderFillButtonStyle}"
-                                          Background="{StaticResource IslandFillBrush}"
+                                          Background="{DynamicResource IslandAccentBrush}"
                                           Command="Slider.DecreaseLarge" />
                         </Track.DecreaseRepeatButton>
                         <Track.IncreaseRepeatButton>
@@ -301,7 +302,7 @@
 <Thumb Focusable="False" Width="20" Height="20">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="Thumb">
-                                        <!-- Bolinha branca de 10px com sombra; cresce no hover (1,15) e ao arrastar (1,25, com halo), como no Volum. -->
+                                        <!-- Bolinha branca de 10px com sombra; cresce no hover (1,15) e ao arrastar (1,25, com halo). -->
                                         <Grid x:Name="Knob" Background="Transparent" RenderTransformOrigin="0.5,0.5">
                                             <Grid.RenderTransform>
                                                 <ScaleTransform />

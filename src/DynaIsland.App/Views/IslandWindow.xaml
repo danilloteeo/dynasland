@@ -131,7 +131,7 @@
             </Border>
 
             <Border Background="{DynamicResource IslandBackgroundBrush}"
-                    BorderBrush="{StaticResource IslandEdgeBrush}"
+                    BorderBrush="{StaticResource IslandGlassBorderBrush}"
                     BorderThickness="1">
                 <Border.CornerRadius>
                     <MultiBinding Converter="{StaticResource IslandCornerRadius}">
