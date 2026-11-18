@@ -1,62 +1,55 @@
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using DynaIsland.Core.Interfaces;
 using DynaIsland.Core.Models;
-using DynaIsland.Core.Modules;
 using Microsoft.Win32;
 
 namespace DynaIsland.App.Services;
 
 /// <summary>
-/// Aplica tema (claro/escuro/sistema), cor de destaque e aparência da ilha substituindo os pincéis
-/// nos recursos da aplicação; tudo que usa DynamicResource é atualizado na hora.
+/// Visual Vidro, sempre escuro: aplica a paleta das janelas, a cor de destaque e o vidro da ilha substituindo
+/// os pincéis nos recursos da aplicação; tudo que usa DynamicResource é atualizado na hora.
 /// </summary>
-public sealed class ThemeService(IIslandSettingsService settings, IIslandTint tint) : IDisposable
+public sealed class ThemeService(IIslandSettingsService settings) : IDisposable
 {
-    private static readonly Duration IslandColorFade = TimeSpan.FromMilliseconds(600);
+    /// <summary>Cor de base do vidro da ilha; o alfa vem da opacidade escolhida.</summary>
+    public static readonly Color GlassBase = Color.FromRgb(0x10, 0x12, 0x1A);
 
-    private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+    /// <summary>Texto sobre a cor de destaque (todas as cores prontas são claras).</summary>
+    public static readonly Color OnAccent = Color.FromRgb(0x0D, 0x12, 0x20);
 
-    internal static readonly IReadOnlyDictionary<string, (string Dark, string Light)> Palette = new Dictionary<string, (string Dark, string Light)>
+    /// <summary>Paleta das janelas WPF (Novidades e restos da Central): o fundo sólido usado quando não há acrílico.</summary>
+    internal static readonly IReadOnlyDictionary<string, string> Palette = new Dictionary<string, string>
     {
-        ["SettingsBackgroundBrush"] = ("#090909", "#FFFFFF"),
-        ["SettingsSidebarBrush"] = ("#0D0D0D", "#F6F6F6"),
-        ["SettingsCardBrush"] = ("#101010", "#F6F6F6"),
-        ["SettingsCardHoverBrush"] = ("#161616", "#EFEFEF"),
-        ["SettingsBorderBrush"] = ("#1C1C1C", "#E4E4E4"),
-        ["SettingsTextBrush"] = ("#FFFFFF", "#111111"),
-        ["SettingsSecondaryTextBrush"] = ("#B8B8B8", "#5C5C5C"),
-        ["SettingsTertiaryTextBrush"] = ("#757575", "#8A8A8A"),
-        ["SettingsNavHoverBrush"] = ("#161616", "#EDEDED"),
-        ["SettingsButtonBrush"] = ("#161616", "#FFFFFF"),
-        ["SettingsButtonHoverBrush"] = ("#1E1E1E", "#F0F0F0"),
-        ["SettingsButtonBorderBrush"] = ("#262626", "#DADADA"),
-        ["SettingsChipBrush"] = ("#161616", "#EFEFEF"),
-        ["SettingsTrackBrush"] = ("#2A2A2A", "#D0D0D0"),
-        ["SettingsScrollThumbBrush"] = ("#333333", "#C4C4C4"),
+        ["SettingsBackgroundBrush"] = "#14171F",
+        ["SettingsSidebarBrush"] = "#0F1218",
+        ["SettingsCardBrush"] = "#1A1E28",
+        ["SettingsCardHoverBrush"] = "#212634",
+        ["SettingsBorderBrush"] = "#262B3B",
+        ["SettingsTextBrush"] = "#FFFFFF",
+        ["SettingsSecondaryTextBrush"] = "#B4B8C4",
+        ["SettingsTertiaryTextBrush"] = "#7D8291",
+        ["SettingsNavHoverBrush"] = "#1C202B",
+        ["SettingsButtonBrush"] = "#1F2330",
+        ["SettingsButtonHoverBrush"] = "#272C3B",
+        ["SettingsButtonBorderBrush"] = "#30364A",
+        ["SettingsChipBrush"] = "#1F2330",
+        ["SettingsTrackBrush"] = "#30364A",
+        ["SettingsScrollThumbBrush"] = "#3A4055",
     };
-
-    /// <summary>
-    /// Cor de destaque efetiva: no tema claro um destaque quase branco (o padrão) viraria texto invisível
-    /// sobre fundo branco, então usa o quase preto do Volum.
-    /// </summary>
-    public static Color AccentFor(Color accent, bool dark) =>
-        !dark && (0.2126 * accent.R + 0.7152 * accent.G + 0.0722 * accent.B) / 255 > 0.9
-            ? Color.FromRgb(0x11, 0x11, 0x11)
-            : accent;
 
     private Application? _application;
 
     /// <summary>
-    /// Pincel mutável do fundo da ilha: trocar de tema ou de música anima as cores dele. Fica nos recursos
-    /// da janela da ilha, porque os recursos da aplicação congelam os pincéis (sem animação).
+    /// Pincel mutável do vidro da ilha. Fica nos recursos da janela da ilha (os recursos da aplicação levam
+    /// uma cópia congelada), e a opacidade muda na hora, sem recriar a janela.
     /// </summary>
-    public LinearGradientBrush IslandBrush { get; } = new(Colors.Black, Colors.Black, new Point(0, 0), new Point(0, 1));
+    public SolidColorBrush IslandBrush { get; } = new(Glass(IslandSettings.Default.IslandOpacity));
 
-    public bool IsDark { get; private set; } = true;
+    /// <summary>As janelas são sempre escuras (barra de título inclusive).</summary>
+    public bool IsDark => true;
 
-    /// <summary>Disparado na thread de UI após aplicar um tema.</summary>
+    /// <summary>Disparado na thread de UI após aplicar o tema.</summary>
     public event EventHandler? ThemeChanged;
 
     public void Initialize(Application application)
@@ -64,36 +57,20 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
         _application = application;
         Apply(settings.Current);
         settings.Changed += OnSettingsChanged;
-        tint.Changed += OnTintChanged;
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
-    public static bool WindowsAppsUseLightTheme()
+    /// <summary>A cor do vidro com a opacidade escolhida (mínimo de 50%, para a ilha continuar recebendo cliques).</summary>
+    public static Color Glass(double opacity)
     {
-        using var key = Registry.CurrentUser.OpenSubKey(PersonalizeKey);
-        return key?.GetValue("AppsUseLightTheme") is int value && value == 1;
+        var color = GlassBase;
+        color.A = (byte)Math.Round(255 * Math.Clamp(opacity, 0.5, 1), MidpointRounding.AwayFromZero);
+        return color;
     }
 
-    /// <summary>Cor do texto sobre a cor de destaque: a (escura ou branca) de maior contraste, o que cobre também os cinzas médios.</summary>
-    public static Color ContrastOn(Color color)
-    {
-        var dark = Color.FromRgb(0x1B, 0x1B, 0x1B);
-        var background = RelativeLuminance(color) + 0.05;
-        var onDark = background / (RelativeLuminance(dark) + 0.05);
-        var onWhite = 1.05 / background;
-        return onDark >= onWhite ? dark : Colors.White;
-    }
-
-    private static double RelativeLuminance(Color color)
-    {
-        static double Linear(byte channel)
-        {
-            var s = channel / 255.0;
-            return s <= 0.03928 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
-        }
-
-        return 0.2126 * Linear(color.R) + 0.7152 * Linear(color.G) + 0.0722 * Linear(color.B);
-    }
+    /// <summary>O destaque em uso: a cor do Windows, se pedida e disponível, ou a escolhida.</summary>
+    public static string EffectiveAccent(IslandSettings current) =>
+        current.AccentFollowsWindows && WindowsAccent.Read() is { } windows ? windows : current.AccentColor;
 
     private void Apply(IslandSettings current)
     {
@@ -102,82 +79,33 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
             return;
         }
 
-        IsDark = current.Theme switch
-        {
-            AppTheme.Dark => true,
-            AppTheme.Light => false,
-            _ => !WindowsAppsUseLightTheme(),
-        };
-
         var resources = _application.Resources;
-        foreach (var (key, (dark, light)) in Palette)
+        foreach (var (key, hex) in Palette)
         {
-            resources[key] = Brush(Parse(IsDark ? dark : light));
+            resources[key] = Brush(Parse(hex));
         }
 
-        var accent = AccentFor(Parse(current.AccentColor), IsDark);
+        var accent = Parse(EffectiveAccent(current));
         resources["SettingsAccentBrush"] = Brush(accent);
-        resources["SettingsAccentTextBrush"] = Brush(ContrastOn(accent));
+        resources["SettingsAccentTextBrush"] = Brush(OnAccent);
         resources["IslandAccentBrush"] = Brush(accent);
+        resources["IslandOnAccentTextBrush"] = Brush(OnAccent);
 
-        ApplyIslandBackground(current, accent);
-        resources["IslandShadowOpacity"] = 0.45;
+        var glass = Glass(current.IslandOpacity);
+        IslandBrush.Color = glass;
+        resources["IslandBackgroundBrush"] = Brush(glass);
+        resources["IslandShadowOpacity"] = 0.32;
 
         ThemeChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// O fundo vem do tema da ilha (sempre escuro) ou, se o usuário pediu, da capa da mídia tocando;
-    /// a transparência só altera o alfa.
-    /// </summary>
-    private void ApplyIslandBackground(IslandSettings current, Color accent)
-    {
-        // Como no modelo, a cápsula é sempre preta e opaca: não há tema, transparência nem cor da capa.
-        var brush = IslandBrush;
-        var animate = current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
-        Fade(brush.GradientStops[0], Colors.Black, animate);
-        Fade(brush.GradientStops[1], Colors.Black, animate);
-
-        // Cópia congelada para quem usa o recurso fora da janela da ilha.
-        var snapshot = new LinearGradientBrush(Colors.Black, Colors.Black, brush.StartPoint, brush.EndPoint);
-        snapshot.Freeze();
-        _application?.Resources["IslandBackgroundBrush"] = snapshot;
-    }
-
-    private static void Fade(GradientStop stop, Color to, bool animate)
-    {
-        if (animate)
-        {
-            stop.BeginAnimation(GradientStop.ColorProperty, new ColorAnimation(to, IslandColorFade));
-        }
-        else
-        {
-            stop.BeginAnimation(GradientStop.ColorProperty, null);
-            stop.Color = to;
-        }
-    }
-
-    private Color? TintColor()
-    {
-        try
-        {
-            return tint.Color is { } hex ? Parse(hex) : null;
-        }
-        catch (FormatException)
-        {
-            return null;
-        }
-    }
-
-    private void OnTintChanged(object? sender, EventArgs e) =>
-        _application?.Dispatcher.BeginInvoke(() => ApplyIslandBackground(settings.Current, Parse(settings.Current.AccentColor)));
-
     private void OnSettingsChanged(object? sender, IslandSettings current) =>
         _application?.Dispatcher.BeginInvoke(() => Apply(current));
 
+    /// <summary>Trocar a cor de destaque no Windows chega aqui; só importa quando o DynaIsland a acompanha.</summary>
     private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        if (e.Category == UserPreferenceCategory.General && settings.Current.Theme == AppTheme.System)
+        if (settings.Current.AccentFollowsWindows && e.Category is UserPreferenceCategory.General or UserPreferenceCategory.Color)
         {
             _application?.Dispatcher.BeginInvoke(() => Apply(settings.Current));
         }
@@ -195,7 +123,6 @@ public sealed class ThemeService(IIslandSettingsService settings, IIslandTint ti
     public void Dispose()
     {
         settings.Changed -= OnSettingsChanged;
-        tint.Changed -= OnTintChanged;
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
     }
 }

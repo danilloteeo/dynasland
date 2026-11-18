@@ -27,14 +27,14 @@ public partial class IslandWindow : Window
         nameof(CornerSize),
         typeof(double),
         typeof(IslandWindow),
-        new PropertyMetadata(IslandLayout.Compact.CornerRadius));
+        new PropertyMetadata(IslandLayout.Compact.CornerRadius, (d, _) => ((IslandWindow)d).UpdateShadowClip()));
 
     /// <summary>Formato da ilha: encaixada deixa os cantos de cima da cápsula retos (IslandCornerRadiusConverter).</summary>
     public static readonly DependencyProperty ShapeProperty = DependencyProperty.Register(
         nameof(Shape),
         typeof(IslandShape),
         typeof(IslandWindow),
-        new PropertyMetadata(IslandShape.Float));
+        new PropertyMetadata(IslandShape.Float, (d, _) => ((IslandWindow)d).UpdateShadowClip()));
 
     private const double ExpandMilliseconds = 460;
     private const double CollapseMilliseconds = 340;
@@ -49,11 +49,10 @@ public partial class IslandWindow : Window
     private const double NoticeSlide = 14;
     private const double LeaveMilliseconds = 120;
     private const double EnterScale = 0.965;
-    private const double ContentEnterScale = 0.92;
     private const double EnterRise = 10;
     private const double LeaveScale = 0.98;
     private const double LeaveRise = 4;
-    private const double SwapOffset = 6;
+    private const double SwapOffset = 12;
     private const double GhostRise = -4;
     private const double PrivacyDotFadeMs = 150;
     private const double PulseMilliseconds = 600;
@@ -65,12 +64,10 @@ public partial class IslandWindow : Window
 
     /// <summary>Altura do rodapé (abas e configurações), somada à do conteúdo no estado interativo.</summary>
 
-    // Overshoot na expansão (sensação de mola, ajustável em Animações) e desaceleração suave no recolhimento.
-    private const double BaseSpringAmplitude = 0.22;
-    private static readonly IEasingFunction NoSpringEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
-    private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseInOut });
-    // Mola do Volum: cubic-bezier(.16, 1, .3, 1) na entrada; saída curta que acelera.
-    private static readonly IEasingFunction SpringOut = Frozen(new ExponentialEase { Exponent = 6, EasingMode = EasingMode.EaseOut });
+    // Movimento suave: abre desacelerando sem passar do tamanho final e fecha com desaceleração curta.
+    private static readonly IEasingFunction ExpandEasing = Frozen(new QuinticEase { EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction CollapseEasing = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction EnterEase = Frozen(new ExponentialEase { Exponent = 6, EasingMode = EasingMode.EaseOut });
     private static readonly IEasingFunction LeaveEase = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseIn });
     private static readonly IEasingFunction SoftEasing = Frozen(new QuadraticEase { EasingMode = EasingMode.EaseOut });
 
@@ -90,10 +87,6 @@ public partial class IslandWindow : Window
     private long _lastPulseTicks;
     private bool _repositionPending;
     private bool _wantsVisible;
-    private IEasingFunction _expandEasing = NoSpringEasing;
-    private double _expandEasingIntensity = -1;
-    private IEasingFunction _collapseWidthEasing = CollapseEasing;
-    private double _collapseEasingIntensity = -1;
 
     public IslandWindow(IslandViewModel viewModel, IslandPlacementService placement, IIslandSettingsService settings, FullscreenDetector fullscreen, ISessionStateService session, IslandActions actions, IEventBus bus, ThemeService theme, INativeEngine nativeEngine)
     {
@@ -106,12 +99,14 @@ public partial class IslandWindow : Window
         _actions = actions;
 
         InitializeComponent();
+        IslandHost.SizeChanged += (_, _) => UpdateShadowClip();
         // O fundo animável vale só nesta janela (sobrepõe o recurso congelado da aplicação).
         Resources["IslandBackgroundBrush"] = theme.IslandBrush;
         DataContext = viewModel;
 
         ApplyPositionAndShape(settings.Current);
         ApplyEdge(settings.Current.Edge);
+        ApplyEyes(settings.Current);
         ApplyLayers(viewModel.State, animate: false);
         ApplyPrivacyDot(MicrophoneDot, viewModel.ShowMicrophoneDot, animate: false);
         ApplyPrivacyDot(CameraDot, viewModel.ShowCameraDot, animate: false);
@@ -247,10 +242,23 @@ public partial class IslandWindow : Window
         UpdateVisibility();
         ApplyPositionAndShape(settings);
         ApplyEdge(settings.Edge);
+        ApplyEyes(settings);
         ApplyDimensions(_viewModel.Dimensions, ShouldAnimate);
         ApplyPressFeedback();
         RequestReposition();
     }
+
+    /// <summary>Mascote: aparece conforme "Olhos na ilha" e só se mexe com as animações ligadas.</summary>
+    private void ApplyEyes(IslandSettings settings)
+    {
+        Eyes.Visibility = settings.ShowIslandEyes ? Visibility.Visible : Visibility.Collapsed;
+        UpdateEyesAnimation();
+    }
+
+    private bool _pillShown;
+
+    /// <summary>Os olhos só se mexem com as animações ligadas e a pílula fechada à vista (ela some só por opacidade).</summary>
+    private void UpdateEyesAnimation() => Eyes.IsAnimated = _pillShown && _settings.Current.AnimationsEnabled && SystemParameters.ClientAreaAnimation;
 
     /// <summary>
     /// A janela tem largura fixa; a cápsula se alinha ao lado da posição escolhida (a <see cref="IslandPlacementCalculator.EdgeMargin"/>
@@ -259,6 +267,8 @@ public partial class IslandWindow : Window
     private void ApplyPositionAndShape(IslandSettings settings)
     {
         Shape = settings.Shape;
+        // Encaixada: sem a aresta de cima (colada na borda do monitor, uma linha clara ali ficaria estranha).
+        GlassBorder.BorderThickness = settings.Shape == IslandShape.Notch ? new Thickness(1, 0, 1, 1) : new Thickness(1);
         UpdateEars(settings.Shape, settings.Edge);
         var edge = IslandPlacementCalculator.EdgeMargin;
         (IslandHost.HorizontalAlignment, IslandHost.Margin, IslandHost.RenderTransformOrigin) = settings.Position switch
@@ -290,10 +300,8 @@ public partial class IslandWindow : Window
         Stage.RenderTransformOrigin = new Point(0.5, bottom ? 1 : 0);
         IslandHost.RenderTransformOrigin = new Point(IslandHost.RenderTransformOrigin.X, bottom ? 1 : 0);
 
-        if (ShadowBorder.Effect is DropShadowEffect shadow)
-        {
-            shadow.Direction = bottom ? 90 : 270;
-        }
+        // A sombra cai para o lado de dentro da tela: para baixo na borda de cima, para cima na de baixo.
+        ShadowShift.Y = bottom ? -10 : 10;
     }
 
     /// <summary>Sinal do deslocamento de entrada/saída: a ilha vem do lado da borda onde está ancorada.</summary>
@@ -347,12 +355,12 @@ public partial class IslandWindow : Window
             SetStage(0, EnterScale, Rise(EnterRise));
             Show();
             _placement.Place(this);
-            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
+            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), EnterEase);
         }
         else if (visible)
         {
             // Voltou a aparecer no meio da saída: retoma a entrada de onde estava.
-            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), SpringOut);
+            PlayStage(1, 1, 0, Scaled(EnterMilliseconds), EnterEase);
         }
         else if (IsVisible && ShouldAnimate)
         {
@@ -608,6 +616,17 @@ public partial class IslandWindow : Window
     /// <summary>Altura da linha das bolinhas de página embaixo da ilha aberta.</summary>
     private const double DotsRowHeight = 22;
 
+    /// <summary>Recorta a sombra no formato atual da cápsula; roda a cada quadro da animação de tamanho.</summary>
+    private void UpdateShadowClip()
+    {
+        if (ShadowHost is null)
+        {
+            return;
+        }
+
+        ShadowHost.Clip = IslandShapeGeometry.ShadowClip(IslandHost.ActualWidth, IslandHost.ActualHeight, CornerSize, Shape == IslandShape.Notch);
+    }
+
     private void ApplyDimensions(IslandDimensions requested, bool animate)
     {
         var target = IslandAppearance.Adjust(requested, _viewModel.State, _settings.Current);
@@ -633,10 +652,9 @@ public partial class IslandWindow : Window
 
         var growing = height >= IslandHost.Height;
         var duration = Scaled(growing ? ExpandMilliseconds : CollapseMilliseconds);
-        var easing = growing ? ExpandEasing() : CollapseEasing;
+        var easing = growing ? ExpandEasing : CollapseEasing;
 
-        // Na retração só a largura tem mola; a altura segue suave.
-        Animate(IslandHost, WidthProperty, width, duration, growing ? easing : CollapseWidthEasing());
+        Animate(IslandHost, WidthProperty, width, duration, easing);
         Animate(IslandHost, HeightProperty, height, duration, easing);
         Animate(this, CornerSizeProperty, radius, duration, easing);
     }
@@ -650,6 +668,8 @@ public partial class IslandWindow : Window
         var pill = _viewModel.IsClosedPill;
         CompactLayer.Visibility = pill ? Visibility.Collapsed : Visibility.Visible;
         var show = state == IslandState.Compact && pill;
+        _pillShown = show;
+        UpdateEyesAnimation();
         if (!animate)
         {
             SetImmediate(ClosedPill, OpacityProperty, show ? 1 : 0);
@@ -698,15 +718,10 @@ public partial class IslandWindow : Window
             {
                 // O conteúdo aparece depois que a cápsula já ganhou espaço, evitando corte do texto.
                 Animate(layer, OpacityProperty, 1, resizeDuration * 0.55, SoftEasing, beginTime: resizeDuration * 0.4);
-                if (layer != CompactLayer)
-                {
-                    ScaleLayerIn(layer, resizeDuration * 0.4);
-                }
-
                 if (layer == ExpandedLayer)
                 {
-                    // Aviso: desliza a partir da dock (do lado da borda), com mola.
-                    SlideLayer(layer, Rise(NoticeSlide), 0, Scaled(EnterMilliseconds), SpringOut, resizeDuration * 0.4);
+                    // Aviso: desliza a partir da borda da tela.
+                    SlideLayer(layer, Rise(NoticeSlide), 0, Scaled(EnterMilliseconds), EnterEase, resizeDuration * 0.4);
                 }
             }
             else
@@ -748,56 +763,10 @@ public partial class IslandWindow : Window
         // As linhas de cima e de baixo mudam a altura total mesmo quando o painel mantém o mesmo tamanho.
         ApplyDimensions(_viewModel.Dimensions, animate);
 
-        if (interactive && animate)
-        {
-            CascadeRows(InteractiveLayer, resizeDuration * 0.4);
-        }
-
         if (state != IslandState.Compact)
         {
             AnimateHover(false);
         }
-    }
-
-    /// <summary>
-    /// Entrada em cascata das linhas do painel interativo (como a lista do Volum): depois do layout, cada filho
-    /// direto do painel raiz do modelo surge em ordem de leitura, 30 ms depois do anterior.
-    /// </summary>
-    private void CascadeRows(ContentPresenter layer, TimeSpan extraDelay)
-    {
-        Dispatcher.BeginInvoke(() =>
-        {
-            if (FindRootPanel(layer) is not { } panel)
-            {
-                return;
-            }
-
-            var rows = panel.Children.OfType<FrameworkElement>()
-                .Select((element, order) => (element, order))
-                .OrderBy(r => panel is Grid ? Grid.GetRow(r.element) : 0)
-                .ThenBy(r => panel is Grid ? Grid.GetColumn(r.element) : 0)
-                .ThenBy(r => r.order)
-                .Select(r => r.element)
-                .ToList();
-            for (var i = 0; i < rows.Count; i++)
-            {
-                RowCascade.Play(rows[i], i, extraDelay);
-            }
-        }, DispatcherPriority.Loaded);
-    }
-
-    private static Panel? FindRootPanel(DependencyObject parent)
-    {
-        for (var depth = 0; depth < 6 && VisualTreeHelper.GetChildrenCount(parent) > 0; depth++)
-        {
-            parent = VisualTreeHelper.GetChild(parent, 0);
-            if (parent is Panel panel && panel.Children.Count > 1)
-            {
-                return panel;
-            }
-        }
-
-        return null;
     }
 
     /// <summary>Move a camada na vertical de <paramref name="from"/> até <paramref name="to"/> (DIPs).</summary>
@@ -825,15 +794,17 @@ public partial class IslandWindow : Window
         }
 
         var duration = Scaled(SwapMilliseconds);
-        if (layer == InteractiveLayer)
+        // Página nova entra pelo lado para onde se andou (no painel); avisos e trocas sem sentido sobem de leve.
+        var step = layer == InteractiveLayer ? _viewModel.TakePageStep() : 0;
+        layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
+        if (TranslateOf(layer) is { } translate)
         {
-            CascadeRows(layer, TimeSpan.Zero);
+            var axis = step == 0 ? TranslateTransform.YProperty : TranslateTransform.XProperty;
+            var from = step == 0 ? SwapOffset / 2 : SwapOffset * step;
+            translate.BeginAnimation(axis, Frozen(new DoubleAnimation(from, 0, duration) { EasingFunction = SoftEasing }));
         }
 
-        layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
-        TranslateOf(layer)?.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(SwapOffset, 0, duration) { EasingFunction = SoftEasing }));
-
-        FadeOutGhost(duration);
+        FadeOutGhost(duration, step);
     }
 
     private static TranslateTransform? TranslateOf(ContentPresenter layer) => layer.RenderTransform switch
@@ -842,27 +813,6 @@ public partial class IslandWindow : Window
         TransformGroup group => group.Children.OfType<TranslateTransform>().FirstOrDefault(),
         _ => null,
     };
-
-    private static ScaleTransform? ScaleOf(ContentPresenter layer) =>
-        (layer.RenderTransform as TransformGroup)?.Children.OfType<ScaleTransform>().FirstOrDefault();
-
-    /// <summary>O conteúdo do módulo cresce de 0,92 a 1 ao entrar, junto com a abertura da cápsula.</summary>
-    private void ScaleLayerIn(ContentPresenter layer, TimeSpan beginTime)
-    {
-        if (ScaleOf(layer) is not { } scale)
-        {
-            return;
-        }
-
-        scale.ScaleX = scale.ScaleY = ContentEnterScale;
-        var grow = Frozen(new DoubleAnimation(ContentEnterScale, 1, new Duration(Scaled(EnterMilliseconds)))
-        {
-            EasingFunction = SpringOut,
-            BeginTime = beginTime,
-        });
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
-    }
 
     /// <summary>
     /// Fotografa a camada (ainda com o conteúdo antigo) e põe a imagem logo acima dela. Um fantasma anterior,
@@ -898,8 +848,8 @@ public partial class IslandWindow : Window
         ContentGrid.Children.Insert(ContentGrid.Children.IndexOf(layer) + 1, _ghost);
     }
 
-    /// <summary>O fantasma esmaece e sobe um pouco enquanto o conteúdo novo entra por baixo dele.</summary>
-    private void FadeOutGhost(TimeSpan duration)
+    /// <summary>O fantasma esmaece e sai para o lado oposto (ou sobe um pouco) enquanto o conteúdo novo entra.</summary>
+    private void FadeOutGhost(TimeSpan duration, int step)
     {
         if (_ghost is not { } ghost)
         {
@@ -916,7 +866,9 @@ public partial class IslandWindow : Window
             }
         };
         ghost.BeginAnimation(OpacityProperty, fade);
-        ghost.RenderTransform.BeginAnimation(TranslateTransform.YProperty, Frozen(new DoubleAnimation(0, GhostRise, duration) { EasingFunction = SoftEasing }));
+        var axis = step == 0 ? TranslateTransform.YProperty : TranslateTransform.XProperty;
+        var to = step == 0 ? GhostRise : -SwapOffset * step;
+        ghost.RenderTransform.BeginAnimation(axis, Frozen(new DoubleAnimation(0, to, duration) { EasingFunction = SoftEasing }));
     }
 
     private void RemoveGhost()
@@ -929,6 +881,7 @@ public partial class IslandWindow : Window
         _ghost = null;
         ghost.BeginAnimation(OpacityProperty, null);
         ghost.RenderTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ghost.RenderTransform.BeginAnimation(TranslateTransform.XProperty, null);
         ghost.Source = null;
         ContentGrid.Children.Remove(ghost);
     }
@@ -1014,36 +967,6 @@ public partial class IslandWindow : Window
     {
         ((IAnimatable)target).BeginAnimation(property, null);
         target.SetValue(property, value);
-    }
-
-    /// <summary>Easing da expansão conforme a intensidade configurada (0 = sem efeito de mola).</summary>
-    private IEasingFunction ExpandEasing()
-    {
-        var intensity = _settings.Current.AnimationIntensity;
-        if (intensity != _expandEasingIntensity)
-        {
-            _expandEasingIntensity = intensity;
-            _expandEasing = intensity <= 0.01
-                ? NoSpringEasing
-                : Frozen(new BackEase { Amplitude = BaseSpringAmplitude * intensity, EasingMode = EasingMode.EaseOut });
-        }
-
-        return _expandEasing;
-    }
-
-    /// <summary>Mola da largura ao recolher: metade da amplitude da expansão (0 = sem efeito de mola).</summary>
-    private IEasingFunction CollapseWidthEasing()
-    {
-        var intensity = _settings.Current.AnimationIntensity;
-        if (intensity != _collapseEasingIntensity)
-        {
-            _collapseEasingIntensity = intensity;
-            _collapseWidthEasing = intensity <= 0.01
-                ? CollapseEasing
-                : Frozen(new BackEase { Amplitude = BaseSpringAmplitude * 0.5 * intensity, EasingMode = EasingMode.EaseOut });
-        }
-
-        return _collapseWidthEasing;
     }
 
     private static T Frozen<T>(T freezable) where T : Freezable

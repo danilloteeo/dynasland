@@ -21,13 +21,12 @@ public static partial class IslandSettingsMapper
         public const string ExpandedDurationSeconds = "island.expandedDurationSeconds";
         public const string AnimationsEnabled = "animations.enabled";
         public const string AnimationSpeed = "animations.speed";
-        public const string AnimationIntensity = "animations.intensity";
-        public const string Theme = "appearance.theme";
-        public const string IslandTheme = "appearance.islandTheme";
-        public const string IslandThemeFollowsMedia = "appearance.islandThemeFollowsMedia";
         public const string IdleDisplay = "appearance.idleDisplay";
         public const string AccentColor = "appearance.accent";
-        public const string IslandOpacity = "appearance.opacity";
+        // Chave nova no Vidro: o valor antigo (sempre 1,0, sem opção na interface) não é reaproveitado.
+        public const string IslandOpacity = "appearance.glassOpacity";
+        public const string ShowIslandEyes = "appearance.islandEyes";
+        public const string AccentFollowsWindows = "appearance.accentFollowsWindows";
         public const string ShadowIntensity = "appearance.shadow";
         public const string Roundness = "appearance.roundness";
         public const string CompactWidth = "appearance.compactWidth";
@@ -72,18 +71,14 @@ public static partial class IslandSettingsMapper
             ExpandedDurationSeconds = ReadDouble(values, Keys.ExpandedDurationSeconds, d.ExpandedDurationSeconds, 1, 60),
             AnimationsEnabled = ReadBool(values, Keys.AnimationsEnabled, d.AnimationsEnabled),
             AnimationSpeed = ReadDouble(values, Keys.AnimationSpeed, d.AnimationSpeed, 0.25, 3),
-            AnimationIntensity = ReadDouble(values, Keys.AnimationIntensity, d.AnimationIntensity, 0, 2),
-            Theme = values.TryGetValue(Keys.Theme, out var theme) && Enum.TryParse<AppTheme>(theme, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed)
-                ? parsed
-                : d.Theme,
-            IslandTheme = values.TryGetValue(Keys.IslandTheme, out var island) && Enum.TryParse<IslandTheme>(island, ignoreCase: true, out var islandTheme) && Enum.IsDefined(islandTheme)
-                ? islandTheme
-                : d.IslandTheme,
-            IslandThemeFollowsMedia = ReadBool(values, Keys.IslandThemeFollowsMedia, d.IslandThemeFollowsMedia),
             // Como no modelo, o repouso é só a dock: o texto ao lado dos ícones não é mais uma opção.
             IdleDisplay = IdleDisplay.TimeOnly,
-            AccentColor = accent is not null && IsHexColor(accent) ? accent.ToUpperInvariant() : d.AccentColor,
+            AccentColor = accent is not null && IsHexColor(accent) && !string.Equals(accent, AccentColors.LegacyDefault, StringComparison.OrdinalIgnoreCase)
+                ? accent.ToUpperInvariant()
+                : d.AccentColor,
+            AccentFollowsWindows = ReadBool(values, Keys.AccentFollowsWindows, d.AccentFollowsWindows),
             IslandOpacity = ReadDouble(values, Keys.IslandOpacity, d.IslandOpacity, 0.5, 1),
+            ShowIslandEyes = ReadBool(values, Keys.ShowIslandEyes, d.ShowIslandEyes),
             ShadowIntensity = ReadDouble(values, Keys.ShadowIntensity, d.ShadowIntensity, 0, 1),
             Roundness = d.Roundness,
             CompactWidth = d.CompactWidth,
@@ -122,13 +117,11 @@ public static partial class IslandSettingsMapper
         [Keys.ExpandedDurationSeconds] = Format(s.ExpandedDurationSeconds),
         [Keys.AnimationsEnabled] = Format(s.AnimationsEnabled),
         [Keys.AnimationSpeed] = Format(s.AnimationSpeed),
-        [Keys.AnimationIntensity] = Format(s.AnimationIntensity),
-        [Keys.Theme] = s.Theme.ToString(),
-        [Keys.IslandTheme] = s.IslandTheme.ToString(),
-        [Keys.IslandThemeFollowsMedia] = Format(s.IslandThemeFollowsMedia),
         [Keys.IdleDisplay] = s.IdleDisplay.ToString(),
         [Keys.AccentColor] = s.AccentColor,
+        [Keys.AccentFollowsWindows] = Format(s.AccentFollowsWindows),
         [Keys.IslandOpacity] = Format(s.IslandOpacity),
+        [Keys.ShowIslandEyes] = Format(s.ShowIslandEyes),
         [Keys.ShadowIntensity] = Format(s.ShadowIntensity),
         [Keys.Roundness] = Format(s.Roundness),
         [Keys.CompactWidth] = Format(s.CompactWidth),

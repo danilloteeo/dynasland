@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace DynaIsland.App.Controls;
 
-/// <summary>Estado vazio das listas da Central: mascote em pixel art e uma frase.</summary>
+/// <summary>Estado vazio das listas da Central: mini pílula e uma frase.</summary>
 public partial class EmptyState : UserControl
 {
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(

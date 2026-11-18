@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:DynaIsland.App.ViewModels"
         xmlns:views="clr-namespace:DynaIsland.App.Views"
+        xmlns:controls="clr-namespace:DynaIsland.App.Controls"
         xmlns:converters="clr-namespace:DynaIsland.App.Converters"
         xmlns:common="clr-namespace:DynaIsland.Modules.Common;assembly=DynaIsland.Modules"
         xmlns:models="clr-namespace:DynaIsland.Core.Models;assembly=DynaIsland.Core"
@@ -42,7 +43,7 @@
             <Setter Property="IsHitTestVisible" Value="False" />
         </Style>
 
-        <!-- Seta de página: círculo de 22px a 10% de branco (18% no hover), com a seta em cinza que clareia, como no Volum. -->
+        <!-- Seta de página: círculo de 22px a 10% de branco (18% no hover), com a seta em cinza que clareia. -->
         <Style x:Key="PageArrow" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
@@ -67,7 +68,7 @@
             </Setter>
         </Style>
 
-        <!-- Bolinha de página: 5px a 30% de branco; a da página aberta fica comprida (14px) e branca. -->
+        <!-- Bolinha de página: 5px a 30% de branco; a da página aberta vira um traço branco de 14px (animado). -->
         <Style x:Key="PageDot" TargetType="Button">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Cursor" Value="Hand" />
@@ -75,16 +76,37 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid Background="Transparent" Height="14" Margin="2.5,0">
-                            <Border x:Name="Dot" Width="4" Height="4" CornerRadius="2" Background="#33FFFFFF" VerticalAlignment="Center" />
+                            <Border x:Name="Dot" Width="5" Height="5" CornerRadius="2.5" Background="#4DFFFFFF" VerticalAlignment="Center" />
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                <Setter TargetName="Dot" Property="Width" Value="12" />
-                                <Setter TargetName="Dot" Property="Background" Value="#FFFFFFFF" />
-                            </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Dot" Property="Background" Value="#80FFFFFF" />
                             </Trigger>
+                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                <Setter TargetName="Dot" Property="Background" Value="#FFFFFFFF" />
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Width" To="14" Duration="0:0:0.24">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Width" To="5" Duration="0:0:0.24">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -92,7 +114,7 @@
         </Style>
     </Window.Resources>
 
-    <!-- Palco: entrada e saída da ilha inteira (opacidade, escala e subida), como a abertura do cartão do Volum. -->
+    <!-- Palco: entrada e saída da ilha inteira (opacidade, escala e subida). -->
     <Grid x:Name="Stage" RenderTransformOrigin="0.5,0">
         <Grid.RenderTransform>
             <TransformGroup>
@@ -112,26 +134,31 @@
                 <ScaleTransform x:Name="HoverScaleTransform" />
             </Grid.RenderTransform>
 
-            <!-- Camada separada para a sombra: o efeito não afeta a renderização do texto. -->
-            <Border x:Name="ShadowBorder" Background="{DynamicResource IslandBackgroundBrush}">
-                <Border.CornerRadius>
-                    <MultiBinding Converter="{StaticResource IslandCornerRadius}">
-                        <Binding Path="CornerSize" ElementName="Root" />
-                        <Binding Path="Shape" ElementName="Root" />
-                    </MultiBinding>
-                </Border.CornerRadius>
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="30"
-                                      ShadowDepth="8"
-                                      Direction="270"
-                                      Opacity="{DynamicResource IslandShadowOpacity}"
-                                      Color="Black"
-                                      RenderingBias="Performance" />
-                </Border.Effect>
-            </Border>
+            <!--
+                Sombra: borda preta desfocada e deslocada para baixo, dentro de um host recortado (ShadowHost.Clip,
+                IslandShapeGeometry.ShadowClip) com um buraco no formato da cápsula; assim o vidro não escurece.
+            -->
+            <Grid x:Name="ShadowHost" IsHitTestVisible="False">
+                <Border x:Name="ShadowBorder" Background="Black" Opacity="{DynamicResource IslandShadowOpacity}">
+                    <Border.CornerRadius>
+                        <MultiBinding Converter="{StaticResource IslandCornerRadius}">
+                            <Binding Path="CornerSize" ElementName="Root" />
+                            <Binding Path="Shape" ElementName="Root" />
+                        </MultiBinding>
+                    </Border.CornerRadius>
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="ShadowShift" Y="10" />
+                    </Border.RenderTransform>
+                    <Border.Effect>
+                        <BlurEffect Radius="28" RenderingBias="Performance" />
+                    </Border.Effect>
+                </Border>
+            </Grid>
 
-            <Border Background="{DynamicResource IslandBackgroundBrush}"
-                    BorderBrush="{StaticResource IslandEdgeBrush}"
+            <!-- Vidro: fundo translúcido e borda clara (sem a aresta de cima quando encaixada; ApplyPositionAndShape). -->
+            <Border x:Name="GlassBorder"
+                    Background="{DynamicResource IslandBackgroundBrush}"
+                    BorderBrush="{StaticResource IslandGlassBorderBrush}"
                     BorderThickness="1">
                 <Border.CornerRadius>
                     <MultiBinding Converter="{StaticResource IslandCornerRadius}">
@@ -149,7 +176,7 @@
                         <RowDefinition x:Name="DotsRow" Height="0" />
                     </Grid.RowDefinitions>
 
-                    <!-- Ilha fechada: o conteúdo compacto ocupa a cápsula inteira (relógio no meio, como no Volum). -->
+                    <!-- Ilha fechada: o conteúdo compacto ocupa a cápsula inteira (relógio no meio). -->
                     <ContentPresenter x:Name="CompactLayer" Grid.RowSpan="3"
                                       Style="{StaticResource LayerStyle}"
                                       Content="{Binding CompactContent}"
@@ -159,20 +186,23 @@
                         </ContentPresenter.RenderTransform>
                     </ContentPresenter>
 
-                    <!-- Pílula fechada do Volum: clima na esquerda, hora no meio e a onda (música tocando) na direita. -->
+                    <!-- Pílula fechada: clima na esquerda, hora no meio e a onda (música tocando) na direita. -->
                     <Grid x:Name="ClosedPill" Grid.RowSpan="3" Margin="12,0,14,0" Opacity="0" IsHitTestVisible="False">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <!-- Esquerda: clima (ícone e temperatura). -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Visibility="{Binding HasWeather, Converter={StaticResource BoolToVisibility}}">
-                            <ContentControl Content="{Binding WeatherGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
-                                            Foreground="{StaticResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
-                            <TextBlock Text="{Binding WeatherTemp}" Margin="4,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
-                                       Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                        <!-- Esquerda: os olhos (mascote) e o clima. -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <controls:IslandEyes x:Name="Eyes" Margin="1,0,8,0" VerticalAlignment="Center" IsListening="{Binding MusicPlaying}" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                        Visibility="{Binding HasWeather, Converter={StaticResource BoolToVisibility}}">
+                                <ContentControl Content="{Binding WeatherGlyph, Converter={StaticResource GlyphContent}}" FontFamily="{DynamicResource IslandIconFont}" FontSize="13"
+                                                Foreground="{StaticResource IslandSecondaryTextBrush}" VerticalAlignment="Center" Focusable="False" IsTabStop="False" />
+                                <TextBlock Text="{Binding WeatherTemp}" Margin="4,0,0,0" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}" FontSize="12"
+                                           Foreground="{StaticResource IslandSecondaryTextBrush}" />
+                            </StackPanel>
                         </StackPanel>
                         <TextBlock Grid.Column="1" Text="{Binding PillTime}" VerticalAlignment="Center" FontFamily="{DynamicResource IslandTextFont}"
                                    FontSize="14" FontWeight="Bold" Typography.NumeralAlignment="Tabular" Foreground="{DynamicResource IslandPrimaryTextBrush}" />
@@ -185,7 +215,7 @@
                                         <Setter Property="Margin" Value="1,0" />
                                         <Setter Property="RadiusX" Value="1.25" />
                                         <Setter Property="RadiusY" Value="1.25" />
-                                        <Setter Property="Fill" Value="{DynamicResource IslandPrimaryTextBrush}" />
+                                        <Setter Property="Fill" Value="{DynamicResource IslandAccentBrush}" />
                                         <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
                                     </Style>
                                 </StackPanel.Resources>
@@ -310,7 +340,7 @@
                 </Grid>
             </Border>
 
-            <!-- Orelhas (só encaixada em cima): duas curvas de 10px que ligam a pílula à borda da tela, como no Volum. -->
+            <!-- Orelhas (só encaixada em cima): duas curvas de 10px que ligam a pílula à borda da tela. -->
             <Path x:Name="EarLeft" Width="10" Height="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-9.5,0,0,0"
                   Data="M10,0 L0,0 A10,10 0 0 1 10,10 Z" Fill="{DynamicResource IslandBackgroundBrush}" IsHitTestVisible="False" Visibility="Collapsed" />
             <Path x:Name="EarRight" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,-9.5,0"

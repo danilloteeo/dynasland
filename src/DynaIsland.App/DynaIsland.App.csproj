@@ -26,7 +26,7 @@
     <Resource Include="Assets\Fonts\*.ttf" />
   </ItemGroup>
 
-  <!-- Páginas web das janelas (WebView2): copiadas para a pasta Web ao lado do executável. CSS derivado do Volum (MIT). -->
+  <!-- Páginas web das janelas (WebView2): copiadas para a pasta Web ao lado do executável. -->
   <ItemGroup>
     <Content Include="Web\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -7,6 +7,7 @@ using DynaIsland.App.Services;
 using DynaIsland.Core.Interfaces;
 using DynaIsland.Core.Models;
 using DynaIsland.Core.Modules;
+using DynaIsland.Core.Services;
 using DynaIsland.Infrastructure.Database;
 using DynaIsland.Infrastructure.Logging;
 using DynaIsland.Infrastructure.Updates;
@@ -43,18 +44,7 @@ public enum ModuleStatus
 /// <summary>Janela de configurações: tudo o que é exibido vem dos serviços reais e é aplicado na hora.</summary>
 public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
-    public static readonly IReadOnlyList<(string Name, string Hex)> AccentPresets =
-    [
-        ("Branco", "#FFFFFF"),
-        ("Verde", "#30D158"),
-        ("Azul", "#0A84FF"),
-        ("Ciano", "#64D2FF"),
-        ("Roxo", "#BF5AF2"),
-        ("Rosa", "#FF375F"),
-        ("Laranja", "#FF9F0A"),
-        ("Amarelo", "#FFD60A"),
-        ("Grafite", "#8E8E93"),
-    ];
+    public static IReadOnlyList<(string Name, string Hex)> AccentPresets => AccentColors.Presets;
 
     private readonly ModuleManager _modules;
     private readonly IModuleOptions _moduleOptions;
@@ -137,8 +127,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<AccentOptionViewModel> AccentOptions { get; } = [];
 
-    public ObservableCollection<IslandThemeOptionViewModel> IslandThemeOptions { get; } = [];
-
     public ObservableCollection<NotificationAppViewModel> NotificationApps { get; } = [];
 
     public string DataPath { get; }
@@ -189,10 +177,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     // Aparência
     [ObservableProperty]
-    private AppTheme _theme;
+    private bool _accentFollowsWindows;
 
     [ObservableProperty]
-    private bool _islandThemeFollowsMedia;
+    private bool _showIslandEyes;
+
+    /// <summary>Destaque escolhido (#RRGGBB); a página usa para a prévia e para pintar os controles.</summary>
+    [ObservableProperty]
+    private string _accentColor = AccentColors.Default;
+
+    /// <summary>Cor de destaque do Windows já clareada, ou <c>null</c>; mostrada quando "Usar a cor do Windows" está ligado.</summary>
+    public string? WindowsAccentHex { get; } = WindowsAccent.Read();
 
     [ObservableProperty]
     private IdleDisplay _idleDisplay;
@@ -221,9 +216,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private double _animationSpeed;
-
-    [ObservableProperty]
-    private double _animationIntensity;
 
     [ObservableProperty]
     private double _expandedDurationSeconds;
@@ -282,8 +274,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Position = s.Position;
         Shape = s.Shape;
         Edge = s.Edge;
-        Theme = s.Theme;
-        IslandThemeFollowsMedia = s.IslandThemeFollowsMedia;
+        AccentFollowsWindows = s.AccentFollowsWindows;
+        ShowIslandEyes = s.ShowIslandEyes;
+        AccentColor = s.AccentColor;
         IdleDisplay = s.IdleDisplay;
         IslandOpacity = s.IslandOpacity;
         ShadowIntensity = s.ShadowIntensity;
@@ -293,12 +286,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         MaxWidth = s.MaxWidth;
         AnimationsEnabled = s.AnimationsEnabled;
         AnimationSpeed = s.AnimationSpeed;
-        AnimationIntensity = s.AnimationIntensity;
         ExpandedDurationSeconds = s.ExpandedDurationSeconds;
         CheckForUpdates = s.CheckForUpdates;
         RefreshMonitors(s);
         RefreshAccents(s);
-        RefreshIslandThemes(s);
     }
 
     private void RefreshModules()
@@ -342,17 +333,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         foreach (var (name, hex) in AccentPresets)
         {
             AccentOptions.Add(new AccentOptionViewModel(name, hex, string.Equals(hex, current.AccentColor, StringComparison.OrdinalIgnoreCase), SelectAccent));
-        }
-    }
-
-    private void RefreshIslandThemes(IslandSettings current)
-    {
-        var accent = (Color)ColorConverter.ConvertFromString(current.AccentColor);
-        IslandThemeOptions.Clear();
-        foreach (var (theme, name) in IslandThemes.All)
-        {
-            IslandThemeOptions.Add(new IslandThemeOptionViewModel(theme, name, IslandThemes.Background(theme, accent, 1),
-                theme == current.IslandTheme, SelectIslandTheme));
         }
     }
 
@@ -418,12 +398,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     private void SelectAccent(string hex)
     {
+        AccentColor = hex;
         Save(s => s with { AccentColor = hex });
-        // A amostra do tema "Cor de destaque" acompanha a cor escolhida.
-        RefreshIslandThemes(_settings.Current with { AccentColor = hex });
     }
-
-    private void SelectIslandTheme(IslandTheme theme) => Save(s => s with { IslandTheme = theme });
 
     partial void OnStartWithWindowsChanged(bool value)
     {
@@ -447,9 +424,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     partial void OnEdgeChanged(IslandEdge value) => Save(s => s with { Edge = value });
 
-    partial void OnThemeChanged(AppTheme value) => Save(s => s with { Theme = value });
+    partial void OnAccentFollowsWindowsChanged(bool value) => Save(s => s with { AccentFollowsWindows = value });
 
-    partial void OnIslandThemeFollowsMediaChanged(bool value) => Save(s => s with { IslandThemeFollowsMedia = value });
+    partial void OnShowIslandEyesChanged(bool value) => Save(s => s with { ShowIslandEyes = value });
 
     partial void OnIdleDisplayChanged(IdleDisplay value) => Save(s => s with { IdleDisplay = value });
 
@@ -468,8 +445,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnAnimationsEnabledChanged(bool value) => Save(s => s with { AnimationsEnabled = value });
 
     partial void OnAnimationSpeedChanged(double value) => Save(s => s with { AnimationSpeed = Math.Round(value, 2) });
-
-    partial void OnAnimationIntensityChanged(double value) => Save(s => s with { AnimationIntensity = Math.Round(value, 2) });
 
     partial void OnExpandedDurationSecondsChanged(double value) => Save(s => s with { ExpandedDurationSeconds = Math.Round(value) });
 
@@ -788,24 +763,6 @@ public sealed partial class AccentOptionViewModel : ObservableObject
         if (value)
         {
             _select(Hex);
-        }
-    }
-}
-
-public sealed partial class IslandThemeOptionViewModel(IslandTheme theme, string name, Brush brush, bool isSelected, Action<IslandTheme> select) : ObservableObject
-{
-    public string Name { get; } = name;
-
-    public Brush Brush { get; } = brush;
-
-    [ObservableProperty]
-    private bool _isSelected = isSelected;
-
-    partial void OnIsSelectedChanged(bool value)
-    {
-        if (value)
-        {
-            select(theme);
         }
     }
 }

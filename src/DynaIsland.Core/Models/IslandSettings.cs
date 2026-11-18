@@ -1,35 +1,5 @@
 namespace DynaIsland.Core.Models;
 
-public enum AppTheme
-{
-    /// <summary>Segue o modo de cor de aplicativos do Windows.</summary>
-    System,
-    Dark,
-    Light,
-}
-
-/// <summary>Fundo da ilha. Todos são escuros: o texto e os ícones continuam claros.</summary>
-public enum IslandTheme
-{
-    Black,
-    Graphite,
-    Midnight,
-    Aurora,
-    Sunset,
-    Forest,
-    Steel,
-    Wine,
-    Copper,
-    Ember,
-    Magenta,
-
-    /// <summary>Azul para magenta, na horizontal.</summary>
-    Dusk,
-
-    /// <summary>Tom escuro da cor de destaque escolhida.</summary>
-    Accent,
-}
-
 /// <summary>O que a ilha compacta mostra em repouso (sem nenhuma atividade de outro módulo).</summary>
 public enum IdleDisplay
 {
@@ -130,9 +100,6 @@ public sealed record IslandSettings
     /// <summary>Multiplicador de velocidade das animações (1 = normal).</summary>
     public double AnimationSpeed { get; init; } = 1.0;
 
-    /// <summary>Intensidade do efeito de mola ao expandir (0 = nenhum, 1 = normal, 2 = acentuado).</summary>
-    public double AnimationIntensity { get; init; } = 1.0;
-
     /// <summary>Tempo sem interação até a ilha voltar ao estado compacto.</summary>
     public double ExpandedDurationSeconds { get; init; } = 6;
 
@@ -141,22 +108,19 @@ public sealed record IslandSettings
 
     // Aparência
 
-    /// <summary>Tema da janela de configurações (o fundo da ilha vem de <see cref="IslandTheme"/>).</summary>
-    public AppTheme Theme { get; init; } = AppTheme.System;
-
-    /// <summary>Tema (fundo) da ilha.</summary>
-    public IslandTheme IslandTheme { get; init; } = IslandTheme.Black;
-
-    /// <summary>Enquanto uma mídia toca, o fundo da ilha usa a cor da capa em vez do tema.</summary>
-    public bool IslandThemeFollowsMedia { get; init; }
-
     public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.TimeOnly;
 
     /// <summary>Cor de destaque em hexadecimal (#RRGGBB).</summary>
-    public string AccentColor { get; init; } = "#FFFFFF";
+    public string AccentColor { get; init; } = Services.AccentColors.Default;
 
-    /// <summary>Opacidade do fundo da ilha (0,5 a 1).</summary>
-    public double IslandOpacity { get; init; } = 1.0;
+    /// <summary>O destaque segue a cor de destaque do Windows (clareada) em vez de <see cref="AccentColor"/>.</summary>
+    public bool AccentFollowsWindows { get; init; }
+
+    /// <summary>Opacidade do vidro da ilha (0,5 a 1).</summary>
+    public double IslandOpacity { get; init; } = 0.70;
+
+    /// <summary>Olhos na pílula fechada (o mascote): piscam, olham para os lados e "curtem" a música.</summary>
+    public bool ShowIslandEyes { get; init; } = true;
 
     /// <summary>Intensidade da sombra da ilha (0 a 1).</summary>
     public double ShadowIntensity { get; init; } = 0.5;
