@@ -779,7 +779,7 @@ public partial class IslandWindow : Window
 
         var duration = Scaled(SwapMilliseconds);
         // Página nova entra pelo lado para onde se andou (no painel); avisos e trocas sem sentido sobem de leve.
-        var step = layer == InteractiveLayer ? _viewModel.PageStep : 0;
+        var step = layer == InteractiveLayer ? _viewModel.TakePageStep() : 0;
         layer.BeginAnimation(OpacityProperty, Frozen(new DoubleAnimation(0, 1, duration) { EasingFunction = SoftEasing }));
         if (TranslateOf(layer) is { } translate)
         {

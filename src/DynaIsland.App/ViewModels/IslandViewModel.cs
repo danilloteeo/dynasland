@@ -192,8 +192,18 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
 
     private int? _pendingStep;
 
-    /// <summary>Sentido da última troca de página: -1 (anterior), +1 (próxima) ou 0 (desconhecido). A janela usa na animação.</summary>
-    public int PageStep { get; private set; }
+    private int _pageStep;
+
+    /// <summary>
+    /// Sentido da troca de página que acabou de acontecer: -1 (anterior), +1 (próxima) ou 0 (desconhecido).
+    /// Vale uma vez só: a janela lê ao animar a troca e o valor volta a 0, para outras trocas não herdarem o sentido.
+    /// </summary>
+    public int TakePageStep()
+    {
+        var step = _pageStep;
+        _pageStep = 0;
+        return step;
+    }
 
     /// <summary>Seta ‹ ou ›: abre a página anterior (-1) ou a próxima (+1), dando a volta no fim.</summary>
     private void StepPage(int direction)
@@ -223,7 +233,7 @@ public sealed partial class IslandViewModel : ObservableObject, IDisposable
         }
 
         var currentIndex = Dock.ToList().FindIndex(i => i.IsActive);
-        PageStep = _pendingStep ?? (currentIndex < 0 ? 0 : Math.Sign(Dock.IndexOf(item) - currentIndex));
+        _pageStep = _pendingStep ?? (currentIndex < 0 ? 0 : Math.Sign(Dock.IndexOf(item) - currentIndex));
         _pendingStep = null;
 
         // Como no modelo: clicar no módulo que já está aberto fecha o painel.
