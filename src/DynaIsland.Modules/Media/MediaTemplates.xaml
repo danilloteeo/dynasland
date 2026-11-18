@@ -177,8 +177,8 @@
             <!-- Barra de progresso com os tempos embaixo. -->
             <StackPanel Grid.Row="1" Margin="0,10,0,0" Visibility="{Binding HasTimeline, Converter={StaticResource BoolToVisibility}}">
                 <!-- Só mostra a posição (barra com bolinha, como no modelo); não responde ao clique. -->
-                <Slider Style="{DynamicResource IslandSliderStyle}" Height="12" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
-                        IsHitTestVisible="False" Focusable="False" Margin="0,2,0,2" />
+                <Slider Style="{DynamicResource IslandSliderStyle}" Height="20" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
+                        IsHitTestVisible="False" Focusable="False" Margin="0,-2,0,-2" />
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding DurationText}" FontSize="9.5" Typography.NumeralAlignment="Tabular"
                                Foreground="{DynamicResource IslandSecondaryTextBrush}" />

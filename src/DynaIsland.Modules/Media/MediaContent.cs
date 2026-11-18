@@ -282,7 +282,7 @@ public sealed partial class MediaContent(string sessionId, IMediaSessionService 
     {
         IslandState.Compact => new IslandDimensions(HasOtherSessions ? 252 : 232, 34, 17),
         IslandState.Expanded => new IslandDimensions(360, 72, 30),
-        IslandState.Interactive => new IslandDimensions(440, 132 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0) + (HasLyrics ? 70 : 0), 36),
+        IslandState.Interactive => new IslandDimensions(440, 148 + (HasAppVolume ? 34 : 0) + (HasVolumeMessage ? 18 : 0) + (HasQueue ? 30 + Queue.Count * 34 : 0) + (HasLyrics ? 70 : 0), 36),
         _ => null,
     };
 
