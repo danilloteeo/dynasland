@@ -49,4 +49,18 @@ public class VidroSettingsTests
 
         Assert.True(IslandSettingsMapper.FromValues(values).AccentFollowsWindows);
     }
+
+    [Fact]
+    public void Removed_theme_and_spring_keys_are_ignored()
+    {
+        var legacy = Read(
+            ("appearance.theme", "Light"),
+            ("appearance.islandTheme", "Aurora"),
+            ("appearance.islandThemeFollowsMedia", "true"),
+            ("animations.intensity", "2"));
+
+        Assert.Equal(IslandSettingsMapper.FromValues(new Dictionary<string, string>()), legacy);
+        Assert.DoesNotContain("appearance.islandTheme", IslandSettingsMapper.ToValues(IslandSettings.Default).Keys);
+        Assert.DoesNotContain("animations.intensity", IslandSettingsMapper.ToValues(IslandSettings.Default).Keys);
+    }
 }

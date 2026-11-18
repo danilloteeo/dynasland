@@ -1,35 +1,5 @@
 namespace DynaIsland.Core.Models;
 
-public enum AppTheme
-{
-    /// <summary>Segue o modo de cor de aplicativos do Windows.</summary>
-    System,
-    Dark,
-    Light,
-}
-
-/// <summary>Fundo da ilha. Todos são escuros: o texto e os ícones continuam claros.</summary>
-public enum IslandTheme
-{
-    Black,
-    Graphite,
-    Midnight,
-    Aurora,
-    Sunset,
-    Forest,
-    Steel,
-    Wine,
-    Copper,
-    Ember,
-    Magenta,
-
-    /// <summary>Azul para magenta, na horizontal.</summary>
-    Dusk,
-
-    /// <summary>Tom escuro da cor de destaque escolhida.</summary>
-    Accent,
-}
-
 /// <summary>O que a ilha compacta mostra em repouso (sem nenhuma atividade de outro módulo).</summary>
 public enum IdleDisplay
 {
@@ -130,9 +100,6 @@ public sealed record IslandSettings
     /// <summary>Multiplicador de velocidade das animações (1 = normal).</summary>
     public double AnimationSpeed { get; init; } = 1.0;
 
-    /// <summary>Intensidade do efeito de mola ao expandir (0 = nenhum, 1 = normal, 2 = acentuado).</summary>
-    public double AnimationIntensity { get; init; } = 1.0;
-
     /// <summary>Tempo sem interação até a ilha voltar ao estado compacto.</summary>
     public double ExpandedDurationSeconds { get; init; } = 6;
 
@@ -140,15 +107,6 @@ public sealed record IslandSettings
     public TimeSpan ExpandedDuration => TimeSpan.FromSeconds(ExpandedDurationSeconds);
 
     // Aparência
-
-    /// <summary>Tema da janela de configurações (o fundo da ilha vem de <see cref="IslandTheme"/>).</summary>
-    public AppTheme Theme { get; init; } = AppTheme.System;
-
-    /// <summary>Tema (fundo) da ilha.</summary>
-    public IslandTheme IslandTheme { get; init; } = IslandTheme.Black;
-
-    /// <summary>Enquanto uma mídia toca, o fundo da ilha usa a cor da capa em vez do tema.</summary>
-    public bool IslandThemeFollowsMedia { get; init; }
 
     public IdleDisplay IdleDisplay { get; init; } = IdleDisplay.TimeOnly;
 

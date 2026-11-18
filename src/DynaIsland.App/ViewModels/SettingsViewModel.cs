@@ -215,9 +215,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private double _animationSpeed;
 
     [ObservableProperty]
-    private double _animationIntensity;
-
-    [ObservableProperty]
     private double _expandedDurationSeconds;
 
     // Notificações
@@ -285,7 +282,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         MaxWidth = s.MaxWidth;
         AnimationsEnabled = s.AnimationsEnabled;
         AnimationSpeed = s.AnimationSpeed;
-        AnimationIntensity = s.AnimationIntensity;
         ExpandedDurationSeconds = s.ExpandedDurationSeconds;
         CheckForUpdates = s.CheckForUpdates;
         RefreshMonitors(s);
@@ -443,8 +439,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnAnimationsEnabledChanged(bool value) => Save(s => s with { AnimationsEnabled = value });
 
     partial void OnAnimationSpeedChanged(double value) => Save(s => s with { AnimationSpeed = Math.Round(value, 2) });
-
-    partial void OnAnimationIntensityChanged(double value) => Save(s => s with { AnimationIntensity = Math.Round(value, 2) });
 
     partial void OnExpandedDurationSecondsChanged(double value) => Save(s => s with { ExpandedDurationSeconds = Math.Round(value) });
 

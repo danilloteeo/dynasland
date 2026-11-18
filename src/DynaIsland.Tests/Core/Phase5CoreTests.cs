@@ -14,13 +14,10 @@ public class Phase5CoreTests
     {
         var custom = IslandSettings.Default with
         {
-            Theme = AppTheme.Light,
-            IslandTheme = IslandTheme.Aurora,
-            IslandThemeFollowsMedia = true,
             AccentColor = "#0A84FF",
+            AccentFollowsWindows = true,
             IslandOpacity = 0.8,
             ShadowIntensity = 0.2,
-            AnimationIntensity = 1.5,
             StartHidden = true,
             HideInFullscreen = false,
             CheckForUpdates = false,
@@ -32,20 +29,16 @@ public class Phase5CoreTests
     }
 
     [Fact]
-    public void Invalid_theme_and_accent_fall_back_to_defaults()
+    public void Invalid_accent_falls_back_to_default()
     {
         var values = new Dictionary<string, string>
         {
-            [IslandSettingsMapper.Keys.Theme] = "Neon",
-            [IslandSettingsMapper.Keys.IslandTheme] = "Neon",
             [IslandSettingsMapper.Keys.AccentColor] = "verde",
             [IslandSettingsMapper.Keys.MaxWidth] = "9999",
         };
 
         var settings = IslandSettingsMapper.FromValues(values);
 
-        Assert.Equal(AppTheme.System, settings.Theme);
-        Assert.Equal(IslandTheme.Black, settings.IslandTheme);
         Assert.Equal(IslandSettings.Default.AccentColor, settings.AccentColor);
         Assert.Equal(440, settings.MaxWidth);
     }
@@ -114,7 +107,7 @@ public class Phase5CoreTests
     {
         var store = new InMemorySettingsStore();
         using var service = new IslandSettingsService(store);
-        await service.UpdateAsync(s => s with { Theme = AppTheme.Dark, CompactWidth = 250 });
+        await service.UpdateAsync(s => s with { AccentColor = "#8FE3C8", CompactWidth = 250 });
         IslandSettings? raised = null;
         service.Changed += (_, s) => raised = s;
 
